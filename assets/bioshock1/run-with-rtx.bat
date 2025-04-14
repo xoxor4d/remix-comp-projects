@@ -1,0 +1,1 @@
+START Bioshock.exe -dx9 -NOINTRO -windowed %*

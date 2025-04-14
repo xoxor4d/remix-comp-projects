@@ -1,0 +1,39 @@
+#usda 1.0
+(
+    customLayerData = {
+        string lightspeed_game_name = "Bioshock1-RTX"
+        string lightspeed_layer_type = "replacement"
+        dictionary lightspeed_mod_dependencies = {
+        }
+        string lightspeed_mod_name = "bioshock1rtx"
+        string lightspeed_mod_notes = "xoxor4d"
+        string lightspeed_mod_version = "0.0.1"
+    }
+    subLayers = [
+        @./comp_world.usda@,
+        @./comp_lights.usda@
+    ]
+    timeCodesPerSecond = 24
+    upAxis = "Z"
+)
+
+over "RootNode"
+{
+    over "meshes"
+    {
+    }
+
+    over "Looks"
+    {
+    }
+
+    over "cameras"
+    {
+        over "Camera"
+        {
+            custom uniform vector3d omni:kit:centerOfInterest = (0, 0, -3372.28131393165)
+            matrix4d xformOp:transform = ( (0.9757661403958412, 0.21659941604618868, 0.031066577305093285, 0), (-0.027068274289032714, -0.021402503996692874, 0.9994044433309708, 0), (0.21713532136439107, -0.9760259349992296, -0.015020866315277168, 0), (214.21548799822702, -2673.903956024873, 152.9882488209559, 0.9999999999999999) )
+        }
+    }
+}
+

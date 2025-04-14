@@ -1,0 +1,278 @@
+#usda 1.0
+(
+    upAxis = "Z"
+)
+
+over "RootNode"
+{
+    over "cameras"
+    {
+        over "Camera"
+        {
+            matrix4d xformOp:transform = ( (0.795256756577672, 0.605476307457284, 0.031066577305093282, 0), (-0.013557157038238569, -0.033469343731995685, 0.9993477905730285, 0), (0.6061211880561539, -0.7951592570913335, -0.018408184357959094, 0), (675.3758259085913, -3023.7144054917167, 156.27963357203242, 0.9999999999999999) )
+        }
+    }
+
+    over "Looks"
+    {
+        over "mat_38FB6BF906C8DD9D" (
+            references = @./materials/AperturePBR_Translucent.usda@</Looks/mat_AperturePBR_Translucent>
+        )
+        {
+            over "Shader"
+            {
+                custom float inputs:ior_constant = 1
+                custom asset inputs:normalmap_texture = @./assets/textures_world/glass/glass_dirty_generic/glass_trans_nml_dx_OTH_Normal.n.rtex.dds@
+                custom float inputs:thin_wall_thickness = 1
+                custom bool inputs:thin_walled = 1
+                custom color3f inputs:transmittance_color = (0.99999, 1, 0.9999983)
+                custom float inputs:transmittance_measurement_distance = 1
+                custom asset inputs:transmittance_texture = @./assets/textures_world/glass/glass_dirty_generic/glass_trans.a.rtex.dds@
+                custom bool inputs:use_diffuse_layer = 1
+            }
+        }
+
+        over "mat_14D46828647982D6"
+        {
+            over "Shader"
+            {
+                custom float inputs:metallic_constant = 0.445
+                custom float inputs:reflection_roughness_constant = 0.22999999
+            }
+        }
+
+        over "mat_E82631F865CA4E2C" (
+            references = @./materials/AperturePBR_Translucent.usda@</Looks/mat_AperturePBR_Translucent>
+        )
+        {
+            over "Shader"
+            {
+                custom float inputs:ior_constant = 1.3
+                custom asset inputs:normalmap_texture = @./assets/textures_world/water/water_slow_shallow_16x4_OTH_Normal.n.rtex.dds@
+                custom int inputs:sprite_sheet_cols = 16
+                custom int inputs:sprite_sheet_fps = 20
+                custom int inputs:sprite_sheet_rows = 4
+                custom bool inputs:thin_walled = 0
+                custom color3f inputs:transmittance_color = (1, 0.99999, 0.99999)
+            }
+        }
+
+        over "mat_61A3074914EF9FBB"
+        {
+            over "Shader"
+            {
+                custom float inputs:reflection_roughness_constant = 0.105
+            }
+        }
+
+        over "mat_59EC894DCEC8D46C"
+        {
+            over "Shader"
+            {
+                custom float inputs:metallic_constant = 0.074999996
+                custom float inputs:reflection_roughness_constant = 0.19999999
+            }
+        }
+
+        over "mat_10722959F66468F6"
+        {
+            over "Shader"
+            {
+                custom int inputs:alpha_test_type = 4
+                custom bool inputs:blend_enabled = 1
+                custom int inputs:blend_type = 8
+                custom bool inputs:inverted_blend = 0
+                custom float inputs:opacity_constant = 1
+                custom float inputs:reflection_roughness_constant = 0.53
+                custom asset inputs:reflectionroughness_texture = @@
+                custom bool inputs:use_legacy_alpha_state = 0
+            }
+        }
+
+        over "mat_2358AA95C480770A"
+        {
+            over "Shader"
+            {
+                custom float inputs:metallic_constant = 0.59499997
+                custom float inputs:reflection_roughness_constant = 0.48999998
+            }
+        }
+
+        over "mat_8B58B4BED52EC842"
+        {
+            over "Shader"
+            {
+                custom float inputs:metallic_constant = 0.84
+                custom float inputs:reflection_roughness_constant = 0.36499998
+            }
+        }
+
+        over "mat_B78B1BB4FB7B0DD9"
+        {
+            over "Shader"
+            {
+                custom float inputs:metallic_constant = 0.205
+                custom float inputs:reflection_roughness_constant = 0.255
+            }
+        }
+
+        over "mat_E679CA64FCCB885A"
+        {
+            over "Shader"
+            {
+                custom float inputs:reflection_roughness_constant = 1
+            }
+        }
+
+        over "mat_0B14E7FAA2602BA2"
+        {
+            over "Shader"
+            {
+                custom float inputs:reflection_roughness_constant = 1
+            }
+        }
+
+        over "mat_4E83D299B3B9FAE3"
+        {
+            over "Shader"
+            {
+                custom float inputs:reflection_roughness_constant = 0.715
+            }
+        }
+
+        over "mat_4A2F6CD3B0F89158"
+        {
+            over "Shader"
+            {
+                custom float inputs:reflection_roughness_constant = 0.935
+            }
+        }
+
+        over "mat_96259B2B40FF81D6"
+        {
+            over "Shader"
+            {
+                custom float inputs:reflection_roughness_constant = 1
+            }
+        }
+
+        over "mat_AE2DEDB991E606E8"
+        {
+            over "Shader"
+            {
+                custom float inputs:reflection_roughness_constant = 0.125
+            }
+        }
+
+        over "mat_0D357E9907CC8651"
+        {
+            over "Shader"
+            {
+                custom float inputs:reflection_roughness_constant = 0.97499996
+            }
+        }
+
+        over "mat_B6EB9CD42C20A92C"
+        {
+            over "Shader"
+            {
+                custom float inputs:metallic_constant = 0.445
+                custom float inputs:reflection_roughness_constant = 0.295
+            }
+        }
+
+        over "mat_86566AFACB92A808"
+        {
+            over "Shader"
+            {
+                custom float inputs:metallic_constant = 1
+                custom float inputs:reflection_roughness_constant = 0.385
+            }
+        }
+
+        over "mat_A6C6EBCB6861E5F0"
+        {
+            over "Shader"
+            {
+                custom float inputs:metallic_constant = 0.085
+                custom float inputs:reflection_roughness_constant = 0.65
+            }
+        }
+
+        over "mat_D3048E42297BE229"
+        {
+            over "Shader"
+            {
+                custom float inputs:metallic_constant = 0.84
+                custom float inputs:reflection_roughness_constant = 0.285
+            }
+        }
+
+        over "mat_1E4327020A2F9494" (
+            references = @./materials/AperturePBR_Translucent.usda@</Looks/mat_AperturePBR_Translucent>
+        )
+        {
+            over "Shader"
+            {
+                custom asset inputs:normalmap_texture = @./assets/textures_world/water/water_normal_anim_03_64x1_OTH_Normal.n.rtex.dds@
+                custom int inputs:sprite_sheet_cols = 64
+                custom int inputs:sprite_sheet_fps = 23
+                custom int inputs:sprite_sheet_rows = 1
+                custom color3f inputs:transmittance_color = (0.40585262, 0.46718144, 0.46362945)
+                custom float inputs:transmittance_measurement_distance = 10
+                custom bool inputs:use_diffuse_layer = 0
+            }
+        }
+
+        over "mat_AE284D03D59ED666"
+        {
+            over "Shader"
+            {
+                custom int inputs:alpha_test_type = 4
+                custom bool inputs:blend_enabled = 1
+                custom int inputs:blend_type = 0
+                custom bool inputs:use_legacy_alpha_state = 0
+            }
+        }
+
+        over "mat_0E6615A7DC42028C"
+        {
+            over "Shader"
+            {
+                custom float inputs:emissive_intensity = 10
+                custom asset inputs:emissive_mask_texture = @./assets/emissives/0E6615A7DC42028C_emissive.e.rtex.dds@
+                custom bool inputs:enable_emission = 1
+            }
+        }
+
+        over "mat_BC89F1774530D75C"
+        {
+            over "Shader"
+            {
+                custom float inputs:emissive_intensity = 10
+                custom asset inputs:emissive_mask_texture = @./assets/emissives/BC89F1774530D75C_emissive.e.rtex.dds@
+                custom bool inputs:enable_emission = 1
+            }
+        }
+
+        over "mat_22FB8B2099CC78A6"
+        {
+            over "Shader"
+            {
+                custom float inputs:emissive_intensity = 1
+                custom bool inputs:enable_emission = 0
+            }
+        }
+
+        over "mat_2C8329EC189EC2C0"
+        {
+            over "Shader"
+            {
+                custom bool inputs:blend_enabled = 1
+                custom int inputs:blend_type = 1
+                custom bool inputs:use_legacy_alpha_state = 0
+            }
+        }
+    }
+}
+
