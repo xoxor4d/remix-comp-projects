@@ -97,10 +97,10 @@ namespace mods::mirrorsedge
 	HRESULT d3d9ex::D3D9Device::Reset(D3DPRESENT_PARAMETERS* pPresentationParameters)
 	{
 		ImGui_ImplDX9_InvalidateDeviceObjects();
-		auto hr = m_pIDirect3DDevice9->Reset(pPresentationParameters);
+		const auto hr = m_pIDirect3DDevice9->Reset(pPresentationParameters);
 		ImGui_ImplDX9_CreateDeviceObjects();
 
-		return m_pIDirect3DDevice9->Reset(pPresentationParameters);
+		return hr;
 	}
 
 	HRESULT d3d9ex::D3D9Device::Present(CONST RECT* pSourceRect, CONST RECT* pDestRect, HWND hDestWindowOverride, CONST RGNDATA* pDirtyRegion)

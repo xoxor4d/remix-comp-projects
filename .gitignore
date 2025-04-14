@@ -60,6 +60,7 @@ Temporary Items
 *.zip
 
 # Additional stuff
+bin
 obj
 build
 user*.bat

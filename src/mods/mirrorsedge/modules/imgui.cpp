@@ -85,7 +85,7 @@ namespace mods::mirrorsedge
 		}
 	}
 
-	bool imgui::input_message(const UINT message_type, const WPARAM wparam, const LPARAM lparam, bool& inout_pass_msg_to_game)
+	bool imgui::input_message(const UINT message_type, const WPARAM wparam, const LPARAM lparam, [[maybe_unused]] bool& inout_pass_msg_to_game)
 	{
 		if (message_type == WM_KEYUP && wparam == VK_F5) 
 		{

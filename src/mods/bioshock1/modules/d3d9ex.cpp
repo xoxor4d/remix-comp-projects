@@ -98,10 +98,9 @@ namespace mods::bioshock1
 	HRESULT d3d9ex::D3D9Device::Reset(D3DPRESENT_PARAMETERS* pPresentationParameters)
 	{
 		ImGui_ImplDX9_InvalidateDeviceObjects();
-		auto hr = m_pIDirect3DDevice9->Reset(pPresentationParameters);
+		const auto hr = m_pIDirect3DDevice9->Reset(pPresentationParameters);
 		ImGui_ImplDX9_CreateDeviceObjects();
-
-		return m_pIDirect3DDevice9->Reset(pPresentationParameters);
+		return hr;
 	}
 
 	HRESULT d3d9ex::D3D9Device::Present(CONST RECT* pSourceRect, CONST RECT* pDestRect, HWND hDestWindowOverride, CONST RGNDATA* pDirtyRegion)
@@ -442,13 +441,14 @@ namespace mods::bioshock1
 		return m_pIDirect3DDevice9->GetNPatchMode();
 	}
 
-	HRESULT d3d9ex::D3D9Device::DrawPrimitive(D3DPRIMITIVETYPE PrimitiveType, UINT StartVertex, UINT PrimitiveCount)
+	HRESULT d3d9ex::D3D9Device::DrawPrimitive([[maybe_unused]] D3DPRIMITIVETYPE PrimitiveType, [[maybe_unused]] UINT StartVertex, [[maybe_unused]] UINT PrimitiveCount)
 	{
 		return D3D_OK;
-		//patches::pre_drawindexedprim_call();
-		auto hr = m_pIDirect3DDevice9->DrawPrimitive(PrimitiveType, StartVertex, PrimitiveCount);
-		//patches::post_drawindexedprim_call();
-		return hr;
+
+			//patches::pre_drawindexedprim_call();
+		//auto hr = m_pIDirect3DDevice9->DrawPrimitive(PrimitiveType, StartVertex, PrimitiveCount);
+			//patches::post_drawindexedprim_call();
+		//return hr;
 	}
 
 	HRESULT d3d9ex::D3D9Device::DrawIndexedPrimitive(D3DPRIMITIVETYPE PrimitiveType, INT BaseVertexIndex, UINT MinVertexIndex, UINT NumVertices, UINT startIndex, UINT primCount)
@@ -489,10 +489,18 @@ namespace mods::bioshock1
 		return hr;
 	}
 
-	HRESULT d3d9ex::D3D9Device::DrawIndexedPrimitiveUP(D3DPRIMITIVETYPE PrimitiveType, UINT MinVertexIndex, UINT NumVertices, UINT PrimitiveCount, CONST void* pIndexData, D3DFORMAT IndexDataFormat, CONST void* pVertexStreamZeroData, UINT VertexStreamZeroStride)
+	HRESULT d3d9ex::D3D9Device::DrawIndexedPrimitiveUP(
+		[[maybe_unused]] D3DPRIMITIVETYPE PrimitiveType, 
+		[[maybe_unused]] UINT MinVertexIndex, 
+		[[maybe_unused]] UINT NumVertices, 
+		[[maybe_unused]] UINT PrimitiveCount, 
+		[[maybe_unused]] CONST void* pIndexData, 
+		[[maybe_unused]] D3DFORMAT IndexDataFormat,
+		[[maybe_unused]] CONST void* pVertexStreamZeroData,
+		[[maybe_unused]] UINT VertexStreamZeroStride)
 	{
 		return D3D_OK;
-		return m_pIDirect3DDevice9->DrawIndexedPrimitiveUP(PrimitiveType, MinVertexIndex, NumVertices, PrimitiveCount, pIndexData, IndexDataFormat, pVertexStreamZeroData, VertexStreamZeroStride);
+		//return m_pIDirect3DDevice9->DrawIndexedPrimitiveUP(PrimitiveType, MinVertexIndex, NumVertices, PrimitiveCount, pIndexData, IndexDataFormat, pVertexStreamZeroData, VertexStreamZeroStride);
 	}
 
 	HRESULT d3d9ex::D3D9Device::ProcessVertices(UINT SrcStartIndex, UINT DestIndex, UINT VertexCount, IDirect3DVertexBuffer9* pDestBuffer, IDirect3DVertexDeclaration9* pVertexDecl, DWORD Flags)
