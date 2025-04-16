@@ -155,8 +155,6 @@ namespace mods::bioshock1
 
 #if DEBUG
 		{
-			const auto im = imgui::get();
-
 			ImGui::Spacing(0, 8);
 			if (ImGui::CollapsingHeader("DEBUG Build Section", ImGuiTreeNodeFlags_SpanFullWidth))
 			{
@@ -320,11 +318,11 @@ namespace mods::bioshock1
 						io.MouseDrawCursor = false;
 					}
 
-					imgui::get()->m_is_rendering = true;
+					im->m_is_rendering = true;
 					ImGui::EndFrame();
 					ImGui::Render();
 					ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
-					imgui::get()->m_is_rendering = false;
+					im->m_is_rendering = false;
 				}
 			}
 		}

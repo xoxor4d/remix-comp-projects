@@ -1,6 +1,8 @@
 #include "std_include.hpp"
 #include <psapi.h>
 
+#include "modules/d3d9ex.hpp"
+
 BOOL CALLBACK enum_windows_proc(HWND hwnd, LPARAM lParam)
 {
 	DWORD window_pid, target_pid = static_cast<DWORD>(lParam);
@@ -56,6 +58,7 @@ DWORD WINAPI find_game_window_by_sha1([[maybe_unused]] LPVOID lpParam)
 	return 0;
 }
 
+#if 0
 namespace
 {
 	using drawindexedprimitive_fn = long(__stdcall*)(IDirect3DDevice9*, D3DPRIMITIVETYPE, INT, UINT, UINT, UINT, UINT); drawindexedprimitive_fn drawindexedprimitive_original = {};
@@ -245,6 +248,7 @@ __declspec(naked) void grab_device_stub()
 		jmp		retn_addr;
 	}
 }
+#endif
 
 BOOL APIENTRY DllMain(HMODULE, const DWORD ul_reason_for_call, LPVOID)
 {
@@ -256,12 +260,14 @@ BOOL APIENTRY DllMain(HMODULE, const DWORD ul_reason_for_call, LPVOID)
 			return TRUE;
 		}
 
+		mods::anno1404::module_loader::register_module(std::make_unique<mods::anno1404::d3d9ex>());
+
+		// very early hooks
+		//shared::utils::hook(0x8EF769, grab_device_stub, HOOK_JUMP).install()->quick();
+
 		if (const auto t = CreateThread(nullptr, 0, find_game_window_by_sha1, nullptr, 0, nullptr); t) {
 			CloseHandle(t);
 		}
-
-		// very early hooks
-		shared::utils::hook(0x8EF769, grab_device_stub, HOOK_JUMP).install()->quick();
 	}
 
 	return TRUE;

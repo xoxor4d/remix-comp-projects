@@ -47,11 +47,11 @@ If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![k
 #### Anno 1404 Gold Edition (GOG)  
 ###### The good:  
 - Boots, ImGui menu
-- Fake camera to enable pathtracing
+- Game camera transforms to enable path tracing (ImGui F5 -> enable fake cam (temporary name))
+- Fixed function rendering of models (incl. dynamic models)
 
 ###### The bad:
-- Utterly broken
-- No game camera data or mesh transforms yet
+- still very broken and very WIP
 
 <br>
 

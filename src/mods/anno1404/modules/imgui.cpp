@@ -133,15 +133,23 @@ namespace mods::anno1404
 	{
 		const auto& im = imgui::get();
 
-		ImGui::SliderFloat3("Camera Position (X, Y, Z)", im->m_dbg_camera_pos, -200.0f, 200.0f);
-		ImGui::SliderFloat("Yaw (Y-axis)", &im->m_dbg_camera_yaw, -180.0f, 180.0f);
-		ImGui::SliderFloat("Pitch (X-axis)", &im->m_dbg_camera_pitch, -90.0f, 90.0f);
+		ImGui::Checkbox("Use Fake Camera", &im->m_dbg_use_fake_camera);
 
-		// Projection matrix adjustments
-		ImGui::SliderFloat("FOV", &im->m_dbg_camera_fov, 10.0f, 120.0f);
-		ImGui::SliderFloat("Aspect Ratio", &im->m_dbg_camera_aspect, 0.5f, 2.5f);
-		ImGui::SliderFloat("Near Plane", &im->m_dbg_camera_near_plane, 0.1f, 10.0f);
-		ImGui::SliderFloat("Far Plane", &im->m_dbg_camera_far_plane, 100.0f, 2000.0f);
+		ImGui::BeginDisabled(!im->m_dbg_use_fake_camera);
+		{
+			ImGui::SliderFloat3("Camera Position (X, Y, Z)", im->m_dbg_camera_pos, -10000.0f, 10000.0f);
+			ImGui::SliderFloat("Yaw (Y-axis)", &im->m_dbg_camera_yaw, -180.0f, 180.0f);
+			ImGui::SliderFloat("Pitch (X-axis)", &im->m_dbg_camera_pitch, -90.0f, 90.0f);
+
+			// Projection matrix adjustments
+			ImGui::SliderFloat("FOV", &im->m_dbg_camera_fov, 1.0f, 180.0f);
+			ImGui::SliderFloat("Aspect Ratio", &im->m_dbg_camera_aspect, 0.2f, 3.555f);
+			ImGui::SliderFloat("Near Plane", &im->m_dbg_camera_near_plane, 0.1f, 1000.0f);
+			ImGui::SliderFloat("Far Plane", &im->m_dbg_camera_far_plane, 1.0f, 100000.0f);
+
+			ImGui::EndDisabled();
+		}
+		
 
 #if DEBUG
 		{
@@ -306,9 +314,11 @@ namespace mods::anno1404
 						im->devgui();
 					}
 
+					im->m_is_rendering = true;
 					ImGui::EndFrame();
 					ImGui::Render();
 					ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
+					im->m_is_rendering = false;
 				}
 			}
 		}
