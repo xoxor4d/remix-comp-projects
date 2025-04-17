@@ -85,23 +85,49 @@ namespace mods::anno1404
 		imgui::get()->on_present();
 	}
 
-	bool patches::pre_drawindexedprim_call()
+	bool m_ff_instance = false;
+	std::uint32_t m_ff_instance_count = 1u;
+
+	bool patches::pre_drawindexedprim_call(IDirect3DDevice9* unhooked_device, D3DPRIMITIVETYPE PrimitiveType, INT BaseVertexIndex, UINT MinVertexIndex, UINT NumVertices, UINT startIndex, UINT primCount)
 	{
 		const auto p = patches::get();
+		const auto& im = imgui::get();
 		const auto& dev = shared::globals::d3d_device;
 
-		/*IDirect3DBaseTexture9* bound_tex = nullptr;
-		dev->GetTexture(0, &bound_tex);
+		if (/*m_ff_instance_count > 1 &&*/ !p->m_cInstanceBuffer.empty() && m_ff_instance && PrimitiveType == D3DPT_TRIANGLELIST)
+		{
+			unhooked_device->GetVertexShader(&p->m_ff_og_shader);
+			unhooked_device->SetVertexShader(nullptr);
+			//dev->SetPixelShader(nullptr);
 
-		if (!bound_tex) {
-			return true;
-		}*/
+			for (auto i = 0u; i < m_ff_instance_count; ++i) 
+			{
+				auto idx = i * 3;
+				const auto inst_data = reinterpret_cast<mesh_inst_data*>(&p->m_cInstanceBuffer[idx]);
 
-		// disable normalmap texture
-		//dev->SetTexture(1, nullptr); 
 
-		const auto& im = imgui::get();
+				D3DXMATRIX temp_wrld = shared::globals::IDENTITY;
+				temp_wrld.m[3][0] = inst_data->pos.x;
+				temp_wrld.m[3][1] = inst_data->pos.y;
+				temp_wrld.m[3][2] = inst_data->pos.z;
 
+				unhooked_device->SetTransform(D3DTS_WORLD, &temp_wrld); //&shared::globals::IDENTITY);//&instanceData[i]);
+
+				// Draw using original buffers and parameters
+				//device->SetStreamSource(0, vb, offset, stride);
+				//device->SetIndices(ib);
+				unhooked_device->DrawIndexedPrimitive(PrimitiveType, BaseVertexIndex, MinVertexIndex, NumVertices / m_ff_instance_count, startIndex, primCount / m_ff_instance_count);
+			}
+
+			//p->m_ff_was_modified = true;
+
+			unhooked_device->SetVertexShader(p->m_ff_og_shader);
+			m_ff_instance = false;
+
+			return true; // skip og draw call
+		}
+
+#if 0
 		if (!im->m_is_rendering && !p->m_ff_use_shader)
 		{
 			{
@@ -181,8 +207,8 @@ namespace mods::anno1404
 				}
 			}
 		}
+#endif
 
-		dev->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, 0u);
 		return false;
 	}
 
@@ -202,6 +228,10 @@ namespace mods::anno1404
 		p->m_ff_use_shader = false;
 	}
 
+
+
+
+
 	void pre_model_render_hk()
 	{
 		const auto p = patches::get();
@@ -209,6 +239,10 @@ namespace mods::anno1404
 
 		dev->GetVertexShader(&p->m_ff_og_shader);
 		dev->SetVertexShader(nullptr);
+
+		//dev->GetPixelShader(&p->m_ff_og_psshader);
+		//dev->SetPixelShader(nullptr);
+
 		p->m_ff_was_modified = true;
 	}
 
@@ -235,6 +269,7 @@ namespace mods::anno1404
 		if (p->m_ff_was_modified)
 		{
 			dev->SetVertexShader(p->m_ff_og_shader);
+			//dev->SetPixelShader(p->m_ff_og_psshader);
 			p->m_ff_was_modified = false;
 		}
 	}
@@ -254,6 +289,95 @@ namespace mods::anno1404
 		}
 	}
 
+
+	// ---
+	void pre_hud_render_hk()
+	{
+		patches::get()->m_ff_use_shader = true;
+	}
+
+	__declspec(naked) void pre_hud_render_stub()
+	{
+		static uint32_t retn_addr = 0x8E0325;
+		__asm
+		{
+			pushad;
+			call	pre_hud_render_hk;
+			popad;
+
+			push    esi;
+			mov     esi, ecx;
+			mov     eax, esi;
+			jmp		retn_addr;
+		}
+	}
+
+	void post_hud_render_hk()
+	{
+		patches::get()->m_ff_use_shader = false;
+	}
+
+	__declspec(naked) void post_hud_render_stub()
+	{
+		__asm
+		{
+			pushad;
+			call	post_hud_render_hk;
+			popad;
+
+			pop     esi
+			retn;
+		}
+	}
+
+	// ----
+
+	void pre_instance_render_hk(const int num_objects)
+	{
+		m_ff_instance = true;
+		m_ff_instance_count = num_objects;
+	}
+
+	__declspec(naked) void pre_instance_render_stub()
+	{
+		static uint32_t retn_addr = 0x9DCCA0;
+		__asm
+		{
+			push    ebp;
+			mov     ebp, [esp + 0x1C]; // numobj
+
+			pushad;
+			push	ebp;
+			call	pre_instance_render_hk;
+			add		esp, 4;
+			popad;
+
+			jmp		retn_addr;
+		}
+	}
+
+
+	void post_instance_render_hk()
+	{
+		m_ff_instance = false;
+	}
+
+	__declspec(naked) void post_instance_render_stub()
+	{
+		static uint32_t retn_addr = 0x9DCCB8;
+		__asm
+		{
+			call    edx; // func towards drawindexedpprim
+
+			pushad;
+			call	post_instance_render_hk;
+			popad;
+
+			cmp     edi, 1;
+			jmp		retn_addr;
+		}
+	}
+
 	patches::patches()
 	{
 		p_this = this;
@@ -267,6 +391,14 @@ namespace mods::anno1404
 
 		shared::utils::hook::nop(0x9681AC, 7);
 		shared::utils::hook(0x9681AC, post_model_render_stub, HOOK_JUMP).install()->quick();
+
+		// 8E0320
+		shared::utils::hook(0x8E0320, pre_hud_render_stub, HOOK_JUMP).install()->quick();
+		shared::utils::hook(0x8E0330, post_hud_render_stub, HOOK_JUMP).install()->quick();
+
+		// 9DCC81
+		shared::utils::hook(0x9DCC9B, pre_instance_render_stub, HOOK_JUMP).install()->quick();
+		shared::utils::hook(0x9DCCB3, post_instance_render_stub, HOOK_JUMP).install()->quick();
 
 		printf("[Module] patches loaded.\n");
 	}

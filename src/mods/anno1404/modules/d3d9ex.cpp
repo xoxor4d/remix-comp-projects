@@ -453,14 +453,14 @@ namespace mods::anno1404
 
 	HRESULT d3d9ex::D3D9Device::DrawIndexedPrimitive(D3DPRIMITIVETYPE PrimitiveType, INT BaseVertexIndex, UINT MinVertexIndex, UINT NumVertices, UINT startIndex, UINT primCount)
 	{
-		//const auto skip = patches::pre_drawindexedprim_call();
+		const auto skip = patches::pre_drawindexedprim_call(m_pIDirect3DDevice9, PrimitiveType, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
 
 		auto hr = S_OK;
-		//if (!skip) {
+		if (!skip) {
 			hr = m_pIDirect3DDevice9->DrawIndexedPrimitive(PrimitiveType, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
-		//}
+		}
 
-		//patches::post_drawindexedprim_call();
+		patches::post_drawindexedprim_call();
 		return hr;
 	}
 
@@ -537,7 +537,11 @@ namespace mods::anno1404
 		}
 	};
 
-	bool asd(IDirect3DDevice9* dev, UINT start_register)
+	float instance_pos[3] = {};
+	float instance_rot[3] = {};
+	float instance_size[3] = { 1.0f, 1.0f, 1.0f };
+
+	bool asd(IDirect3DDevice9* dev, UINT start_register, CONST float* pConstantData, UINT Vector4fCount)
 	{
 		IDirect3DVertexShader9* used_vs = nullptr;
 		if (auto hr = dev->GetVertexShader(&used_vs); used_vs)
@@ -609,6 +613,20 @@ namespace mods::anno1404
 							return false;
 						}
 
+						if (name == "cInstanceData") 
+						{
+							const auto p = patches::get();
+							p->m_cInstanceBuffer.reserve(Vector4fCount);
+
+							if (p->m_cInstanceBuffer.size() < Vector4fCount) {
+								p->m_cInstanceBuffer.resize(Vector4fCount);
+							}
+
+							memcpy(p->m_cInstanceBuffer.data(), pConstantData, Vector4fCount * sizeof(float) * 4);
+							return false;
+						}
+						// cInstanceData
+
 						break;
 					}
 				}
@@ -625,7 +643,7 @@ namespace mods::anno1404
 	{
 		const auto& im = imgui::get();
 
-		if (im->m_dbg_use_fake_camera && asd(m_pIDirect3DDevice9, StartRegister))
+		if (im->m_dbg_use_fake_camera && asd(m_pIDirect3DDevice9, StartRegister, pConstantData, Vector4fCount))
 		{
 			if (Vector4fCount >= 4) 
 			{
