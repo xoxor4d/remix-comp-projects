@@ -273,6 +273,50 @@ over "RootNode"
                 custom bool inputs:use_legacy_alpha_state = 0
             }
         }
+
+        over "mat_79D28C7EA4330261"
+        {
+            over "Shader"
+            {
+                custom float inputs:emissive_intensity = 3
+                custom asset inputs:emissive_mask_texture = @./assets/emissives/0E6615A7DC42028C_emissive.e.rtex.dds@
+                custom bool inputs:enable_emission = 1
+            }
+        }
+
+        over "mat_AF014FCF761F20B1"
+        {
+            over "Shader"
+            {
+                custom float inputs:reflection_roughness_constant = 0.91499996
+            }
+        }
+
+        over "mat_97CD695D4366E3CD"
+        {
+            over "Shader"
+            {
+                custom float inputs:reflection_roughness_constant = 0.79999995
+            }
+        }
+
+        over "mat_EC30CCCC83FB4058"
+        {
+            over "Shader"
+            {
+                custom float inputs:metallic_constant = 0.615
+                custom float inputs:reflection_roughness_constant = 0.525
+            }
+        }
+
+        over "mat_0E39E1A1C04EE73C"
+        {
+            over "Shader"
+            {
+                custom float inputs:metallic_constant = 0.17
+                custom float inputs:reflection_roughness_constant = 1
+            }
+        }
     }
 }
 

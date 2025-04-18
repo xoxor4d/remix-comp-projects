@@ -104,6 +104,8 @@ namespace shared::utils
 	float finterp_to(const float current, const float target, const float delta_time, const float interpolation_speed);
 
 	bool open_file_homepath(const std::string& root_path, const std::string& sub_dir, const std::string& file_name, std::ifstream& file);
+
+	uint32_t data_hash32(const void* data, size_t size);
 	std::uint64_t string_hash64(const std::string_view& str);
 	std::uint32_t string_hash32(const std::string_view& str);
 

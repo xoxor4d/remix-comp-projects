@@ -11,7 +11,7 @@ namespace mods::bioshock1
 
 	HRESULT d3d9ex::D3D9Device::QueryInterface(REFIID riid, void** ppvObj)
 	{
-		*ppvObj = nullptr;
+		//*ppvObj = nullptr;
 
 		HRESULT hRes = m_pIDirect3DDevice9->QueryInterface(riid, ppvObj);
 		if (hRes == NOERROR) *ppvObj = this;
@@ -136,14 +136,14 @@ namespace mods::bioshock1
 
 	HRESULT d3d9ex::D3D9Device::CreateTexture(UINT Width, UINT Height, UINT Levels, DWORD Usage, D3DFORMAT Format, D3DPOOL Pool, IDirect3DTexture9** ppTexture, HANDLE* pSharedHandle)
 	{
-		if (Pool == D3DPOOL_MANAGED) { Pool = D3DPOOL_DEFAULT; Usage |= D3DUSAGE_DYNAMIC; }
+		//if (Pool == D3DPOOL_MANAGED) { Pool = D3DPOOL_DEFAULT; Usage |= D3DUSAGE_DYNAMIC; }
 
 		return m_pIDirect3DDevice9->CreateTexture(Width, Height, Levels, Usage, Format, Pool, ppTexture, pSharedHandle);
 	}
 
 	HRESULT d3d9ex::D3D9Device::CreateVolumeTexture(UINT Width, UINT Height, UINT Depth, UINT Levels, DWORD Usage, D3DFORMAT Format, D3DPOOL Pool, IDirect3DVolumeTexture9** ppVolumeTexture, HANDLE* pSharedHandle)
 	{
-		if (Pool == D3DPOOL_MANAGED) { Pool = D3DPOOL_DEFAULT; Usage |= D3DUSAGE_DYNAMIC; }
+		//if (Pool == D3DPOOL_MANAGED) { Pool = D3DPOOL_DEFAULT; Usage |= D3DUSAGE_DYNAMIC; }
 
 		return m_pIDirect3DDevice9->CreateVolumeTexture(Width, Height, Depth, Levels, Usage, Format, Pool, ppVolumeTexture, pSharedHandle);
 	}
@@ -157,14 +157,14 @@ namespace mods::bioshock1
 
 	HRESULT d3d9ex::D3D9Device::CreateVertexBuffer(UINT Length, DWORD Usage, DWORD FVF, D3DPOOL Pool, IDirect3DVertexBuffer9** ppVertexBuffer, HANDLE* pSharedHandle)
 	{
-		if (Pool == D3DPOOL_MANAGED) { Pool = D3DPOOL_DEFAULT; Usage |= D3DUSAGE_DYNAMIC; }
+		//if (Pool == D3DPOOL_MANAGED) { Pool = D3DPOOL_DEFAULT; Usage |= D3DUSAGE_DYNAMIC; }
 
 		return m_pIDirect3DDevice9->CreateVertexBuffer(Length, Usage, FVF, Pool, ppVertexBuffer, pSharedHandle);
 	}
 
 	HRESULT d3d9ex::D3D9Device::CreateIndexBuffer(UINT Length, DWORD Usage, D3DFORMAT Format, D3DPOOL Pool, IDirect3DIndexBuffer9** ppIndexBuffer, HANDLE* pSharedHandle)
 	{
-		if (Pool == D3DPOOL_MANAGED) { Pool = D3DPOOL_DEFAULT; Usage |= D3DUSAGE_DYNAMIC; }
+		//if (Pool == D3DPOOL_MANAGED) { Pool = D3DPOOL_DEFAULT; Usage |= D3DUSAGE_DYNAMIC; }
 
 		return m_pIDirect3DDevice9->CreateIndexBuffer(Length, Usage, Format, Pool, ppIndexBuffer, pSharedHandle);
 	}
@@ -359,8 +359,8 @@ namespace mods::bioshock1
 
 	HRESULT d3d9ex::D3D9Device::SetTexture(DWORD Stage, IDirect3DBaseTexture9* pTexture)
 	{
-		if (Stage == 1u) {
-			return m_pIDirect3DDevice9->SetTexture(1, nullptr);
+		if (Stage > 0u) {
+			return m_pIDirect3DDevice9->SetTexture(Stage, nullptr);
 		}
 
 		return m_pIDirect3DDevice9->SetTexture(Stage, pTexture);
@@ -467,14 +467,14 @@ namespace mods::bioshock1
 
 	HRESULT d3d9ex::D3D9Device::DrawPrimitiveUP(D3DPRIMITIVETYPE PrimitiveType, UINT PrimitiveCount, CONST void* pVertexStreamZeroData, UINT VertexStreamZeroStride)
 	{
-		// TODO: hud flickers when viewmodel fx plays
+		// detect main menu
 		if (game::rg && (
-			game::rg->worldMatrix.m[0][0] != shared::globals::IDENTITY.m[0][0] ||
-			game::rg->worldMatrix.m[1][1] != shared::globals::IDENTITY.m[1][1] ||
-			game::rg->worldMatrix.m[2][2] != shared::globals::IDENTITY.m[2][2] ||
-			game::rg->worldMatrix.m[3][0] != shared::globals::IDENTITY.m[3][0] ||
-			game::rg->worldMatrix.m[3][1] != shared::globals::IDENTITY.m[3][1] ||
-			game::rg->worldMatrix.m[3][2] != shared::globals::IDENTITY.m[3][2])) 
+			game::rg->viewMatrix.m[0][2] != 1.0f ||
+			game::rg->viewMatrix.m[1][0] != 1.0f ||
+			game::rg->viewMatrix.m[2][1] != 1.0f ||
+			!shared::utils::float_equal(game::rg->viewMatrix.m[3][0],  14.2943535f) ||
+			!shared::utils::float_equal(game::rg->viewMatrix.m[3][1],  47.000f) ||
+			!shared::utils::float_equal(game::rg->viewMatrix.m[3][2], -29.8155823f) ))
 		{
 			m_pIDirect3DDevice9->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, 1u);
 		}

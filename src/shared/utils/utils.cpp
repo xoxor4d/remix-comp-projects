@@ -313,6 +313,23 @@ namespace shared::utils
 	}
 
 	//fnv1a
+	uint32_t data_hash32(const void* data, const size_t size)
+	{
+		constexpr uint32_t FNV_prime = 16777619u;
+		constexpr uint32_t offset_basis = 2166136261u;
+		uint32_t hash = offset_basis;
+		const uint8_t* bytes = static_cast<const uint8_t*>(data);
+
+		for (size_t i = 0; i < size; ++i) 
+		{
+			hash ^= bytes[i];
+			hash *= FNV_prime;
+		}
+
+		return hash;
+	}
+
+	//fnv1a
 	std::uint64_t string_hash64(const std::string_view& str)
 	{
 		const uint64_t FNV_prime = 1099511628211u;

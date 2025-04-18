@@ -271,6 +271,65 @@ over "RootNode"
                 uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
             }
         }
+
+        over "mesh_31D1C5D816A3CD45"
+        {
+            def CylinderLight "CylinderLight" (
+                prepend apiSchemas = ["ShapingAPI"]
+            )
+            {
+                float3[] extent = [(-5, -5, -5), (5, 5, 5)]
+                float inputs:colorTemperature = 4170
+                bool inputs:enableColorTemperature = 1
+                float inputs:intensity = 50
+                float inputs:length = 10
+                float inputs:radius = 12
+                float inputs:shaping:cone:angle = 180
+                float inputs:shaping:cone:softness
+                float inputs:shaping:focus
+                color3f inputs:shaping:focusTint
+                asset inputs:shaping:ies:file
+                double3 xformOp:rotateXYZ = (90.00002174960326, 90, 90)
+                double3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-0.0000018580224150355207, -21.253288944491942, -5.121872267002232)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+        }
+
+        over "mesh_DACEE5C7B6ABCD9A"
+        {
+            def SphereLight "SphereLight" (
+                prepend apiSchemas = ["ShapingAPI"]
+            )
+            {
+                float3[] extent = [(-5, -5, -5), (5, 5, 5)]
+                color3f inputs:color = (0.3236088, 0.7760618, 0.6979597)
+                float inputs:intensity = 100
+                float inputs:radius = 5
+                float inputs:shaping:cone:angle = 180
+                float inputs:shaping:cone:softness
+                float inputs:shaping:focus
+                color3f inputs:shaping:focusTint
+                asset inputs:shaping:ies:file
+                double3 xformOp:rotateXYZ = (90, 0, 90)
+                double3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-51.091270257496944, -1.4592589000296812, -15.623201476344093)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+        }
+    }
+
+    over "Looks"
+    {
+        over "mat_A2310F21F5FB2BBD"
+        {
+            over "Shader"
+            {
+                custom float inputs:emissive_intensity = 0.9
+                custom asset inputs:emissive_mask_texture = @./assets/emissives/BC89F1774530D75C_emissive.e.rtex.dds@
+                custom bool inputs:enable_emission = 1
+            }
+        }
     }
 }
 

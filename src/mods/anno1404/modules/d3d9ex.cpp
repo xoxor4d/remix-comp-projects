@@ -605,13 +605,13 @@ namespace mods::anno1404
 							return true;
 						}
 
-						if (name == "cMtxProj") {
+						/*if (name == "cMtxProj") {
 							return false;
 						}
 
 						if (name == "cMtxView") {
 							return false;
-						}
+						}*/
 
 						if (name == "cInstanceData") 
 						{

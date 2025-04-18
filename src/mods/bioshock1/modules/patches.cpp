@@ -2,6 +2,7 @@
 #include "patches.hpp"
 
 #include "imgui.hpp"
+#include "shared/common/remix.hpp"
 #include "shared/common/remix_api.hpp"
 
 // commandline: -dx9 -NOINTRO -windowed
@@ -305,9 +306,6 @@ namespace mods::bioshock1
 			return true;
 		}
 
-		// disable normalmap texture
-		//dev->SetTexture(1, nullptr); 
-
 		const auto& im = imgui::get();
 		const auto& patches = patches::get();
 
@@ -326,6 +324,21 @@ namespace mods::bioshock1
 					dev->SetTransform(D3DTS_VIEW, &game::rg->viewMatrix);
 					dev->SetTransform(D3DTS_PROJECTION, &game::rg->projMatrix);
 					ff_was_modified = true;
+
+					DWORD og_srcblend = 0u, og_destblend = 0u;
+					dev->GetRenderState(D3DRS_SRCBLEND, &og_srcblend);
+					dev->GetRenderState(D3DRS_DESTBLEND, &og_destblend);
+
+					// do not allow emissive surfaces - helps with meshes getting emissive when using plasmids
+					if (og_srcblend == D3DBLEND_ONE && og_destblend == D3DBLEND_ONE)
+					{
+						dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);
+						//return true;
+					}
+
+					//dev->SetRenderState(D3DRS_ALPHABLENDENABLE, 0);
+					//dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
+					//dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);
 
 #if 0
 					IDirect3DVertexDeclaration9* vertex_decl = nullptr;
