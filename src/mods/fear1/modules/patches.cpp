@@ -144,78 +144,15 @@ namespace mods::fear1
 
 	// ------------------
 
-	// Parameters:
-// - device: IDirect3DDevice9 pointer
-// - matrixArrayAddress: Memory address of 4x3 matrix array (float*)
-// - numBones: Number of bones (up to 24)
-// - indexOffset: Offset for D3DTS_WORLDMATRIX (0 for bone matrix 0 at index 0, 1 to avoid D3DTS_WORLD)
-	void Convert4x3To4x4AndSetTransforms(IDirect3DDevice9* device, float* matrixArrayAddress, int numBones, int indexOffset = 0)
-	{
-		// Validate inputs
-		if (!device || !matrixArrayAddress || numBones < 0 || numBones > 24 || indexOffset < 0) {
-			return; // Error handling
-		}
 
-		// Check device capabilities
-		D3DCAPS9 caps;
-		device->GetDeviceCaps(&caps);
-
-		//if (numBones + indexOffset > caps.MaxVertexBlendMatrixIndex) {
-		//	return; // Too many matrices
-		//}
-
-		// Optionally set D3DTS_WORLD to identity if not using offset
-		//if (indexOffset == 0)
-		//{
-		//	D3DXMATRIX identity;
-		//	D3DXMatrixIdentity(&identity);
-		//	device->SetTransform(D3DTS_WORLD, &identity); // Ensure D3DTS_WORLD is safe
-		//}
-
-		// Convert 4x3 to 4x4 and set transforms
-		D3DXMATRIX boneMatrices4x4[24];
-		for (int i = 0; i < numBones; ++i) 
-		{
-			float* src = matrixArrayAddress + i * 12;
-			D3DXMATRIX& dst = boneMatrices4x4[i];
-			// Copy 4x3 matrix (row-major)
-			dst._11 = src[0]; dst._12 = src[1]; dst._13 = src[2]; dst._14 = src[3];
-			dst._21 = src[4]; dst._22 = src[5]; dst._23 = src[6]; dst._24 = src[7];
-			dst._31 = src[8]; dst._32 = src[9]; dst._33 = src[10]; dst._34 = src[11];
-			// Pad 4th row
-			dst._41 = 0.0f; dst._42 = 0.0f; dst._43 = 0.0f; dst._44 = 1.0f;
-			// Set to D3DTS_WORLDMATRIX with offset
-			device->SetTransform(D3DTS_WORLDMATRIX(i + indexOffset), &dst);
-		}
-	}
-
-	//void Convert3x4To4x4(const shared::float3x4* input, D3DXMATRIX* output, int count)
-	//{
-	//	for (int i = 0; i < count; ++i) 
-	//	{
-	//		//output[i].m[0][0] = input[i].m[0][0]; output[i].m[0][1] = input[i].m[0][1]; output[i].m[0][2] = input[i].m[0][2]; output[i].m[0][3] = 0.0f;
-	//		//output[i].m[1][0] = input[i].m[1][0]; output[i].m[1][1] = input[i].m[1][1]; output[i].m[1][2] = input[i].m[1][2]; output[i].m[1][3] = 0.0f;
-	//		//output[i].m[2][0] = input[i].m[2][0]; output[i].m[2][1] = input[i].m[2][1]; output[i].m[2][2] = input[i].m[2][2]; output[i].m[2][3] = 0.0f;
-	//		//output[i].m[3][0] = input[i].m[3][0]; output[i].m[3][1] = input[i].m[3][1]; output[i].m[3][2] = input[i].m[3][2]; output[i].m[3][3] = 1.0f;
-
-	//		// Copy 3x4 matrix (rotation + translation)
-	//		output[i].m[0][0] = input[i].m[0][0]; output[i].m[0][1] = input[i].m[0][1]; output[i].m[0][2] = input[i].m[0][2]; output[i].m[0][3] = input[i].m[0][3];
-	//		output[i].m[1][0] = input[i].m[1][0]; output[i].m[1][1] = input[i].m[1][1]; output[i].m[1][2] = input[i].m[1][2]; output[i].m[1][3] = input[i].m[1][3];
-	//		output[i].m[2][0] = input[i].m[2][0]; output[i].m[2][1] = input[i].m[2][1]; output[i].m[2][2] = input[i].m[2][2]; output[i].m[2][3] = input[i].m[2][3];
-
-	//		// Set last row to [0, 0, 0, 1]
-	//		output[i].m[3][0] = 0.0f; output[i].m[3][1] = 0.0f; output[i].m[3][2] = 0.0f; output[i].m[3][3] = 1.0f;
-	//	}
-	//}
-
-	void Convert3x4To4x4(const shared::float3x4* input, D3DXMATRIX* output, int count)
+	void matrix3x4_transpose_to_4x4(const shared::float3x4* input, D3DXMATRIX* output, const int count)
 	{
 		for (int i = 0; i < count; ++i)
 		{
 			const shared::float3x4& in = input[i];
 			D3DXMATRIX& out = output[i];
 
-			// Fill in column-major D3DXMATRIX from row-major 3x4
+			// column-major D3DXMATRIX from row-major 3x4
 			out._11 = in.m[0][0]; out._12 = in.m[1][0]; out._13 = in.m[2][0]; out._14 = 0.0f;
 			out._21 = in.m[0][1]; out._22 = in.m[1][1]; out._23 = in.m[2][1]; out._24 = 0.0f;
 			out._31 = in.m[0][2]; out._32 = in.m[1][2]; out._33 = in.m[2][2]; out._34 = 0.0f;
@@ -223,17 +160,10 @@ namespace mods::fear1
 		}
 	}
 
-	void ApplyWorldTransformToBones(
-		const D3DXMATRIX& worldTransform,
-		const D3DXMATRIX* localBones,
-		D3DXMATRIX* outFinalBones,
-		int count)
+	void ApplyWorldTransformToBones(const D3DXMATRIX& world_transform, const D3DXMATRIX* local_bones, D3DXMATRIX* out_bones, const int count)
 	{
-		for (int i = 0; i < count; ++i)
-		{
-			// Multiply bone matrix by world transform:
-			// finalBone = worldTransform * localBone
-			D3DXMatrixMultiply(&outFinalBones[i], &localBones[i], &worldTransform);
+		for (int i = 0; i < count; ++i) {
+			D3DXMatrixMultiply(&out_bones[i], &local_bones[i], &world_transform);
 		}
 	}
 
@@ -330,25 +260,17 @@ namespace mods::fear1
 			dev->SetTransform(D3DTS_WORLD, &transworld);
 
 			{
-				// only valid on 16:9 - TODO
-				//if (shared::utils::float_equal(game::rg->projMatrix.m[0][0], 0.750000060f))
-				if (im->m_dbg_use_fake_camera)
+				//if (im->m_dbg_use_fake_camera)
 				{
 					bool is_hw_skin = false;
-					if (ff_skel_bone_count > 1 && decl[5].Stream == 0u && decl[5].Usage == D3DDECLUSAGE_BLENDWEIGHT)
+					if (ff_skel_bone_count > 0 && decl[5].Stream == 0u && decl[5].Usage == D3DDECLUSAGE_BLENDWEIGHT)
 					{
 						//dev->SetFVF(D3DFVF_XYZB4 | D3DFVF_NORMAL | D3DFVF_TEX1 | D3DFVF_LASTBETA_D3DCOLOR);
 						is_hw_skin = true;
 
 						shared::float3x4* mModelObjectNodes = reinterpret_cast<shared::float3x4*>(0x577750);
 						D3DXMATRIX boneMatrices[24];
-						Convert3x4To4x4(mModelObjectNodes, boneMatrices, 24);
-
-						// Composite bone matrices with the world transform
-						/*D3DXMATRIX finalBoneMatrices[24];
-						for (int i = 0; i < 24; ++i) {
-							D3DXMatrixTranslation(&boneMatrices[i], transworld.m[3][0], transworld.m[3][1], transworld.m[3][2]);
-						}*/
+						matrix3x4_transpose_to_4x4(mModelObjectNodes, boneMatrices, 24);
 
 						auto bone_count = 24; 
 						if (ff_skel_bone_count < bone_count) {
@@ -356,7 +278,11 @@ namespace mods::fear1
 						}
 
 						D3DXMATRIX finalBoneMatrices[24];
-						ApplyWorldTransformToBones(transworld, boneMatrices, finalBoneMatrices, ff_skel_bone_count);
+						for (int i = 0; i < bone_count; ++i) {
+							D3DXMatrixMultiply(&finalBoneMatrices[i], &boneMatrices[i], &transworld);
+						}
+
+						//ApplyWorldTransformToBones(transworld, boneMatrices, finalBoneMatrices, ff_skel_bone_count);
 
 						for (int i = 0; i < bone_count; ++i) {
 							dev->SetTransform(D3DTS_WORLDMATRIX(i), &finalBoneMatrices[i]); //&boneMatrices[i]);
@@ -385,132 +311,58 @@ namespace mods::fear1
 						dev->SetRenderState(D3DRS_VERTEXBLEND, D3DVBF_0WEIGHTS); // 3 bone influences
 						dev->SetRenderState(D3DRS_INDEXEDVERTEXBLENDENABLE, TRUE);
 
-						/*D3DXMATRIX transworld = {};
-						shared::utils::transpose_matrix3x4_to_d3dxmatrix(*to_world, transworld);
-						dev->SetTransform(D3DTS_WORLD, &transworld);*/
-						//dev->SetRenderState(D3DRS_VERTEXBLEND, D3DVBF_1WEIGHTS);
-						//float* blendmatrices = reinterpret_cast<float*>(0x577750);
-						//Convert4x3To4x4AndSetTransforms(dev, blendmatrices, 24, 1);
-
-						//if (false)
+#if 0
 						{
 							IDirect3DVertexBuffer9* vb = nullptr; UINT t_stride = 0u, t_offset = 0u;
 							dev->GetStreamSource(0, &vb, &t_offset, &t_stride);
 
-							//IDirect3DIndexBuffer9* ib = nullptr;
-							//if (SUCCEEDED(dev->GetIndices(&ib)))
-
 							if (!fixedVertexBuffers.contains(vb)) 
 							{
-								//void* ib_data; // retrieve a single vertex index (*2 because WORD)
-								//if (SUCCEEDED(ib->Lock(primlist->m_FirstIndex * 2, 2, &ib_data, D3DLOCK_READONLY)))
+								void* src_buffer_data;
+								if (SUCCEEDED(vb->Lock(MinVertexIndex * t_stride, NumVertices * t_stride, &src_buffer_data, 0)))
 								{
-									//const auto first_index = *static_cast<std::uint16_t*>(ib_data);
-									//ib->Unlock();
+									struct src_vert {
+										float pos[3]; float normal[3]; float tc[2]; float tangent[3]; float binormal[3]; D3DCOLOR blendweight; D3DCOLOR blendindices;
+									};
 
-									void* src_buffer_data; // retrieve single indexed vertex
-									if (SUCCEEDED(vb->Lock(MinVertexIndex * t_stride, NumVertices * t_stride, &src_buffer_data, 0)))
+									for (UINT i = 0; i < NumVertices; ++i)
 									{
-										struct src_vert {
-											float pos[3]; float normal[3]; float tc[2]; float tangent[3]; float binormal[3]; D3DCOLOR blendweight; D3DCOLOR blendindices;
+										src_vert* src = reinterpret_cast<src_vert*>((DWORD)src_buffer_data + i * t_stride);
+
+										float w[4] = {
+											((src->blendweight >> 16) & 0xFF) / 255.0f,
+											((src->blendweight >> 8) & 0xFF) / 255.0f,
+											((src->blendweight >> 0) & 0xFF) / 255.0f,
+											((src->blendweight >> 24) & 0xFF) / 255.0f,
 										};
 
-										for (UINT i = 0; i < NumVertices; ++i)
+										// Normalize
+										float sum = w[0] + w[1] + w[2] + w[3];
+										if (sum > 0.0f)
 										{
-											src_vert* src = reinterpret_cast<src_vert*>((DWORD)src_buffer_data + i * t_stride);
-
-											/* // GOOD WITH BLEND0
-											 float w[4] = {
-												((src->blendweight >> 16) & 0xFF) / 255.0f,
-												((src->blendweight >> 8) & 0xFF) / 255.0f,
-												((src->blendweight >> 0) & 0xFF) / 255.0f,
-												((src->blendweight >> 24) & 0xFF) / 255.0f,
-											};
-
-											// Normalize
-											float sum = w[0] + w[1] + w[2] + w[3];
-											if (sum > 0.0f)
-											{
-												w[0] /= sum; w[1] /= sum; w[2] /= sum; w[3] /= sum;
-											}
-
-											// Repack
-											DWORD r = (DWORD)(w[0] * 255.0f);
-											DWORD g = (DWORD)(w[1] * 255.0f);
-											DWORD b = (DWORD)(w[2] * 255.0f);
-											DWORD a = (DWORD)(w[3] * 255.0f);
-											src->blendweight = (a << 24) | (r << 16) | (g << 8) | b;
-
-											uint8_t* indices = reinterpret_cast<uint8_t*>(&src->blendindices);
-											float idx[4] = {
-												((src->blendindices >> 16) & 0xFF) / 255.0f,
-												((src->blendindices >> 8) & 0xFF) / 255.0f,
-												((src->blendindices >> 0) & 0xFF) / 255.0f,
-												((src->blendindices >> 24) & 0xFF) / 255.0f,
-											};
-
-											float idx2[4];
-											idx2[0] = indices[0];
-											idx2[1] = indices[1];
-											idx2[2] = indices[2];
-											idx2[3] = indices[3];
-											 */
-
-											float w[4] = {
-												((src->blendweight >> 16) & 0xFF) / 255.0f,
-												((src->blendweight >> 8) & 0xFF) / 255.0f,
-												((src->blendweight >> 0) & 0xFF) / 255.0f,
-												((src->blendweight >> 24) & 0xFF) / 255.0f,
-											};
-
-											// Normalize
-											float sum = w[0] + w[1] + w[2] + w[3];
-											if (sum > 0.0f)
-											{
-												w[0] /= sum; w[1] /= sum; w[2] /= sum; w[3] /= sum;
-											}
-
-											// Repack
-											DWORD r = (DWORD)(w[0] * 255.0f);
-											DWORD g = (DWORD)(w[1] * 255.0f);
-											DWORD b = (DWORD)(w[2] * 255.0f);
-											DWORD a = (DWORD)(w[3] * 255.0f);
-											src->blendweight = (a << 24) | (r << 16) | (g << 8) | b;
-
-											/*uint8_t* indices = reinterpret_cast<uint8_t*>(&src->blendindices);
-											float idx[4] = {
-												((src->blendindices >> 16) & 0xFF) / 255.0f,
-												((src->blendindices >> 8) & 0xFF) / 255.0f,
-												((src->blendindices >> 0) & 0xFF) / 255.0f,
-												((src->blendindices >> 24) & 0xFF) / 255.0f,
-											};
-
-											uint8_t idx2[4];
-											idx2[0] = indices[0];
-											idx2[1] = indices[1];
-											idx2[2] = indices[2];
-											idx2[3] = indices[3];
-
-											indices[0] = idx2[1];
-											indices[1] = idx2[0];*/
-
-
-											//int asd = 9;
-											
+											w[0] /= sum; w[1] /= sum; w[2] /= sum; w[3] /= sum;
 										}
 
-										vb->Unlock();
-										fixedVertexBuffers.insert(vb);
+										// Repack
+										DWORD r = (DWORD)(w[0] * 255.0f);
+										DWORD g = (DWORD)(w[1] * 255.0f);
+										DWORD b = (DWORD)(w[2] * 255.0f);
+										DWORD a = (DWORD)(w[3] * 255.0f);
+										src->blendweight = (a << 24) | (r << 16) | (g << 8) | b;
+
+										uint8_t* indices = reinterpret_cast<uint8_t*>(&src->blendindices);
+	
 									}
+
+									vb->Unlock();
+									fixedVertexBuffers.insert(vb);
 								}
 							}
-
 							vb->Release();
 						}
-
+#endif
 					}
-					else
-					{
+					else {
 						dev->SetRenderState(D3DRS_VERTEXBLEND, D3DVBF_DISABLE);
 					}
 
@@ -523,9 +375,6 @@ namespace mods::fear1
 
 					dev->GetPixelShader(&ff_og_psshader);
 					dev->SetPixelShader(nullptr);
-					/*dev->SetTransform(D3DTS_WORLD, &game::rg->worldMatrix);
-					dev->SetTransform(D3DTS_VIEW, &game::rg->viewMatrix);
-					dev->SetTransform(D3DTS_PROJECTION, &game::rg->projMatrix);*/
 					ff_was_modified = true;
 
 					//DWORD og_srcblend = 0u, og_destblend = 0u;
@@ -616,16 +465,44 @@ namespace mods::fear1
 		}
 	}
 
+
+	// ---
+
+	/*__declspec(naked) void pre_sky_stub()
+	{
+		static uint32_t retn_addr = 0x518A82;
+		__asm
+		{
+			pushad;
+			push	eax;
+			call	pre_mesh_hk;
+			add		esp, 4;
+			popad;
+
+			push    edx;
+			mov     edx, [esp + 0x1C];
+			jmp		retn_addr;
+		}
+	}*/
+
 	patches::patches()
 	{
 		p_this = this;
 		shared::common::remix_api::initialize(begin_scene_cb, end_scene_cb, present_scene_cb);
 
-
-		// 50171E
 		shared::utils::hook(0x50171E, pre_render_hud_stub, HOOK_JUMP).install()->quick();
-
 		shared::utils::hook(0x50FDD3, pre_mesh_stub, HOOK_JUMP).install()->quick();
+
+		// 518A7D
+		//shared::utils::hook(0x518A7B, pre_sky_stub, HOOK_JUMP).install()->quick();
+
+		// skip prepass shit
+		shared::utils::hook::nop(0x517A18, 6); // nop 6 @ 0x517A18 should be enough - the rest could be removed
+		shared::utils::hook::nop(0x517A06, 3); shared::utils::hook::nop(0x517A0B, 5); // 01
+		shared::utils::hook::nop(0x5179EC, 3); shared::utils::hook::nop(0x5179F1, 5); // 02
+		shared::utils::hook::nop(0x5179D2, 3); shared::utils::hook::nop(0x5179D7, 5); // 03 - flashlight
+
+		shared::utils::hook::nop(0x518B3E, 5); // disable SetTransform's for the sky
 
 		//shared::utils::hook(0x10B91692, grab_renderglob_stub, HOOK_JUMP).install()->quick();
 
