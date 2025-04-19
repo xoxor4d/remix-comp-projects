@@ -98,7 +98,7 @@ namespace shared::utils
 	const char* va(const char* fmt, ...);
 	void extract_integer_words(const std::string_view& str, std::vector<int>& integers, bool check_for_duplicates);
 
-	void transpose_matrix3x4_to_d3dxmatrix(const shared::matrix3x4_t& src, D3DXMATRIX& dest);
+	void transpose_float3x4_to_d3dxmatrix(const shared::float3x4& src, D3DXMATRIX& dest);
 	void transpose_float4x4(const float* row_major, float* column_major);
 	bool float_equal(float a, float b, float eps = 1.e-6f);
 	float finterp_to(const float current, const float target, const float delta_time, const float interpolation_speed);

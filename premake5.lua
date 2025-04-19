@@ -249,6 +249,7 @@ workspace "remix-comp-proj"
 			targetdir(os.getenv("BIOSHOCK1_ROOT"))
 			debugdir (os.getenv("BIOSHOCK1_ROOT"))
 			debugcommand (os.getenv("BIOSHOCK1_ROOT") .. "/" .. "Bioshock.exe")
+			debugargs { "-dx9 -NOINTRO -windowed" }
 		end
 	filter {}
 
@@ -307,6 +308,64 @@ workspace "remix-comp-proj"
 			targetdir(os.getenv("MIRRORSEDGE_ROOT"))
 			debugdir (os.getenv("MIRRORSEDGE_ROOT"))
 			debugcommand (os.getenv("MIRRORSEDGE_ROOT") .. "/" .. "MirrorsEdge.exe")
+		end
+	filter {}
+
+	-- Specific configurations
+	flags { 
+		"UndefinedIdentifiers" 
+	}
+
+	warnings "Extra"
+
+	dependencies.imports()
+
+	group "Dependencies"
+		dependencies.projects()
+	group ""
+
+
+	---------------------------
+
+	project "fear1-rtx"
+	kind "SharedLib"
+	language "C++"
+
+	linkoptions {
+		"/PDBCompress"
+	}
+
+	pchheader "std_include.hpp"
+	pchsource "src/mods/fear1/std_include.cpp"
+
+	files {
+		"./src/mods/fear1/**.hpp",
+		"./src/mods/fear1/**.cpp",
+	}
+
+	includedirs {
+		"%{prj.location}/src",
+		"./src",
+	}
+
+	links {
+		"_shared"
+	}
+
+	resincludedirs {
+		"$(ProjectDir)src"
+	}
+
+	buildoptions { 
+		"/Zm100 -Zm100" 
+	}
+
+	filter "configurations:Debug or configurations:Release"
+		if(os.getenv("FEAR1_ROOT")) then
+			print ("Setup paths using environment variable 'FEAR1_ROOT' :: '" .. os.getenv("FEAR1_ROOT") .. "'")
+			targetdir(os.getenv("FEAR1_ROOT"))
+			debugdir (os.getenv("FEAR1_ROOT"))
+			debugcommand (os.getenv("FEAR1_ROOT") .. "/" .. "FEAR.exe")
 		end
 	filter {}
 

@@ -23,6 +23,8 @@
 #include <xmmintrin.h>
 #include <intrin.h>
 
+#pragma comment(lib, "psapi.lib")
+
 #pragma warning(push)
 #pragma warning(disable: 26495)
 #include <d3d9.h>
@@ -31,6 +33,7 @@
 
 #pragma comment(lib, "d3d9.lib")
 #pragma comment(lib, "d3dx9.lib")
+//#pragma comment(lib, "dxguid.lib")
 
 #define STRINGIZE_(x) #x
 #define STRINGIZE(x) STRINGIZE_(x)
@@ -40,14 +43,30 @@
 #define XASSERT(x) if (x) MessageBoxA(HWND_DESKTOP, #x, "FATAL ERROR", MB_ICONERROR)
 
 #include "MinHook.h"
+#include "toml.hpp"
 #include "bridge_remix_api.h"
 
-#include "common/console.hpp"
-#include "utils/utils.hpp"
-#include "utils/vector.hpp"
-#include "utils/hooking.hpp"
-#include "utils/memory.hpp"
-#include "utils/function.hpp"
-#include "common/loader.hpp"
+#pragma warning(push)
+#pragma warning(disable: 6011)
+#pragma warning(disable: 28182)
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include "imgui.h"
+#include <backends/imgui_impl_dx9.h>
+#include <backends/imgui_impl_win32.h>
+#include <misc/cpp/imgui_stdlib.h>
+#pragma warning(pop)
+
+#include "../../shared/globals.hpp"
+#include "../../shared/utils/utils.hpp"
+#include "../../shared/utils/vector.hpp"
+#include "../../shared/utils/hooking.hpp"
+#include "../../shared/utils/memory.hpp"
+#include "../../shared/utils/function.hpp"
+#include "../../shared/common/console.hpp"
+#include "../../shared/common/loader.hpp"
+#include "game/structs.hpp"
+#include "game/game.hpp"
+#include "fear1.hpp"
+//#include "loader.hpp"
 
 using namespace std::literals;

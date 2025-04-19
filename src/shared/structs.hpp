@@ -6,4 +6,9 @@ namespace shared
 	{
 		float m_flMatVal[3][4];
 	};
+
+	struct float3x4
+	{
+		float m[3][4];
+	};
 }
