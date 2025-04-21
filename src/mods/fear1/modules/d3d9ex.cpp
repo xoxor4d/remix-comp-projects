@@ -449,14 +449,15 @@ namespace mods::fear1
 
 	HRESULT d3d9ex::D3D9Device::DrawIndexedPrimitive(D3DPRIMITIVETYPE PrimitiveType, INT BaseVertexIndex, UINT MinVertexIndex, UINT NumVertices, UINT startIndex, UINT primCount)
 	{
-		const auto skip = patches::pre_drawindexedprim_call(PrimitiveType, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
+		bool skip = false;
+		skip = patches::pre_drawindexedprim_call(PrimitiveType, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
 
 		auto hr = S_OK;
 		if (!skip) 
 		{
 			hr = m_pIDirect3DDevice9->DrawIndexedPrimitive(PrimitiveType, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
 		}
-		
+
 		patches::post_drawindexedprim_call();
 		return hr;
 	}

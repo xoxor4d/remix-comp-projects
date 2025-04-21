@@ -24,38 +24,38 @@ namespace mods::fear1
 	{
 		bool pass_msg_to_game = false;
 
-		switch (message_type)
-		{
-		case WM_KEYUP: // always pass button up events to prevent "stuck" game keys
+		//switch (message_type)
+		//{
+		//case WM_KEYUP: // always pass button up events to prevent "stuck" game keys
 
-		// allows user to move the game window via titlebar :>
-		case WM_NCLBUTTONDOWN: case WM_NCLBUTTONUP: case WM_NCMOUSEMOVE: case WM_NCMOUSELEAVE:
-		case WM_WINDOWPOSCHANGED: //case WM_WINDOWPOSCHANGING:
+		//// allows user to move the game window via titlebar :>
+		//case WM_NCLBUTTONDOWN: case WM_NCLBUTTONUP: case WM_NCMOUSEMOVE: case WM_NCMOUSELEAVE:
+		//case WM_WINDOWPOSCHANGED: //case WM_WINDOWPOSCHANGING:
 
-		//case WM_INPUT:
-		//case WM_NCHITTEST: // sets cursor to center
-		//case WM_SETCURSOR: case WM_CAPTURECHANGED:
+		////case WM_INPUT:
+		////case WM_NCHITTEST: // sets cursor to center
+		////case WM_SETCURSOR: case WM_CAPTURECHANGED:
 
-		case WM_NCACTIVATE:
-		case WM_SETFOCUS: case WM_KILLFOCUS:
-		case WM_SYSCOMMAND:
-		
-		case WM_GETMINMAXINFO: case WM_ENTERSIZEMOVE: case WM_EXITSIZEMOVE:
-		case WM_SIZING: case WM_MOVING: case WM_MOVE:
-			pass_msg_to_game = true;
-			break;
+		//case WM_NCACTIVATE:
+		//case WM_SETFOCUS: case WM_KILLFOCUS:
+		//case WM_SYSCOMMAND:
+		//
+		//case WM_GETMINMAXINFO: case WM_ENTERSIZEMOVE: case WM_EXITSIZEMOVE:
+		//case WM_SIZING: case WM_MOVING: case WM_MOVE:
+		//	pass_msg_to_game = true;
+		//	break;
 
-		case WM_MOUSEACTIVATE: 
-			if (ImGui::GetIO().WantCaptureMouse || !imgui::get()->m_menu_active)
-			{
-				pass_msg_to_game = true;
-			}
-			break;
+		//case WM_MOUSEACTIVATE: 
+		//	if (ImGui::GetIO().WantCaptureMouse || !imgui::get()->m_menu_active)
+		//	{
+		//		pass_msg_to_game = true;
+		//	}
+		//	break;
 
-		default: break; 
-		}
+		//default: break; 
+		//}
 
-		if (imgui::get()->input_message(message_type, wparam, lparam, pass_msg_to_game) && !pass_msg_to_game) {
+		if (imgui::get()->input_message(message_type, wparam, lparam, pass_msg_to_game) /*&& !pass_msg_to_game*/) {
 			return true;
 		}
 
@@ -82,14 +82,47 @@ namespace mods::fear1
 		if (message_type == WM_KEYUP && wparam == VK_F4) 
 		{
 			const auto& io = ImGui::GetIO();
-			if (!io.MouseDown[1]) {
+			if (!io.MouseDown[1]) 
+			{
 				m_menu_active = !m_menu_active;
+
+				if (game::game_client)
+				{
+					// freezes game input but keeps mouse locked ...
+					/*auto some_glob = shared::utils::hook::call<void* (__cdecl)()>(game::game_client_addr + 0xBAD0)();
+					*((BYTE*)some_glob + 76) = !m_menu_active;*/
+
+					// later useful for flashlight - keep!
+					/*auto g_pPlayerMgr = reinterpret_cast<void*>(game::game_client_addr + 0x1ACAC4);
+					shared::utils::hook::call<void(__fastcall)(void* this_ptr, int unused, bool bAllowInput, bool bRestoreBackupAngles)>
+						(game::game_client_addr + 0xAFDC0)(g_pPlayerMgr, 0, !m_menu_active, true);*/
+
+					// calls the actual pause function but still locks the mouse (PauseGameActual) // usage: 0x10062A2D
+					int asd = *reinterpret_cast<int*>(0x101A4FE8);
+					(*(void(__thiscall**)(int, int, int))(*(DWORD*)asd + 0x7C))(asd, m_menu_active, 1);
+
+					// set CV_CursorCenter cvar used in the msg loop to center the cursor
+					game::center_cursor(!m_menu_active);
+				}
 			}
 
 			else {
 				ImGui_ImplWin32_WndProcHandler(shared::globals::main_window, message_type, wparam, lparam);
 			}
 		}
+
+		if (game::game_client)
+		{
+			//auto xasd = (DWORD)game::game_client + 0xBAD0; 
+			// utils::hook::call<BOOL(__stdcall)(HWND, UINT, WPARAM, LPARAM)>(0x57BB20)(hWnd, Msg, wParam, lParam);
+			auto some_glob = shared::utils::hook::call<void*(__cdecl)()>(game::game_client_addr + 0xBAD0)();
+			//auto some_glob = reinterpret_cast<void*>(game::game_client + 0xBAD0);
+			*((BYTE*)some_glob + 76) = !m_menu_active;
+		}
+
+		// m_menu_active
+		reinterpret_cast<void*>(0x1000BAD0);
+
 		if (m_menu_active)
 		{
 			const auto& io = ImGui::GetIO();
@@ -131,24 +164,61 @@ namespace mods::fear1
 	{
 		const auto& im = imgui::get();
 
-		ImGui::Checkbox("Use Fake Camera", &im->m_dbg_use_fake_camera);
+		{ auto* var = reinterpret_cast<bool*>(0x56D124); ImGui::Checkbox("FogEnable", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56D214); ImGui::Checkbox("DrawTranslucent", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56D274); ImGui::Checkbox("DrawWorldModelPhysicsDims", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56D28C); ImGui::Checkbox("DrawWorldTree", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56D2A4); ImGui::Checkbox("DrawGroupedBatchesOnly", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56D2BC); ImGui::Checkbox("DisableBatchGrouping", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56D2D4); ImGui::Checkbox("DrawSkyPortals", var); }
 
-		ImGui::SliderFloat3("Camera Position (X, Y, Z)", im->m_dbg_camera_pos, -200.0f, 200.0f);
-		ImGui::SliderFloat("Yaw (Y-axis)", &im->m_dbg_camera_yaw, -180.0f, 180.0f);
-		ImGui::SliderFloat("Pitch (X-axis)", &im->m_dbg_camera_pitch, -90.0f, 90.0f);
 
-		// Projection matrix adjustments
-		ImGui::SliderFloat("FOV", &im->m_dbg_camera_fov, 10.0f, 120.0f);
-		ImGui::SliderFloat("Aspect Ratio", &im->m_dbg_camera_aspect, 0.5f, 2.5f);
-		ImGui::SliderFloat("Near Plane", &im->m_dbg_camera_near_plane, 0.1f, 10.0f);
-		ImGui::SliderFloat("Far Plane", &im->m_dbg_camera_far_plane, 100.0f, 2000.0f);
 
+		{ auto* var = reinterpret_cast<bool*>(0x56D2EC); ImGui::Checkbox("VisDrawPortals", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56D304); ImGui::Checkbox("VisLock", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56D31C); ImGui::Checkbox("VisDrawFrustum", var); }
+
+		{ auto* var = reinterpret_cast<int*>(0x56D334); ImGui::DragInt("VisMaxSectorDepth", var); }
+
+		{ auto* var = reinterpret_cast<bool*>(0x56D34C); ImGui::Checkbox("VisDisableWhenOutside", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56D364); ImGui::Checkbox("VisDrawModelDims", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56D37C); ImGui::Checkbox("VisDrawLightDims", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56D394); ImGui::Checkbox("VisDrawWorldModelDims", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56D3AC); ImGui::Checkbox("VisDrawCustomRenderDims", var); }
+
+		{ auto* var = reinterpret_cast<bool*>(0x56D3C4); ImGui::Checkbox("VisDrawWorldBlocks", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56D3DC); ImGui::Checkbox("VisDrawSubWorldBlocks", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56D3F4); ImGui::Checkbox("VisDrawSectorDims", var); }
+
+		{ auto* var = reinterpret_cast<float*>(0x56D6C4); ImGui::DragFloat("NearZ", var); }
+		{ auto* var = reinterpret_cast<float*>(0x56D6DC); ImGui::DragFloat("FarZ", var); }
+
+		{ auto* var = reinterpret_cast<int*>(0x56D844); ImGui::DragInt("ModelLODOffset", var); }
+		{ auto* var = reinterpret_cast<float*>(0x56D85C); ImGui::DragFloat("ModelLODDistanceScale", var); }
+		{ auto* var = reinterpret_cast<float*>(0x56D874); ImGui::DragFloat("ModelLODDistanceBias", var); }
+
+		{ auto* var = reinterpret_cast<bool*>(0x56D88C); ImGui::Checkbox("ModelDebug_DrawSkeleton", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56D8A4); ImGui::Checkbox("DrawModels", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56D8BC); ImGui::Checkbox("DrawWorld", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56D8D4); ImGui::Checkbox("DrawSky", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56D8EC); ImGui::Checkbox("DrawWorldModels", var); }
+
+		{ auto* var = reinterpret_cast<bool*>(0x56D904); ImGui::Checkbox("DrawCustomRender", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56D91C); ImGui::Checkbox("DrawFogVolumes", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56D934); ImGui::Checkbox("DrawModelDecals", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56D94C); ImGui::Checkbox("Wireframe", var); }
+
+		{ auto* var = reinterpret_cast<bool*>(0x56D964); ImGui::Checkbox("DisablePrimitiveRendering", var); }
+		{ auto* var = reinterpret_cast<float*>(0x56D9AC); ImGui::DragFloat("SkyFarZ", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56DA54); ImGui::Checkbox("ShaderDisablePreshaders", var); }
+		{ auto* var = reinterpret_cast<bool*>(0x56DA6C); ImGui::Checkbox("ShaderDisableCompiled", var); }
+
+		{ auto* var = reinterpret_cast<int*>(0x56DAB4); ImGui::DragInt("LODMaterials", var); }
 
 		ImGui::SeparatorText("Custom Viewmodel Projection");
 		ImGui::PushID("VMProj");
 		ImGui::Checkbox("Use Custom Projection", &im->m_viewmodel_use_custom_proj);
 		ImGui::SliderFloat("FOV", &im->m_viewmodel_proj_fov, 10.0f, 120.0f);
-		ImGui::SliderFloat("Aspect Ratio", &im->m_viewmodel_proj_aspect, 0.5f, 2.5f);
 		ImGui::SliderFloat("Near Plane", &im->m_viewmodel_proj_near_plane, 0.1f, 10.0f);
 		ImGui::SliderFloat("Far Plane", &im->m_viewmodel_proj_far_plane, 100.0f, 2000.0f);
 		ImGui::PopID();
@@ -459,6 +529,72 @@ namespace mods::fear1
 		merge_icons_with_latest_font(17.0f, false);
 	}
 
+	using getdevicestate_fn = HRESULT(__stdcall*)(IDirectInputDevice8*, DWORD, LPVOID); getdevicestate_fn getdevicestate_original = {};
+	HRESULT __stdcall getdevicestate_hk(IDirectInputDevice8* device, DWORD cb_data, LPVOID lpv_data)
+	{
+		HRESULT result = DI_OK;
+		const auto* im = imgui::get();
+		//if (!im->m_menu_active) {
+			result = getdevicestate_original(device, cb_data, lpv_data);
+		//}
+
+		/*if (im->m_menu_active && result == DI_OK)
+		{
+			if (cb_data == sizeof(DIMOUSESTATE) || cb_data == sizeof(DIMOUSESTATE2))
+			{
+				((LPDIMOUSESTATE2)lpv_data)->rgbButtons[0] = 0;
+				((LPDIMOUSESTATE2)lpv_data)->rgbButtons[1] = 0;
+				((LPDIMOUSESTATE2)lpv_data)->rgbButtons[2] = 0;
+			}
+		}*/
+
+		return result; //result;
+	}
+
+	using getdevicedata_fn = HRESULT(__stdcall*)(IDirectInputDevice8* pthis, DWORD cb_object_data, LPDIDEVICEOBJECTDATA rg_dod, LPDWORD pdw_in_out, DWORD dw_flags); getdevicedata_fn getdevicedata_original = {};
+	HRESULT __stdcall getdevicedata_hk(IDirectInputDevice8* pthis, DWORD cb_object_data, LPDIDEVICEOBJECTDATA rg_dod, LPDWORD pdw_in_out, DWORD dw_flags)
+	{
+		HRESULT result = DI_OK;
+		const auto* im = imgui::get();
+
+		//if (!im->m_menu_active) {
+			result = getdevicedata_original(pthis, cb_object_data, rg_dod, pdw_in_out, dw_flags);
+		//}
+
+		//const auto result = getdevicedata_original(pthis, cb_object_data, rg_dod, pdw_in_out, dw_flags);
+		//if (result == DI_OK)
+		//{
+		//	const auto* im = imgui::get();
+		//	if (im->m_menu_active) {
+		//		*pdw_in_out = 0; //set array size 0
+		//	}
+		//}
+
+		return result;//result;
+	}
+
+	/*typedef HRESULT(__stdcall* GetDeviceStateT)(IDirectInputDevice8* pthis, DWORD cb_data, LPVOID lpv_data);
+	GetDeviceStateT pGetDeviceState = nullptr;
+
+	HRESULT __stdcall GetDeviceState_hk(IDirectInputDevice8* pthis, DWORD cb_data, LPVOID lpv_data)
+	{
+		const auto* im = imgui::get();
+		HRESULT result = pGetDeviceState(pthis, cb_data, lpv_data);
+
+		if (im->m_menu_active && result == DI_OK)
+		{
+			if (cb_data == sizeof(DIMOUSESTATE) || cb_data == sizeof(DIMOUSESTATE2))
+			{
+				((LPDIMOUSESTATE2)lpv_data)->rgbButtons[0] = 0;
+				((LPDIMOUSESTATE2)lpv_data)->rgbButtons[1] = 0;
+				((LPDIMOUSESTATE2)lpv_data)->rgbButtons[2] = 0;
+			}
+		}
+
+		return result;
+	}*/
+
+
 	imgui::imgui()
 	{
 		p_this = this;
@@ -477,6 +613,26 @@ namespace mods::fear1
 
 		ImGui_ImplWin32_Init(shared::globals::main_window);
 		g_game_wndproc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(shared::globals::main_window, GWLP_WNDPROC, LONG_PTR(wnd_proc_hk)));
+
+		// hk dinput
+		/*IDirectInput8* pdirectinput = nullptr;
+		LPDIRECTINPUTDEVICE8 lpdi_mouse;
+		if (DirectInput8Create(shared::globals::dll_hmodule, DIRECTINPUT_VERSION, IID_IDirectInput8, (LPVOID*)&pdirectinput, nullptr) == DI_OK)
+		{
+			if (pdirectinput->CreateDevice(GUID_SysMouse, &lpdi_mouse, nullptr) != DI_OK) {
+				pdirectinput->Release();
+			}
+		}*/
+
+		/*auto get_virtual = [](void* _class, unsigned int index) {
+			return static_cast<unsigned int>((*static_cast<int**>(_class))[index]);
+			};*/
+
+		//MH_CreateHook(reinterpret_cast<void*>(get_virtual(lpdi_mouse, 9)), getdevicestate_hk, reinterpret_cast<void**>(&getdevicestate_original));
+		//MH_CreateHook(reinterpret_cast<void*>(get_virtual(lpdi_mouse, 10)), getdevicedata_hk, reinterpret_cast<void**>(&getdevicedata_original));
+
+		//MH_CreateHook(reinterpret_cast<void*>(get_virtual(lpdi_mouse, 9)), getdevicestate_hk, reinterpret_cast<void**>(&pGetDeviceState));
+		//pGetDeviceState = (GetDeviceStateT)DetourFunction((PBYTE)getFunctionAddress(lpdi_mouse, 9), (PBYTE)hookGetDeviceState);
 
 		printf("[Module] imgui loaded.\n");
 	}

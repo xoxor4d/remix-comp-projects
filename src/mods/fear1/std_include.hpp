@@ -33,7 +33,11 @@
 
 #pragma comment(lib, "d3d9.lib")
 #pragma comment(lib, "d3dx9.lib")
-//#pragma comment(lib, "dxguid.lib")
+
+#define DIRECTINPUT_VERSION 0x0800
+#include <dinput.h>
+#pragma comment(lib, "Dinput8.lib")
+#pragma comment(lib, "dxguid.lib")
 
 #define STRINGIZE_(x) #x
 #define STRINGIZE(x) STRINGIZE_(x)

@@ -16,5 +16,7 @@ namespace mods::fear1
 
 		shared::common::loader::module_loader::register_module(std::make_unique<imgui>());
 		shared::common::loader::module_loader::register_module(std::make_unique<patches>());
+
+		MH_EnableHook(MH_ALL_HOOKS);
 	}
 }

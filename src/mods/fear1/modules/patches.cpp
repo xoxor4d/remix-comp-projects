@@ -121,26 +121,12 @@ namespace mods::fear1
 
 	IDirect3DVertexShader9* ff_og_shader = nullptr;
 	IDirect3DPixelShader9* ff_og_psshader = nullptr;
-	DWORD ff_og_fvf = 0u;
 
 	bool ff_was_viewmodel = false;
 	bool ff_was_modified = false;
-	//bool ff_use_shader = false;
+	bool ff_is_sky = false;
 	bool ff_is_hud = false;
 	std::uint8_t ff_skel_bone_count = 24u;
-
-	void setup_prim_ff_rendering()
-	{
-		const auto& dev = shared::globals::d3d_device;
-		dev->GetVertexShader(&ff_og_shader);
-		dev->SetVertexShader(nullptr);
-
-		/* if (game::rg) {
-			dev->SetTransform(D3DTS_WORLD, &game::rg->worldMatrix);
-		} */
-
-		ff_was_modified = true;
-	}
 
 	// ------------------
 
@@ -160,14 +146,7 @@ namespace mods::fear1
 		}
 	}
 
-	void ApplyWorldTransformToBones(const D3DXMATRIX& world_transform, const D3DXMATRIX* local_bones, D3DXMATRIX* out_bones, const int count)
-	{
-		for (int i = 0; i < count; ++i) {
-			D3DXMatrixMultiply(&out_bones[i], &local_bones[i], &world_transform);
-		}
-	}
-
-	std::set<IDirect3DVertexBuffer9*> fixedVertexBuffers;
+	//std::set<IDirect3DVertexBuffer9*> fixedVertexBuffers;
 
 	bool patches::pre_drawindexedprim_call(D3DPRIMITIVETYPE PrimitiveType, INT BaseVertexIndex, UINT MinVertexIndex, UINT NumVertices, UINT startIndex, UINT primCount)
 	{
@@ -181,10 +160,10 @@ namespace mods::fear1
 		}
 
 		const auto& im = imgui::get();
-		const auto& patches = patches::get();
+		const auto& patches = patches::get(); 
 
 #if 1
-		if (!ff_is_hud && !im->m_is_rendering &&
+		if (!ff_is_sky && !ff_is_hud && !im->m_is_rendering &&
 			!patches->m_ff_use_shader)
 		{
 #if 1
@@ -262,12 +241,12 @@ namespace mods::fear1
 			{
 				//if (im->m_dbg_use_fake_camera)
 				{
-					bool is_hw_skin = false;
+					//bool is_hw_skin = false;
 					if (ff_skel_bone_count > 0 && decl[5].Stream == 0u && decl[5].Usage == D3DDECLUSAGE_BLENDWEIGHT)
 					{
-						//dev->SetFVF(D3DFVF_XYZB4 | D3DFVF_NORMAL | D3DFVF_TEX1 | D3DFVF_LASTBETA_D3DCOLOR);
-						is_hw_skin = true;
+						//is_hw_skin = true;
 
+						// get bone matrices and transpose to 4x4
 						shared::float3x4* mModelObjectNodes = reinterpret_cast<shared::float3x4*>(0x577750);
 						D3DXMATRIX boneMatrices[24];
 						matrix3x4_transpose_to_4x4(mModelObjectNodes, boneMatrices, 24);
@@ -277,17 +256,18 @@ namespace mods::fear1
 							bone_count = ff_skel_bone_count;
 						}
 
+						// add world translation to local bones because we cant use SetTransform WORLD when skinning
 						D3DXMATRIX finalBoneMatrices[24];
 						for (int i = 0; i < bone_count; ++i) {
 							D3DXMatrixMultiply(&finalBoneMatrices[i], &boneMatrices[i], &transworld);
 						}
 
-						//ApplyWorldTransformToBones(transworld, boneMatrices, finalBoneMatrices, ff_skel_bone_count);
-
+						// set bone transforms
 						for (int i = 0; i < bone_count; ++i) {
 							dev->SetTransform(D3DTS_WORLDMATRIX(i), &finalBoneMatrices[i]); //&boneMatrices[i]);
 						}
 
+						// this is not needed? - todo
 						D3DVERTEXELEMENT9 new_decl[] = {
 							{ 0, 0,  D3DDECLTYPE_FLOAT3, 0, D3DDECLUSAGE_POSITION, 0 },
 							{ 0, 12, D3DDECLTYPE_FLOAT3, 0, D3DDECLUSAGE_NORMAL,   0 },
@@ -306,9 +286,7 @@ namespace mods::fear1
 						vertex_decl->Release();
 						pNewDecl->Release();
 
-						//dev->SetTransform(D3DTS_WORLDMATRIX(bone_count), &transworld);
-
-						dev->SetRenderState(D3DRS_VERTEXBLEND, D3DVBF_0WEIGHTS); // 3 bone influences
+						dev->SetRenderState(D3DRS_VERTEXBLEND, D3DVBF_0WEIGHTS); // only 0 works?
 						dev->SetRenderState(D3DRS_INDEXEDVERTEXBLENDENABLE, TRUE);
 
 #if 0
@@ -468,22 +446,307 @@ namespace mods::fear1
 
 	// ---
 
-	/*__declspec(naked) void pre_sky_stub()
+	void pre_sky_kh()
+	{
+		ff_is_sky = true;
+	}
+
+	__declspec(naked) void pre_sky_stub()
 	{
 		static uint32_t retn_addr = 0x518A82;
 		__asm
 		{
 			pushad;
-			push	eax;
-			call	pre_mesh_hk;
+			call	pre_sky_kh;
+			popad;
+
+			test    eax, eax;
+			push    esi;
+			mov     esi, ecx;
+			jmp		retn_addr;
+		}
+	}
+
+
+	void post_sky_kh(game::viewParms* view)
+	{
+		/*if (view)
+		{
+			for (auto i = 0u; i < 5; i++) {
+				view->m_ClipPlanes[i].m_dist = 0.0f; 
+			}
+
+			int x = 1; 
+		}*/
+
+		ff_is_sky = false;
+	}
+
+	__declspec(naked) void post_sky_stub()
+	{
+		static uint32_t retn_addr = 0x510B1E;
+		__asm
+		{
+			pushad;
+			push	edi; //viewparms
+			call	post_sky_kh;
+			add		esp, 4;
+			popad;
+
+			mov     eax, [esp + 0x18];
+			push    eax;
+			jmp		retn_addr;
+		}
+	}
+
+	// ---
+
+	Vector m_player_pos;
+
+	//post_start_view_stub
+	void post_start_view_hk(game::viewParms* view)
+	{
+		const auto& im = imgui::get();
+		if (view)
+		{
+			m_player_pos = view->m_Pos;
+
+			//view->N00000737 = 0; 
+			//view->m_DrawMode_maybe = 0;
+
+			// can be used to disable sky, enable normal pass etc
+			//view->m_DrawMode_maybe2 = 0;
+
+			//view->m_ViewBox.m_WindowSize.x = 0.1f; // related to sky projection?
+
+			// this gets rid of frustum culling behind the player and nearby
+			// but only with 'VisDrawFrustum' which renders every node
+			// 0x5190DC numplanes must be set to 0
+			view->m_ViewAABBMin.x -= 1000.0f;
+			//view->m_ViewAABBMin.y -= 500.0f;
+			view->m_ViewAABBMin.z -= 1000.0f;
+			view->m_ViewAABBMax.x += 1000.0f;
+			//view->m_ViewAABBMax.y += 500.0f;
+			view->m_ViewAABBMax.z += 1000.0f;
+
+			/*view->m_ViewPoints[0].x *= 10.0f;
+			view->m_ViewPoints[0].y *= 10.0f;
+			view->m_ViewPoints[0].z *= 10.0f;
+			view->m_ViewPoints[1].x *= 10.0f;
+			view->m_ViewPoints[1].y *= 10.0f;
+			view->m_ViewPoints[1].z *= 10.0f;
+			view->m_ViewPoints[2].x *= 10.0f;
+			view->m_ViewPoints[2].y *= 10.0f;
+			view->m_ViewPoints[2].z *= 10.0f;
+			view->m_ViewPoints[3].x *= 10.0f;
+			view->m_ViewPoints[3].y *= 10.0f;
+			view->m_ViewPoints[3].z *= 10.0f;
+			view->m_ViewPoints[4].x *= 10.0f;
+			view->m_ViewPoints[4].y *= 10.0f;
+			view->m_ViewPoints[4].z *= 10.0f;
+			view->m_ViewPoints[5].x *= 10.0f;
+			view->m_ViewPoints[5].y *= 10.0f;
+			view->m_ViewPoints[5].z *= 10.0f;
+			view->m_ViewPoints[6].x *= 10.0f;
+			view->m_ViewPoints[6].y *= 10.0f;
+			view->m_ViewPoints[6].z *= 10.0f;
+			view->m_ViewPoints[7].x *= 10.0f;
+			view->m_ViewPoints[7].y *= 10.0f;
+			view->m_ViewPoints[7].z *= 10.0f;*/
+
+			//view->m_pos.y += 1000.0f;
+
+#if 1
+			view->projMatrix;
+
+			// more fov to see culling
+			//D3DXMatrixPerspectiveFovLH(&view->projMatrix,
+			//	D3DXToRadian(90.0f), // FOV in radians
+			//	1.7776f,
+			//	view->m_ViewBox.m_NearZ,
+			//	100000.0f);
+
+			if (im->m_viewmodel_use_custom_proj)
+			{
+				view->m_ViewBox.m_FarZ = im->m_viewmodel_proj_far_plane;
+
+				// this fixes NaN's in the sky
+				D3DXMatrixPerspectiveFovLH(&view->projMatrix,
+					D3DXToRadian(im->m_viewmodel_proj_fov), //view->m_yFov,
+					view->m_fScreenWidth / view->m_fScreenHeight,
+					im->m_viewmodel_proj_near_plane,
+					im->m_viewmodel_proj_far_plane);
+
+				D3DXMATRIX proj_matrix;
+				D3DXMatrixTranspose(&proj_matrix, &view->projMatrix);
+
+				view->projMatrix = proj_matrix;
+			}
+
+			
+#endif
+
+			const auto CPLANE_NEAR_INDEX = 0;
+			const auto CPLANE_FAR_INDEX = 1;
+			const auto CPLANE_LEFT_INDEX = 2;
+			const auto CPLANE_TOP_INDEX = 3;
+			const auto CPLANE_RIGHT_INDEX = 4;
+			const auto CPLANE_BOTTOM_INDEX = 5;
+
+			//view->m_ClipPlanes[0].m_normal = { 0.0, 0.0, 1.0 }; // Near
+			//view->m_ClipPlanes[1].m_normal = { 0.0, 0.0, -1.0 }; // Far
+			//view->m_ClipPlanes[2].m_normal = { 1.0, 0.0, 0.0 }; // Left
+			//view->m_ClipPlanes[3].m_normal = { 0.0, 1.0, 0.0 }; // Top
+			//view->m_ClipPlanes[4].m_normal = { -1.0, 0.0, 0.0 }; // Right
+			//view->m_ClipPlanes[5].m_normal = { 0.0, -1.0, 0.0 }; // Bottom
+
+			for (auto i = 0u; i < 5; i++) 
+			{
+				//if (i != CPLANE_NEAR_INDEX /*&& i != CPLANE_FAR_INDEX*/) 
+				{
+					//view->m_ClipPlanes[i].m_normal.Init(0);
+					//view->m_ClipPlanes[i].m_dist = 0.0f;
+				}
+			}
+
+
+
+
+
+
+
+
+			// had this ON???
+			//view->m_ClipPlanes[0].m_dist -= 10000.0f;
+
+
+
+
+
+
+
+			//view->m_ClipPlanes[CPLANE_NEAR_INDEX].m_dist = -100.0f; // Push near plane far back
+			//view->m_ClipPlanes[CPLANE_FAR_INDEX].m_dist = 100.0f;
+
+
+			
+
+			//view->m_ClipPlanes[3].m_dist -= -100.0f;
+			//view->m_ClipPlanes[4].m_dist *= 5.0f;
+			//view->m_ClipPlanes[5].m_dist *= 5.0f;
+		}
+	}
+
+	__declspec(naked) void post_start_view_stub()
+	{
+		static uint32_t retn_addr = 0x4FFF59;
+		__asm
+		{
+			lea     edx, [esp + 0xC];
+
+			pushad;
+			push	edx; //viewparms
+			call	post_start_view_hk;
 			add		esp, 4;
 			popad;
 
 			push    edx;
-			mov     edx, [esp + 0x1C];
 			jmp		retn_addr;
 		}
-	}*/
+	}
+
+	struct cull02_s
+	{
+		BYTE gap0[12];
+		Vector mins;
+		Vector maxs;
+		BYTE gap10[4];
+		float* pfloat28;
+		DWORD dword2C;
+	};
+
+
+	bool IsAABBVisible(float* a, float a2, float a3, float a4)
+	{
+		return a2 >= *a && a2 <= a[3] && a3 >= a[1] && a3 <= a[4] && a4 >= a[2] && a4 <= a[5];
+	}
+
+	bool is_aabb_within_distance(const Vector& mins, const Vector& maxs, const Vector& player_origin, const float radius)
+	{
+		auto sq_dist = 0.0f;
+		for (auto i = 0; i < 3; ++i)
+		{
+			if (player_origin[i] < mins[i])
+			{
+				const auto d = mins[i] - player_origin[i];
+				sq_dist += d * d;
+			}
+			else if (player_origin[i] > maxs[i])
+			{
+				const auto d = player_origin[i] - maxs[i];
+				sq_dist += d * d;
+			}
+
+			// return false if distance exceeds radius sqr
+			if (sq_dist > radius * radius) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	char __fastcall cull02(cull02_s* this_ptr, void* junk, float* pos)
+	{
+		const auto* im = imgui::get();
+
+		//return 0;
+		float* i = nullptr;
+
+		if (IsAABBVisible(&this_ptr->mins.x, *pos, pos[1], pos[2]))
+		//if (is_aabb_within_distance(this_ptr->mins, this_ptr->maxs, pos, im->m_debug_vector.x))  
+		{
+			
+			/*if (is_aabb_within_distance(this_ptr->mins, this_ptr->maxs, m_player_pos, im->m_debug_vector.x)) 
+			{
+				return 0; 
+			}*/
+			// m_player_pos
+
+			unsigned int v3 = this_ptr->dword2C; // Number of planes 
+			int v4 = 0;
+
+			if (!v3)
+			{
+				/*if (is_aabb_within_distance(this_ptr->mins, this_ptr->maxs, m_player_pos, im->m_debug_vector.x))
+				{
+					return 0;
+				}*/
+
+				return 1;
+			}
+
+			for (i = this_ptr->pfloat28; v4 < v3; i += 5, ++v4)
+			{
+				// Skip near plane (assume index 4 is near plane, adjust if needed)
+				//if (v4 == 0)
+				//	continue;
+
+				if (i[2] * pos[2] + i[1] * pos[1] + *pos * *i - i[3] >= 0.0)
+				{
+					if (++v4 >= v3)
+						return 1;
+				}
+				else
+				{
+					return 0;
+				}
+			}
+		}
+		return 0;
+	}
+
+	// ---
 
 	patches::patches()
 	{
@@ -493,8 +756,12 @@ namespace mods::fear1
 		shared::utils::hook(0x50171E, pre_render_hud_stub, HOOK_JUMP).install()->quick();
 		shared::utils::hook(0x50FDD3, pre_mesh_stub, HOOK_JUMP).install()->quick();
 
-		// 518A7D
 		//shared::utils::hook(0x518A7B, pre_sky_stub, HOOK_JUMP).install()->quick();
+		shared::utils::hook(0x510B19, post_sky_stub, HOOK_JUMP).install()->quick();
+
+		shared::utils::hook(0x4FFF54, post_start_view_stub, HOOK_JUMP).install()->quick();
+		// 4FFF54
+
 
 		// skip prepass shit
 		shared::utils::hook::nop(0x517A18, 6); // nop 6 @ 0x517A18 should be enough - the rest could be removed
@@ -503,6 +770,10 @@ namespace mods::fear1
 		shared::utils::hook::nop(0x5179D2, 3); shared::utils::hook::nop(0x5179D7, 5); // 03 - flashlight
 
 		shared::utils::hook::nop(0x518B3E, 5); // disable SetTransform's for the sky
+
+		// distance based anti cull
+		//shared::utils::hook::set<BYTE>(0x5190DC + 1, 0x00); // set number of culling planes from 5 to 0
+		//shared::utils::hook(0x458446, cull02, HOOK_CALL).install()->quick(); // add distance based anti culling check
 
 		//shared::utils::hook(0x10B91692, grab_renderglob_stub, HOOK_JUMP).install()->quick();
 

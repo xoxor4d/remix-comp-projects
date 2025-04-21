@@ -9,5 +9,7 @@ namespace shared::globals
 	extern std::string root_path;
 	extern HWND main_window;
 
+	extern HMODULE dll_hmodule;
+
 	extern IDirect3DDevice9* d3d_device;
 }

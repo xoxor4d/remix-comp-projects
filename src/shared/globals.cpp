@@ -29,5 +29,7 @@ namespace shared::globals
 	std::string root_path;
 	HWND main_window = nullptr;
 
+	HMODULE dll_hmodule;
+
 	IDirect3DDevice9* d3d_device = nullptr;
 }
