@@ -12,6 +12,4 @@ namespace mods::fear1::game
 	HMODULE game_client = nullptr;
 	DWORD game_client_addr = 0u;
 	HMODULE game_server = nullptr;
-
-
 }

@@ -544,7 +544,7 @@ namespace mods::anno1404
 	bool asd(IDirect3DDevice9* dev, UINT start_register, CONST float* pConstantData, UINT Vector4fCount)
 	{
 		IDirect3DVertexShader9* used_vs = nullptr;
-		if (auto hr = dev->GetVertexShader(&used_vs); used_vs)
+		if (dev->GetVertexShader(&used_vs); used_vs)
 		{
 			UINT bytecode_size = 0;
 			if (FAILED(used_vs->GetFunction(nullptr, &bytecode_size))) {

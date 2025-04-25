@@ -153,7 +153,7 @@ namespace mods::anno1404
 
 #if DEBUG
 		{
-			const auto im = imgui::get();
+			//const auto im = imgui::get();
 
 			ImGui::Spacing(0, 8);
 			if (ImGui::CollapsingHeader("DEBUG Build Section", ImGuiTreeNodeFlags_SpanFullWidth))

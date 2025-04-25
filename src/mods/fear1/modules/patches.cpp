@@ -9,69 +9,32 @@
 
 namespace mods::fear1
 {
-	void begin_scene_cb()
+	namespace tex_addons
 	{
-#if 1	// not useful anymore
-		D3DXMATRIX view_matrix
-		(
-			1.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 0.447f, 0.894f, 0.0f,
-			0.0f, -0.894f, 0.447f, 0.0f,
-			0.0f, 100.0f, -50.0f, 1.0f
-		);
+		LPDIRECT3DTEXTURE9 sky_gray_up;
+	}
 
-		D3DXMATRIX proj_matrix
-		(
-			1.359f, 0.0f, 0.0f, 0.0f,
-			0.0f, 2.414f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.001f, 1.0f,
-			0.0f, 0.0f, -1.0f, 0.0f
-		);
-
-		const auto& im = imgui::get();
-
-		if (im->m_dbg_use_fake_camera)
+	void patches::init_texture_addons(bool release)
+	{
+		if (release)
 		{
-			// Construct view matrix
-			D3DXMATRIX rotation, translation;
-			D3DXMatrixRotationYawPitchRoll(&rotation,
-				D3DXToRadian(im->m_dbg_camera_yaw),   // Yaw in radians
-				D3DXToRadian(im->m_dbg_camera_pitch), // Pitch in radians
-				0.0f);                      // No roll for simplicity
-
-			D3DXMatrixTranslation(&translation,
-				-im->m_dbg_camera_pos[0], // Negate for camera (moves world opposite)
-				-im->m_dbg_camera_pos[1],
-				-im->m_dbg_camera_pos[2]);
-
-			D3DXMatrixMultiply(&view_matrix, &rotation, &translation);
-
-			// Alternative: Use look-at if preferred
-			// D3DXVECTOR3 eye(camera_pos[0], camera_pos[1], camera_pos[2]);
-			// D3DXVECTOR3 at(0, 0, 0); // Target at origin, adjust as needed
-			// D3DXVECTOR3 up(0, 1, 0);
-			// D3DXMatrixLookAtLH(&view_matrix, &eye, &at, &up);
-
-			// Construct projection matrix
-			D3DXMatrixPerspectiveFovLH(&proj_matrix,
-				D3DXToRadian(im->m_dbg_camera_fov), // FOV in radians
-				im->m_dbg_camera_aspect,
-				im->m_dbg_camera_near_plane,
-				im->m_dbg_camera_far_plane);
-
-
-			shared::globals::d3d_device->SetTransform(D3DTS_WORLD, &shared::globals::IDENTITY);
-			shared::globals::d3d_device->SetTransform(D3DTS_VIEW, &view_matrix);
-			shared::globals::d3d_device->SetTransform(D3DTS_PROJECTION, &proj_matrix);
+			if (tex_addons::sky_gray_up) tex_addons::sky_gray_up->Release();
+			return;
 		}
 
-		/* else if (game::rg)
+		if (!m_textures_initialized)
 		{
-			shared::globals::d3d_device->SetTransform(D3DTS_WORLD, &game::rg->worldMatrix);
-			shared::globals::d3d_device->SetTransform(D3DTS_VIEW, &game::rg->viewMatrix);
-			shared::globals::d3d_device->SetTransform(D3DTS_PROJECTION, &game::rg->projMatrix);
-		} */
-#endif
+			const auto dev = shared::globals::d3d_device;
+			D3DXCreateTextureFromFileA(dev, "fear1-rtx\\textures\\graycloud_up.jpg", &tex_addons::sky_gray_up);
+
+			m_textures_initialized = true;
+		}
+	}
+
+	// -----
+
+	void begin_scene_cb()
+	{
 	}
 
 	void end_scene_cb()
@@ -80,42 +43,7 @@ namespace mods::fear1
 
 	void present_scene_cb()
 	{
-		imgui::get()->on_present();
 	}
-
-	// -------
-
-	/* void grab_renderglob_hk(game::render_glob* ren)
-	{
-		game::rg = ren;
-	}
-
-	__declspec(naked) void grab_renderglob_stub()
-	{
-		static uint32_t retn_addr = 0x10B91697;
-		__asm
-		{
-			// mov eax, [edi] // eax = &device
-
-			push	esi;
-			push	ecx;
-
-			pushad;
-			PUSHFD;
-			push	ecx;
-			call	grab_renderglob_hk;
-			add		esp, 4;
-			POPFD;
-			popad;
-
-			pop		ecx;
-			pop		esi;
-
-			mov     esi, ecx;
-			mov[ebp - 0x10], esp;
-			jmp		retn_addr;
-		}
-	} */
 
 	// --------------------------
 
@@ -129,7 +57,6 @@ namespace mods::fear1
 	std::uint8_t ff_skel_bone_count = 24u;
 
 	// ------------------
-
 
 	void matrix3x4_transpose_to_4x4(const shared::float3x4* input, D3DXMATRIX* output, const int count)
 	{
@@ -146,9 +73,8 @@ namespace mods::fear1
 		}
 	}
 
-	//std::set<IDirect3DVertexBuffer9*> fixedVertexBuffers;
-
-	bool patches::pre_drawindexedprim_call(D3DPRIMITIVETYPE PrimitiveType, INT BaseVertexIndex, UINT MinVertexIndex, UINT NumVertices, UINT startIndex, UINT primCount)
+	// used for bulletholes
+	bool patches::pre_drawprim_call()
 	{
 		const auto& dev = shared::globals::d3d_device;
 
@@ -156,6 +82,62 @@ namespace mods::fear1
 		dev->GetTexture(0, &bound_tex);
 
 		if (!bound_tex) {
+			return true;
+		}
+
+		const auto& im = imgui::get();
+		//const auto& patches = patches::get();
+
+		if (!im->m_is_rendering)
+		{
+			shared::float3x4* to_world = reinterpret_cast<shared::float3x4*>(0x5776F0);
+
+			D3DXMATRIX transworld = {};
+			shared::utils::transpose_float3x4_to_d3dxmatrix(*to_world, transworld);
+			dev->SetTransform(D3DTS_WORLD, &transworld);
+
+			dev->GetVertexShader(&ff_og_shader);
+			dev->SetVertexShader(nullptr);
+			dev->GetPixelShader(&ff_og_psshader);
+			dev->SetPixelShader(nullptr);
+
+			dev->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, 0u);
+			ff_was_modified = true;
+		}
+
+		return false;
+	}
+
+	void patches::post_drawprim_call()
+	{
+		if (ff_was_modified)
+		{
+			const auto& dev = shared::globals::d3d_device;
+			if (ff_was_modified)
+			{
+				dev->SetVertexShader(ff_og_shader);
+				dev->SetPixelShader(ff_og_psshader);
+			}
+
+			ff_was_modified = false;
+		}
+	}
+
+
+	bool patches::pre_drawindexedprim_call(
+		[[maybe_unused]] D3DPRIMITIVETYPE PrimitiveType, 
+		[[maybe_unused]] INT BaseVertexIndex, 
+		[[maybe_unused]] UINT MinVertexIndex, 
+		[[maybe_unused]] UINT NumVertices, 
+		[[maybe_unused]] UINT startIndex, 
+		[[maybe_unused]] UINT primCount)
+	{
+		const auto& dev = shared::globals::d3d_device;
+
+		IDirect3DBaseTexture9* bound_tex = nullptr;
+		dev->GetTexture(0, &bound_tex);
+
+		if (!bound_tex) { 
 			return true;
 		}
 
@@ -225,17 +207,16 @@ namespace mods::fear1
 			d3dvertelem decl[MAX_FVF_DECL_SIZE]; UINT numElements = 0;
 			vertex_decl->GetDeclaration((D3DVERTEXELEMENT9*)decl, &numElements);
 
-			DWORD og_fvf = 0u;
-			dev->GetFVF(&og_fvf);
-			dev->SetFVF(0u);
+			//DWORD og_fvf = 0u;
+			//dev->GetFVF(&og_fvf);
+			//dev->SetFVF(0u);
 #endif
 
-			dev->SetTransform(D3DTS_WORLD, &shared::globals::IDENTITY);
+			//dev->SetTransform(D3DTS_WORLD, &shared::globals::IDENTITY);
 			shared::float3x4* to_world = reinterpret_cast<shared::float3x4*>(0x5776F0);
 
 			D3DXMATRIX transworld = {};
 			shared::utils::transpose_float3x4_to_d3dxmatrix(*to_world, transworld);
-
 			dev->SetTransform(D3DTS_WORLD, &transworld);
 
 			{
@@ -267,6 +248,7 @@ namespace mods::fear1
 							dev->SetTransform(D3DTS_WORLDMATRIX(i), &finalBoneMatrices[i]); //&boneMatrices[i]);
 						}
 
+#if 0
 						// this is not needed? - todo
 						D3DVERTEXELEMENT9 new_decl[] = {
 							{ 0, 0,  D3DDECLTYPE_FLOAT3, 0, D3DDECLUSAGE_POSITION, 0 },
@@ -285,6 +267,7 @@ namespace mods::fear1
 
 						vertex_decl->Release();
 						pNewDecl->Release();
+#endif
 
 						dev->SetRenderState(D3DRS_VERTEXBLEND, D3DVBF_0WEIGHTS); // only 0 works?
 						dev->SetRenderState(D3DRS_INDEXEDVERTEXBLENDENABLE, TRUE);
@@ -420,8 +403,7 @@ namespace mods::fear1
 
 	void pre_mesh_hk(game::mesh_info* info)
 	{
-		if (info)
-		{
+		if (info) {
 			ff_skel_bone_count = info->bone_count;
 		}
 	}
@@ -446,14 +428,24 @@ namespace mods::fear1
 
 	// ---
 
+	// testing
 	void pre_sky_kh()
 	{
-		ff_is_sky = true;
+		//ff_is_sky = true;
+
+		/*patches::get()->init_texture_addons();
+
+		const auto dev = shared::globals::d3d_device;
+		dev->SetTexture(0, tex_addons::sky_gray_up);
+
+		dev->SetRenderState(D3DRS_ALPHABLENDENABLE, 0);
+		dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
+		dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);*/
 	}
 
 	__declspec(naked) void pre_sky_stub()
 	{
-		static uint32_t retn_addr = 0x518A82;
+		static uint32_t retn_addr = 0x518A80;
 		__asm
 		{
 			pushad;
@@ -468,18 +460,65 @@ namespace mods::fear1
 	}
 
 
-	void post_sky_kh(game::viewParms* view)
+	void post_sky_kh([[maybe_unused]] game::viewParms* view)
 	{
-		/*if (view)
-		{
-			for (auto i = 0u; i < 5; i++) {
-				view->m_ClipPlanes[i].m_dist = 0.0f; 
-			}
-
-			int x = 1; 
-		}*/
-
 		ff_is_sky = false;
+
+		{
+			patches::get()->init_texture_addons();
+			struct vertex { D3DXVECTOR3 position; D3DCOLOR color; float tu, tv; };
+
+			const auto dev = shared::globals::d3d_device;
+
+			// save & restore after drawing
+			IDirect3DVertexShader9* og_vs = nullptr;
+			dev->GetVertexShader(&og_vs);
+			dev->SetVertexShader(nullptr);
+
+			IDirect3DBaseTexture9* og_tex = nullptr;
+			dev->GetTexture(0, &og_tex);
+			dev->SetTexture(0, tex_addons::sky_gray_up);
+
+			DWORD og_blend;
+			dev->GetRenderState(D3DRS_ALPHABLENDENABLE, &og_blend);
+
+			D3DXMATRIX og_tex_transform = {};
+			dev->GetTransform(D3DTS_TEXTURE0, &og_tex_transform);
+
+			dev->SetTransform(D3DTS_TEXTURE0, &shared::globals::IDENTITY);
+			dev->SetRenderState(D3DRS_ALPHABLENDENABLE, false);
+			dev->SetFVF(D3DFVF_XYZ | D3DFVF_DIFFUSE | D3DFVF_TEX1);
+
+			const float f_index = 0.0f;
+			const vertex mesh_verts[4] =
+			{
+				D3DXVECTOR3(-4.1337f - (f_index * 0.01f), -4.1337f - (f_index * 0.01f), 0), D3DCOLOR_XRGB(0, 0, 0), 0.0f, f_index / 100.0f,
+				D3DXVECTOR3(4.1337f + (f_index * 0.01f), -4.1337f - (f_index * 0.01f), 0), D3DCOLOR_XRGB(0, 0, 0), f_index / 100.0f, 0.0,
+				D3DXVECTOR3(4.1337f + (f_index * 0.01f),  4.1337f + (f_index * 0.01f), 0), D3DCOLOR_XRGB(0, 0, 0), 0.0f, f_index / 100.0f,
+				D3DXVECTOR3(-4.1337f - (f_index * 0.01f),  4.1337f + (f_index * 0.01f), 0), D3DCOLOR_XRGB(0, 0, 0), 0.0f, f_index / 100.0f,
+			};
+
+			D3DXMATRIX scale_matrix, rotation_x, rotation_y, rotation_z, mat_rotation, mat_translation, world;
+
+			D3DXMatrixScaling(&scale_matrix, 200.0f, 200.0f, 200.0f);
+			D3DXMatrixRotationX(&rotation_x, DEG2RAD(90.0f)); // pitch
+			D3DXMatrixRotationY(&rotation_y, 0.0f); // yaw
+			D3DXMatrixRotationZ(&rotation_z, 0.0f); // roll
+			mat_rotation = rotation_z * rotation_y * rotation_x; // combine rotations (order: Z * Y * X)
+
+			D3DXMatrixTranslation(&mat_translation, 0.0f, -10000.0f, 0.0f);
+			world = scale_matrix * mat_rotation * mat_translation;
+
+			dev->SetTransform(D3DTS_WORLD, &world);
+			dev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, mesh_verts, sizeof(vertex));
+
+			// restore
+			dev->SetVertexShader(og_vs);
+			dev->SetTexture(0, og_tex);
+			dev->SetRenderState(D3DRS_ALPHABLENDENABLE, og_blend);
+			dev->SetFVF(NULL);
+			dev->SetTransform(D3DTS_WORLD, &shared::globals::IDENTITY);
+		}
 	}
 
 	__declspec(naked) void post_sky_stub()
@@ -507,133 +546,82 @@ namespace mods::fear1
 	void post_start_view_hk(game::viewParms* view)
 	{
 		const auto& im = imgui::get();
+
 		if (view)
 		{
 			m_player_pos = view->m_Pos;
 
-			//view->N00000737 = 0; 
-			//view->m_DrawMode_maybe = 0;
-
 			// can be used to disable sky, enable normal pass etc
 			//view->m_DrawMode_maybe2 = 0;
 
-			//view->m_ViewBox.m_WindowSize.x = 0.1f; // related to sky projection?
-
+			
 			// this gets rid of frustum culling behind the player and nearby
 			// but only with 'VisDrawFrustum' which renders every node
 			// 0x5190DC numplanes must be set to 0
-			view->m_ViewAABBMin.x -= 1000.0f;
+			const auto viewbox_offs = im->m_debug_vector.y;
+			view->m_ViewAABBMin.x -= viewbox_offs;
 			//view->m_ViewAABBMin.y -= 500.0f;
-			view->m_ViewAABBMin.z -= 1000.0f;
-			view->m_ViewAABBMax.x += 1000.0f;
+			view->m_ViewAABBMin.z -= viewbox_offs;
+			view->m_ViewAABBMax.x += viewbox_offs;
 			//view->m_ViewAABBMax.y += 500.0f;
-			view->m_ViewAABBMax.z += 1000.0f;
+			view->m_ViewAABBMax.z += viewbox_offs;
 
-			/*view->m_ViewPoints[0].x *= 10.0f;
-			view->m_ViewPoints[0].y *= 10.0f;
-			view->m_ViewPoints[0].z *= 10.0f;
-			view->m_ViewPoints[1].x *= 10.0f;
-			view->m_ViewPoints[1].y *= 10.0f;
-			view->m_ViewPoints[1].z *= 10.0f;
-			view->m_ViewPoints[2].x *= 10.0f;
-			view->m_ViewPoints[2].y *= 10.0f;
-			view->m_ViewPoints[2].z *= 10.0f;
-			view->m_ViewPoints[3].x *= 10.0f;
-			view->m_ViewPoints[3].y *= 10.0f;
-			view->m_ViewPoints[3].z *= 10.0f;
-			view->m_ViewPoints[4].x *= 10.0f;
-			view->m_ViewPoints[4].y *= 10.0f;
-			view->m_ViewPoints[4].z *= 10.0f;
-			view->m_ViewPoints[5].x *= 10.0f;
-			view->m_ViewPoints[5].y *= 10.0f;
-			view->m_ViewPoints[5].z *= 10.0f;
-			view->m_ViewPoints[6].x *= 10.0f;
-			view->m_ViewPoints[6].y *= 10.0f;
-			view->m_ViewPoints[6].z *= 10.0f;
-			view->m_ViewPoints[7].x *= 10.0f;
-			view->m_ViewPoints[7].y *= 10.0f;
-			view->m_ViewPoints[7].z *= 10.0f;*/
-
-			//view->m_pos.y += 1000.0f;
-
+			/*view->m_pos.x += im->m_debug_vector2.x;
+			view->m_pos.y += im->m_debug_vector2.y;
+			view->m_pos.z += im->m_debug_vector2.z;
+			view->m_Pos.x += im->m_debug_vector2.x;
+			view->m_Pos.y += im->m_debug_vector2.y;
+			view->m_Pos.z += im->m_debug_vector2.z;
+			view->m_PosDupe.x += im->m_debug_vector2.x;
+			view->m_PosDupe.y += im->m_debug_vector2.y;
+			view->m_PosDupe.z += im->m_debug_vector2.z;*/
 #if 1
-			view->projMatrix;
-
-			// more fov to see culling
-			//D3DXMatrixPerspectiveFovLH(&view->projMatrix,
-			//	D3DXToRadian(90.0f), // FOV in radians
-			//	1.7776f,
-			//	view->m_ViewBox.m_NearZ,
-			//	100000.0f);
-
-			if (im->m_viewmodel_use_custom_proj)
+			//if (im->m_viewmodel_use_custom_proj) 
 			{
-				view->m_ViewBox.m_FarZ = im->m_viewmodel_proj_far_plane;
-
-				// this fixes NaN's in the sky
-				D3DXMatrixPerspectiveFovLH(&view->projMatrix,
-					D3DXToRadian(im->m_viewmodel_proj_fov), //view->m_yFov,
-					view->m_fScreenWidth / view->m_fScreenHeight,
-					im->m_viewmodel_proj_near_plane,
-					im->m_viewmodel_proj_far_plane);
+				//view->m_ViewBox.m_FarZ = im->m_viewmodel_proj_far_plane;
 
 				D3DXMATRIX proj_matrix;
-				D3DXMatrixTranspose(&proj_matrix, &view->projMatrix);
 
-				view->projMatrix = proj_matrix;
+				// this fixes NaN's in the sky (can cause fx placement issues)
+				D3DXMatrixPerspectiveFovLH(&proj_matrix,
+					im->m_viewmodel_use_custom_proj ? D3DXToRadian(im->m_viewmodel_proj_fov) : view->m_yFov, // 
+					view->m_fScreenWidth / view->m_fScreenHeight,
+					view->m_ViewBox.m_NearZ, //im->m_viewmodel_proj_near_plane,
+					view->m_ViewBox.m_FarZ); //im->m_viewmodel_proj_far_plane);
+
+				
+				D3DXMatrixTranspose(&view->projMatrix, &proj_matrix);
+				view->projMatrix.m[2][2] = 1.000005f; // fix NaN's without causing fx issues
 			}
-
-			
 #endif
 
-			const auto CPLANE_NEAR_INDEX = 0;
-			const auto CPLANE_FAR_INDEX = 1;
-			const auto CPLANE_LEFT_INDEX = 2;
-			const auto CPLANE_TOP_INDEX = 3;
-			const auto CPLANE_RIGHT_INDEX = 4;
-			const auto CPLANE_BOTTOM_INDEX = 5;
+			//const auto CPLANE_NEAR_INDEX = 0;
+			//const auto CPLANE_FAR_INDEX = 1;
+			//const auto CPLANE_LEFT_INDEX = 2;
+			//const auto CPLANE_TOP_INDEX = 3;
+			//const auto CPLANE_RIGHT_INDEX = 4;
+			//const auto CPLANE_BOTTOM_INDEX = 5;
 
-			//view->m_ClipPlanes[0].m_normal = { 0.0, 0.0, 1.0 }; // Near
-			//view->m_ClipPlanes[1].m_normal = { 0.0, 0.0, -1.0 }; // Far
-			//view->m_ClipPlanes[2].m_normal = { 1.0, 0.0, 0.0 }; // Left
-			//view->m_ClipPlanes[3].m_normal = { 0.0, 1.0, 0.0 }; // Top
-			//view->m_ClipPlanes[4].m_normal = { -1.0, 0.0, 0.0 }; // Right
-			//view->m_ClipPlanes[5].m_normal = { 0.0, -1.0, 0.0 }; // Bottom
+			////view->m_ClipPlanes[0].m_normal = { 0.0, 0.0, 1.0 }; // Near
+			////view->m_ClipPlanes[1].m_normal = { 0.0, 0.0, -1.0 }; // Far
+			////view->m_ClipPlanes[2].m_normal = { 1.0, 0.0, 0.0 }; // Left
+			////view->m_ClipPlanes[3].m_normal = { 0.0, 1.0, 0.0 }; // Top
+			////view->m_ClipPlanes[4].m_normal = { -1.0, 0.0, 0.0 }; // Right
+			////view->m_ClipPlanes[5].m_normal = { 0.0, -1.0, 0.0 }; // Bottom
 
-			for (auto i = 0u; i < 5; i++) 
-			{
-				//if (i != CPLANE_NEAR_INDEX /*&& i != CPLANE_FAR_INDEX*/) 
-				{
-					//view->m_ClipPlanes[i].m_normal.Init(0);
-					//view->m_ClipPlanes[i].m_dist = 0.0f;
-				}
-			}
-
-
-
-
-
-
+			//for (auto i = 0u; i < 5; i++) 
+			//{
+			//	//if (i != CPLANE_NEAR_INDEX /*&& i != CPLANE_FAR_INDEX*/) 
+			//	{
+			//		//view->m_ClipPlanes[i].m_normal.Init(0);
+			//		//view->m_ClipPlanes[i].m_dist = 0.0f;
+			//	}
+			//}
 
 
 			// had this ON???
 			//view->m_ClipPlanes[0].m_dist -= 10000.0f;
-
-
-
-
-
-
-
-			//view->m_ClipPlanes[CPLANE_NEAR_INDEX].m_dist = -100.0f; // Push near plane far back
-			//view->m_ClipPlanes[CPLANE_FAR_INDEX].m_dist = 100.0f;
-
-
-			
-
-			//view->m_ClipPlanes[3].m_dist -= -100.0f;
-			//view->m_ClipPlanes[4].m_dist *= 5.0f;
-			//view->m_ClipPlanes[5].m_dist *= 5.0f;
+			//view->m_ClipPlanes[0].m_dist -= im->m_debug_vector.z;
 		}
 	}
 
@@ -657,13 +645,23 @@ namespace mods::fear1
 
 	struct cull02_s
 	{
-		BYTE gap0[12];
+		cull02_s* sub[1];
+		cull02_s* subbbbbb[1];
+		float unkfloat2;
 		Vector mins;
 		Vector maxs;
 		BYTE gap10[4];
 		float* pfloat28;
 		DWORD dword2C;
+		cull02_s* sub2[1];
+		int x2;
+		BYTE x3a;
+		BYTE x3b;
+		BYTE x3c;
+		BYTE x3d;
+		int x3;
 	};
+	STATIC_ASSERT_OFFSET(cull02_s, mins, 0xC);
 
 
 	bool IsAABBVisible(float* a, float a2, float a3, float a4)
@@ -696,24 +694,31 @@ namespace mods::fear1
 		return true;
 	}
 
-	char __fastcall cull02(cull02_s* this_ptr, void* junk, float* pos)
+	char __fastcall cull02(cull02_s* this_ptr, [[maybe_unused]] void* junk, float* pos)
 	{
 		const auto* im = imgui::get();
 
 		//return 0;
 		float* i = nullptr;
 
+		if (!is_aabb_within_distance(this_ptr->mins, this_ptr->maxs, m_player_pos, im->m_debug_vector.x))
+		{
+			//int x = 1;
+			return 0;
+		}
+
 		if (IsAABBVisible(&this_ptr->mins.x, *pos, pos[1], pos[2]))
 		//if (is_aabb_within_distance(this_ptr->mins, this_ptr->maxs, pos, im->m_debug_vector.x))  
 		{
 			
-			/*if (is_aabb_within_distance(this_ptr->mins, this_ptr->maxs, m_player_pos, im->m_debug_vector.x)) 
-			{
-				return 0; 
-			}*/
+			//if (is_aabb_within_distance(this_ptr->mins, this_ptr->maxs, m_player_pos, im->m_debug_vector.x)) 
+			//{
+			//	//int x = 1;
+			//	return 1; 
+			//}
 			// m_player_pos
 
-			unsigned int v3 = this_ptr->dword2C; // Number of planes 
+			int v3 = this_ptr->dword2C; // Number of planes 
 			int v4 = 0;
 
 			if (!v3)
@@ -746,36 +751,285 @@ namespace mods::fear1
 		return 0;
 	}
 
+
+	// ---
+
+	char cull02_none_hk(cull02_s* this_ptr, float* pos)
+	{
+		//const auto* im = imgui::get();
+
+		if (!this_ptr)
+		{
+			return 0;
+		}
+
+		//return 0;
+		float* i = nullptr;
+
+		if (IsAABBVisible(&this_ptr->mins.x, *pos, pos[1], pos[2]))
+			//if (is_aabb_within_distance(this_ptr->mins, this_ptr->maxs, pos, im->m_debug_vector.x))  
+		{
+
+			//if (is_aabb_within_distance(this_ptr->mins, this_ptr->maxs, m_player_pos, im->m_debug_vector.x)) 
+			//{
+			//	//int x = 1;
+			//	return 1; 
+			//}
+			// m_player_pos
+
+			int v3 = this_ptr->dword2C; // Number of planes 
+			int v4 = 0;
+
+			if (!v3)
+			{
+				/*if (is_aabb_within_distance(this_ptr->mins, this_ptr->maxs, m_player_pos, im->m_debug_vector.x))
+				{
+					return 0;
+				}*/
+
+				return 1;
+			}
+
+			for (i = this_ptr->pfloat28; v4 < v3; i += 5, ++v4)
+			{
+				// Skip near plane (assume index 4 is near plane, adjust if needed)
+				//if (v4 == 0)
+				//	continue;
+
+				if (i[2] * pos[2] + i[1] * pos[1] + *pos * *i - i[3] >= 0.0)
+				{
+					if (++v4 >= v3)
+						return 1;
+				}
+				else
+				{
+					return 0;
+				}
+			}
+		}
+		return 0;
+	}
+
+	struct temp_some_bspnode_sub
+	{
+		cull02_s* x0;
+		int x1;
+		temp_some_bspnode_sub* x2;
+		temp_some_bspnode_sub* x3;
+		int x4;
+		float* x5;
+	};
+
+	struct temp_some_bspnode_struct
+	{
+		void* unk_objects;
+		void* brushes;
+		int some_flags0;
+		void* ptr_to_planes_or_similar;
+		int some_flags1;
+		temp_some_bspnode_sub* dword14;
+		int some_flags2;
+	};
+
+	// returning 0 renders the node
+	cull02_s* __fastcall Cull01(temp_some_bspnode_struct* this_ptr, [[maybe_unused]] void* junk, Vector* box_pos)
+	{
+		temp_some_bspnode_sub* dword14; // esi
+		int v3; // edi
+		unsigned int x4; // eax
+
+		//const auto* im = imgui::get();
+
+		if (!this_ptr->some_flags2)
+		{
+			return nullptr;
+		}
+
+		dword14 = this_ptr->dword14;
+		if (!dword14)
+		{
+			return nullptr;
+		}
+
+		while (true)
+		{
+			v3 = 0;
+			if (dword14->x1)                           // setting the initial value (test was 7) to 0 kinda inverts culling
+			{
+				//if (is_aabb_within_distance(dword14->x0->sub->mins, dword14->x0->sub->maxs, m_player_pos, im->m_debug_vector.x))
+				//{
+				//	break;
+				//	//int x = 1;
+				//	//return 1; 
+				//}
+
+				break;
+			}
+			
+		LABEL_6:
+			x4 = dword14->x4;
+			if (x4 <= 2)
+			{
+				auto flt_cmp = (double)*(float*)&dword14->x5;
+
+				dword14 = *(&box_pos->x + x4) >= flt_cmp ? dword14->x3 : dword14->x2;
+
+				//if (is_aabb_within_distance(dword14->x0->sub->mins, dword14->x0->sub->maxs, m_player_pos, im->m_debug_vector.x))
+				//{
+				//	continue;
+				//	//int x = 1;
+				//	//return 1; 
+				//}
+
+				// If the next node exists, continue the loop
+				if (dword14) {
+					continue;
+				}
+			}
+
+			return nullptr;
+		}
+
+		while (!cull02_none_hk(dword14->x0->sub[v3], &box_pos->x))
+		{
+			if (++v3 >= dword14->x1)
+			{
+				goto LABEL_6;
+			}
+		}
+
+		//if (v3 + 2 < dword14->x1)
+		//{
+		//	if (is_aabb_within_distance(dword14->x0->sub[v3+ 2]->mins, dword14->x0->sub[v3 + 2]->maxs, m_player_pos, im->m_debug_vector.x))
+		//	{
+		//		//(unsigned int)++v3;
+		//		//goto LABEL_6;
+		//		//continue;
+		//		//int x = 1;
+		//		//return 1;
+
+		//		const auto ret_node = dword14->x0->sub[v3 + 2];
+		//		return ret_node;
+		//	}
+		//}
+
+		
+
+		const auto ret_node = dword14->x0->sub[v3];
+		return ret_node;
+	}
+
+	// ---
+
+	// post_world_node_vis
+	__declspec(naked) void post_world_node_vis()
+	{
+		static uint32_t retn_og_jnz_addr = 0x5190FF;
+		static uint32_t retn_past_jnz_addr = 0x519092;
+		static uint32_t world_node_vis_func_addr = 0x521370;
+
+		__asm
+		{
+			add     esp, 0x28;
+			//test    al, al;
+			//jnz		LOC_5190FF;
+
+			// custom code
+			mov     edi, [esp + 0x78];
+			mov     ebx, [esp + 0x74];
+			mov     ebp, [esp + 0x70];
+
+			lea     ecx, [esp + 0x6C];
+			push    ecx;
+			push    0;
+			push    1;
+			xor		eax, eax;
+			or		eax, 0xFFFFFFFF; // -1 recurseDepth
+			push	eax;
+			push    edi;
+			push    ebx;
+			push    ebp;
+
+			push    0x578440; // cullbox_planes
+			lea     edx, [esp + 0x4C];
+			push    5; // culling plane num
+			push    edx;
+
+			call	world_node_vis_func_addr;
+			add     esp, 0x28;
+			test    al, al;
+
+			jnz		LOC_5190FF; 
+
+			// custom code end
+
+			jmp		retn_past_jnz_addr;
+
+		LOC_5190FF:
+			jmp		retn_og_jnz_addr;
+		}
+	}
+
 	// ---
 
 	patches::patches()
 	{
 		p_this = this;
-		shared::common::remix_api::initialize(begin_scene_cb, end_scene_cb, present_scene_cb);
 
+		// init addon textures
+		//init_texture_addons();
+
+		// uhm .. this crashes the game when pressing num7 or 8 on the numpad lmao (just 
+		//shared::common::remix_api::initialize(nullptr, nullptr, nullptr); //begin_scene_cb, end_scene_cb, present_scene_cb);
+
+		// stub before hud is rendered
 		shared::utils::hook(0x50171E, pre_render_hud_stub, HOOK_JUMP).install()->quick();
+
+		// get bone count of next mesh to be rendered
 		shared::utils::hook(0x50FDD3, pre_mesh_stub, HOOK_JUMP).install()->quick();
 
-		//shared::utils::hook(0x518A7B, pre_sky_stub, HOOK_JUMP).install()->quick();
+		// before and after sky stubs
+		shared::utils::hook(0x518A7B, pre_sky_stub, HOOK_JUMP).install()->quick();
 		shared::utils::hook(0x510B19, post_sky_stub, HOOK_JUMP).install()->quick();
 
+		// called after viewparams init (before any drawing)
 		shared::utils::hook(0x4FFF54, post_start_view_stub, HOOK_JUMP).install()->quick();
-		// 4FFF54
 
-
-		// skip prepass shit
+		// skip prepass shit (normalmap flickering)
+		// 0x516B0A -> jmp (0xEB) to disable more prepass stuff ... or nop 0x5106EF 3 + 0x5106F4 5
+		shared::utils::hook::nop(0x5106EF, 3); shared::utils::hook::nop(0x5106F4, 5); // nop entire function call, overs below are obsolete
 		shared::utils::hook::nop(0x517A18, 6); // nop 6 @ 0x517A18 should be enough - the rest could be removed
 		shared::utils::hook::nop(0x517A06, 3); shared::utils::hook::nop(0x517A0B, 5); // 01
 		shared::utils::hook::nop(0x5179EC, 3); shared::utils::hook::nop(0x5179F1, 5); // 02
 		shared::utils::hook::nop(0x5179D2, 3); shared::utils::hook::nop(0x5179D7, 5); // 03 - flashlight
+		
 
-		shared::utils::hook::nop(0x518B3E, 5); // disable SetTransform's for the sky
+		// disable SetTransform's for the sky
+		shared::utils::hook::nop(0x518B3E, 5); 
+		shared::utils::hook::nop(0x518C20, 5); 
+
+		// disable SetTransform's for ... 3d skybox fx?
+		shared::utils::hook::nop(0x518CBC, 5);
+		shared::utils::hook::nop(0x518D0E, 5); 
+
 
 		// distance based anti cull
 		//shared::utils::hook::set<BYTE>(0x5190DC + 1, 0x00); // set number of culling planes from 5 to 0
 		//shared::utils::hook(0x458446, cull02, HOOK_CALL).install()->quick(); // add distance based anti culling check
 
-		//shared::utils::hook(0x10B91692, grab_renderglob_stub, HOOK_JUMP).install()->quick();
+		// test
+		//shared::utils::hook(0x52138C, Cull01, HOOK_CALL).install()->quick();
+
+		// test
+		//shared::utils::hook(0x51908B, post_world_node_vis, HOOK_JUMP).install()->quick();
+
+
+		shared::utils::hook::set<BYTE>(0x519083 + 1, 0x01); // set number of culling planes from 5 to 1
+		shared::utils::hook::nop(0x521210, 6);
+		shared::utils::hook::nop(0x521221, 6);
+
+		// TODO:
+		// hk: 0x5009C7 to toggle cvar overrides on/off // 0xEB - 0x74
 
 		printf("[Module] patches loaded.\n");
 	}

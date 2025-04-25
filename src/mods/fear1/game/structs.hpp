@@ -91,10 +91,8 @@ namespace mods::fear1::game
 		__int8 m_DrawMode_maybe2; //0x02E3 
 		Vector m_Pos;
 		Vector m_Rot;
-		int pad_0x2FC;
-		int pad_0x300;
-		int pad_0x304;
-		int pad_0x308;
+		float some_random_one;
+		Vector m_PosDupe;
 		int pad_0x30C;
 		int pad_0x310;
 		int pad_0x314;

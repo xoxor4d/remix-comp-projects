@@ -91,8 +91,8 @@ namespace mods::anno1404
 	bool patches::pre_drawindexedprim_call(IDirect3DDevice9* unhooked_device, D3DPRIMITIVETYPE PrimitiveType, INT BaseVertexIndex, UINT MinVertexIndex, UINT NumVertices, UINT startIndex, UINT primCount)
 	{
 		const auto p = patches::get();
-		const auto& im = imgui::get();
-		const auto& dev = shared::globals::d3d_device;
+		//const auto& im = imgui::get();
+		//const auto& dev = shared::globals::d3d_device;
 
 		if (/*m_ff_instance_count > 1 &&*/ !p->m_cInstanceBuffer.empty() && m_ff_instance && PrimitiveType == D3DPT_TRIANGLELIST)
 		{

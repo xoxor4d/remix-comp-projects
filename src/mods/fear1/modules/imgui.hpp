@@ -27,7 +27,7 @@ namespace mods::fear1
 		ImVec4 ImGuiCol_ContainerBackground = ImVec4(0.220f, 0.220f, 0.220f, 0.863f);
 		ImVec4 ImGuiCol_ContainerBorder = ImVec4(0.099f, 0.099f, 0.099f, 0.901f);
 
-		Vector m_debug_vector = { 0.0f, 0.0f, 0.0f };
+		Vector m_debug_vector = { 1000.0f, 1000.0f, 0.0f };
 		Vector m_debug_vector2 = { 0.0f, 0.0f, 0.0f };
 
 		bool m_dbg_use_fake_camera = false;
@@ -45,10 +45,9 @@ namespace mods::fear1
 
 		// viewmodel projection matrix parameters
 		bool m_viewmodel_use_custom_proj = false;
-		float m_viewmodel_proj_fov = 90.0f;         // Vertical FOV in degrees
-		float m_viewmodel_proj_aspect = 1.777f;     // 16:9 aspect ratio
-		float m_viewmodel_proj_near_plane = 1.0f;   // Near clipping plane
-		float m_viewmodel_proj_far_plane = 1000.0f; // Far clipping plane
+		float m_viewmodel_proj_fov = 70.0f;         // Vertical FOV in degrees
+		float m_viewmodel_proj_near_plane = 4.30000019f;   // Near clipping plane
+		float m_viewmodel_proj_far_plane = 79707.0f; // Far clipping plane
 
 		bool is_imgui_game_input_allowed() const {
 			return m_im_allow_game_input;

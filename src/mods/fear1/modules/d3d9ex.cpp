@@ -441,20 +441,29 @@ namespace mods::fear1
 		return m_pIDirect3DDevice9->GetNPatchMode();
 	}
 
+	// bulletholes
 	HRESULT d3d9ex::D3D9Device::DrawPrimitive([[maybe_unused]] D3DPRIMITIVETYPE PrimitiveType, [[maybe_unused]] UINT StartVertex, [[maybe_unused]] UINT PrimitiveCount)
 	{
-		auto hr = m_pIDirect3DDevice9->DrawPrimitive(PrimitiveType, StartVertex, PrimitiveCount);
+		//return D3D_OK;
+
+		const bool skip = patches::pre_drawprim_call();
+		auto hr = D3D_OK;
+
+		if (!skip) {
+			hr = m_pIDirect3DDevice9->DrawPrimitive(PrimitiveType, StartVertex, PrimitiveCount);
+		}
+		patches::post_drawprim_call();
+
 		return hr;
 	}
 
+	// also renders fx and hud
 	HRESULT d3d9ex::D3D9Device::DrawIndexedPrimitive(D3DPRIMITIVETYPE PrimitiveType, INT BaseVertexIndex, UINT MinVertexIndex, UINT NumVertices, UINT startIndex, UINT primCount)
 	{
-		bool skip = false;
-		skip = patches::pre_drawindexedprim_call(PrimitiveType, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
+		const bool skip = patches::pre_drawindexedprim_call(PrimitiveType, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
+		auto hr = D3D_OK;
 
-		auto hr = S_OK;
-		if (!skip) 
-		{
+		if (!skip) {
 			hr = m_pIDirect3DDevice9->DrawIndexedPrimitive(PrimitiveType, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
 		}
 
@@ -464,7 +473,9 @@ namespace mods::fear1
 
 	HRESULT d3d9ex::D3D9Device::DrawPrimitiveUP(D3DPRIMITIVETYPE PrimitiveType, UINT PrimitiveCount, CONST void* pVertexStreamZeroData, UINT VertexStreamZeroStride)
 	{
-		auto hr = m_pIDirect3DDevice9->DrawPrimitiveUP(PrimitiveType, PrimitiveCount, pVertexStreamZeroData, VertexStreamZeroStride);
+		//return D3D_OK;
+
+		const auto hr = m_pIDirect3DDevice9->DrawPrimitiveUP(PrimitiveType, PrimitiveCount, pVertexStreamZeroData, VertexStreamZeroStride);
 		return hr;
 	}
 
@@ -761,7 +772,7 @@ namespace mods::fear1
 		
 		*ppReturnedDeviceInterface = new d3d9ex::D3D9Device(*ppReturnedDeviceInterface);
 		shared::globals::d3d_device = *ppReturnedDeviceInterface;
-		
+
 		return hres;
 	}
 
@@ -897,43 +908,15 @@ namespace mods::fear1
 	}
 #pragma endregion
 
-	/* // test to see if the engine dynamically adjusts and starts using fat vertices (uncomp. normals) -> no
-	void post_devicecaps_hk(mods::bioshock1::game::UD3DRenderDevice* rendev)
-	{
-		if (rendev)
-		{
-			rendev->DeviceCaps.DeclTypes &= ~D3DDTCAPS_UBYTE4;
-			auto y = 0;
-		}
-	}
-
-	__declspec(naked) void post_devicecaps_stub()
-	{
-		static uint32_t retn_addr = 0x10B6962B;
-		__asm
-		{
-			pushad;
-			push	esi;
-			call	post_devicecaps_hk;
-			add		esp, 4;
-			popad;
-
-			mov     eax, ecx;
-			shr     eax, 8;
-			jmp		retn_addr;
-		}
-	} */
 	IDirect3D9* __stdcall d3d9ex::direct3d_create9_stub(UINT sdk)
 	{
 		//if (dvars::r_d3d9ex && dvars::r_d3d9ex->current.enabled)
-		//{
-		//	IDirect3D9Ex* d3d9ex = nullptr;
-		//	if (SUCCEEDED(Direct3DCreate9Ex(sdk, &d3d9ex))) {
-		//		return (new d3d9ex::_d3d9ex(d3d9ex));
-		//	}
-		//}
-
-		//shared::utils::hook(0x10B69626, post_devicecaps_stub, HOOK_JUMP).install()->quick();
+		{
+			IDirect3D9Ex* d3d9ex = nullptr;
+			if (SUCCEEDED(Direct3DCreate9Ex(sdk, &d3d9ex))) {
+				return (new d3d9ex::_d3d9ex(d3d9ex));
+			}
+		}
 
 		return (new d3d9ex::_d3d9(Direct3DCreate9(sdk)));
 	}

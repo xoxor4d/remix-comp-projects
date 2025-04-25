@@ -23,7 +23,11 @@ namespace shared::common
 				status == REMIXAPI_ERROR_CODE_SUCCESS)
 			{
 				instance.m_initialized = true;
-				remixapi::bridge_setRemixApiCallbacks(begin_scene_callback, end_scene_callback, on_present_callback);
+
+				if (begin_scene_callback || end_scene_callback || on_present_callback) {
+					remixapi::bridge_setRemixApiCallbacks(begin_scene_callback, end_scene_callback, on_present_callback);
+				}
+
 				printf("[RemixApi] Initialized remixApi!\n");
 			}
 			else { console(); printf("[!][RemixApi] Failed to initialize the remixApi - Code: %d\n", status); }

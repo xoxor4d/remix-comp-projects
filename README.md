@@ -32,6 +32,21 @@ If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![k
 
 <br>
 
+#### Fear 1 Platinum (GOG)  
+###### The good:  
+- Somewhat stable
+- Most things rendered via fixed function
+- GPU Skinned meshes via fixed function
+- ImGui menu (F4)
+- Reduced frustum culling
+
+###### The bad:
+- Hash of a lot of "models" not stable
+- Currently can not get remix "friendly" anti-culling to work so it's either light leaking and unstable hashes or rendering the entire map (which is possible via the ImGui menu)
+- original skybox is broken (currently rendering a unique marker with a skysphere attached to it via remix replacements)
+
+<br>
+
 #### Mirrors Edge (GOG)  
 ###### The good:  
 - Boots, ImGui menu

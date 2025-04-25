@@ -1,0 +1,76 @@
+#usda 1.0
+(
+    upAxis = "Z"
+)
+
+over "RootNode"
+{
+    over "meshes"
+    {
+        over "mesh_4093797278C97BF1"
+        {
+            def Xform "ref_a24f85d298964f6eab587c341c1f7897" (
+                prepend references = @./assets/sky/sphere.usd@
+            )
+            {
+                custom bool IsRemixRef = 1
+                double3 xformOp:rotateXYZ = (0, 0, 0)
+                double3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (0, 0, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+
+                over "XForms"
+                {
+                    custom bool remix_category:sky = 1
+                    float3 xformOp:rotateXYZ = (0, 90, 0)
+                    float3 xformOp:scale = (1, 1, 1)
+                    double3 xformOp:translate = (0, 0, 0)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+
+                    over "World"
+                    {
+                        custom bool remix_category:sky = 1
+
+                        over "sphere"
+                        {
+                            custom bool remix_category:sky = 1
+
+                            over "sphere_001"
+                            {
+                                uniform bool doubleSided = 1
+                                custom bool remix_category:sky = 0
+                            }
+                        }
+
+                        over "Looks"
+                        {
+                            over "mtl_rtx_skybox_sphere"
+                            {
+                                over "Shader"
+                                {
+                                    asset inputs:diffuse_texture = @./assets/sky/textures/sphere.a.rtex.dds@
+                                    bool inputs:enable_emission = 0
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    over "Looks"
+    {
+        over "mat_9FC9AED839E6CC95"
+        {
+            over "Shader"
+            {
+                custom int inputs:alpha_test_type = 4
+                custom bool inputs:blend_enabled = 1
+                custom int inputs:blend_type = 1
+                custom bool inputs:use_legacy_alpha_state = 0
+            }
+        }
+    }
+}
+
