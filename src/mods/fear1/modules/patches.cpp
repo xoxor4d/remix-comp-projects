@@ -5,8 +5,6 @@
 #include "shared/common/remix.hpp"
 #include "shared/common/remix_api.hpp"
 
-// commandline: -dx9 -NOINTRO -windowed
-
 namespace mods::fear1
 {
 	namespace tex_addons

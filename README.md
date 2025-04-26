@@ -18,8 +18,17 @@ If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![k
 
 <br>
 
-## Mods:
-#### Bioshock 1 (GOG)  
+
+
+<div align="center" markdown="1"> 
+
+# Mods:
+
+### Bioshock 1 (GOG)  
+![img](.github/img/bioshock1.jpg)
+
+</div>
+
 ###### The good:  
 - Pretty stable
 - Most things rendered via fixed function
@@ -31,8 +40,17 @@ If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![k
 - Hash of (og.) emissive textures changes
 
 <br>
+<br>
 
-#### Fear 1 Platinum (GOG)  
+<div align="center" markdown="1"> 
+
+### Fear 1 Platinum (GOG)  
+![img](.github/img/fear1.jpg)
+
+</div>
+
+- Ships with [EchoPatch](https://github.com/Wemino/EchoPatch)
+
 ###### The good:  
 - Somewhat stable
 - Most things rendered via fixed function
@@ -46,8 +64,16 @@ If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![k
 - original skybox is broken (currently rendering a unique marker with a skysphere attached to it via remix replacements)
 
 <br>
+<br>
 
-#### Mirrors Edge (GOG)  
+<div align="center" markdown="1"> 
+
+### Mirrors Edge (GOG)  
+![img](.github/img/mirrorsedge.jpg)
+
+</div>
+
+
 ###### The good:  
 - Boots, ImGui menu
 - Fake camera to enable pathtracing
@@ -58,8 +84,15 @@ If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![k
 - Currently not worth proceeding 
 
 <br>
+<br>
 
-#### Anno 1404 Gold Edition (GOG)  
+<div align="center" markdown="1"> 
+
+### Anno 1404 Gold Edition (GOG)  
+![img](.github/img/anno1404.jpg)
+
+</div>
+
 ###### The good:  
 - Boots, ImGui menu
 - Game camera transforms to enable path tracing (ImGui F5 -> enable fake cam (temporary name))
@@ -101,11 +134,3 @@ If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![k
 - [minhook](https://github.com/TsudaKageyu/minhook)
 - [toml11](https://github.com/ToruNiina/toml11)
 - [dxwrapper](https://github.com/elishacloud/dxwrapper)
-
-<br>
-
-<div align="center" markdown="1">
-
-
-![img](.github/img/02.png)
-</div>
