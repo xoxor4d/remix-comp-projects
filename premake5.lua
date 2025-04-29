@@ -381,3 +381,66 @@ workspace "remix-comp-proj"
 	group "Dependencies"
 		dependencies.projects()
 	group ""
+
+
+		---------------------------
+
+		project "swat4-rtx"
+		kind "SharedLib"
+		language "C++"
+	
+		linkoptions {
+			"/PDBCompress"
+		}
+	
+		pchheader "std_include.hpp"
+		pchsource "src/mods/swat4/std_include.cpp"
+	
+		files {
+			"./src/mods/swat4/**.hpp",
+			"./src/mods/swat4/**.cpp",
+		}
+	
+		includedirs {
+			"%{prj.location}/src",
+			"./src",
+		}
+	
+		links {
+			"_shared"
+		}
+	
+		resincludedirs {
+			"$(ProjectDir)src"
+		}
+	
+		buildoptions { 
+			"/Zm100 -Zm100" 
+		}
+	
+		filter "configurations:Debug or configurations:Release"
+			if(os.getenv("SWAT4_ROOT")) then
+				print ("Setup paths using environment variable 'SWAT4_ROOT' :: '" .. os.getenv("SWAT4_ROOT") .. "'")
+				targetdir(os.getenv("SWAT4_ROOT"))
+				debugdir (os.getenv("SWAT4_ROOT"))
+				debugcommand (os.getenv("SWAT4_ROOT") .. "/" .. "Swat4.exe")
+			end
+		filter {}
+	
+		-- Specific configurations
+		flags { 
+			"UndefinedIdentifiers" 
+		}
+	
+		warnings "Extra"
+
+		-- Post-build
+		postbuildcommands {
+			"MOVE /Y \"$(TargetDir)swat4-rtx.dll\" \"$(TargetDir)swat4-rtx.asi\"",
+		}
+	
+		dependencies.imports()
+	
+		group "Dependencies"
+			dependencies.projects()
+		group ""
