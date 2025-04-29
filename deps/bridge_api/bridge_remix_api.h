@@ -56,8 +56,8 @@ static constexpr char initRemixApi[] = "remixapi_InitializeLibrary";
 static constexpr char registerCallbacks[] = "remixapi_RegisterCallbacks";
 }
 
-inline remixapi_ErrorCode bridge_initRemixApi(remixapi_Interface* out_remixInterface) {
-  HMODULE hModule = GetModuleHandleA("d3d9.dll");
+inline remixapi_ErrorCode bridge_initRemixApi(remixapi_Interface* out_remixInterface, bool is_asi = false) {
+  HMODULE hModule = is_asi ? GetModuleHandleA("d3d9.asi") : GetModuleHandleA("d3d9.dll");
   if (hModule) {
     PFN_remixapi_InitializeLibrary const pfn_Initialize =
       (PFN_remixapi_InitializeLibrary)GetProcAddress(hModule, exported_func_name::initRemixApi);

@@ -16,7 +16,8 @@ namespace shared::common
 		static void initialize(
 			PFN_remixapi_BridgeCallback begin_scene_callback,
 			PFN_remixapi_BridgeCallback end_scene_callback,
-			PFN_remixapi_BridgeCallback on_present_callback);
+			PFN_remixapi_BridgeCallback on_present_callback,
+			bool is_asi = false);
 
 		static bool is_initialized() { return get().m_initialized; }
 
