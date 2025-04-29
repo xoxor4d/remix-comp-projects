@@ -45,127 +45,419 @@ namespace mods::swat4
 
 	// --------------------------
 
-	IDirect3DVertexShader9* ff_og_shader = nullptr;
-	IDirect3DPixelShader9* ff_og_psshader = nullptr;
+	std::vector<int> g_forcedLeaves;
+	std::vector<int> g_forcedNodes;
 
-	bool ff_was_viewmodel = false;
-	bool ff_was_modified = false;
-	bool ff_is_sky = false;
-	bool ff_is_hud = false;
-	std::uint8_t ff_skel_bone_count = 24u;
-
-	// ------------------
-
-	void matrix3x4_transpose_to_4x4(const shared::float3x4* input, D3DXMATRIX* output, const int count)
+	bool IsPointInsideBox(const game::FBox& Box, const Vector& Point)
 	{
-		for (int i = 0; i < count; ++i)
-		{
-			const shared::float3x4& in = input[i];
-			D3DXMATRIX& out = output[i];
-
-			// column-major D3DXMATRIX from row-major 3x4
-			out._11 = in.m[0][0]; out._12 = in.m[1][0]; out._13 = in.m[2][0]; out._14 = 0.0f;
-			out._21 = in.m[0][1]; out._22 = in.m[1][1]; out._23 = in.m[2][1]; out._24 = 0.0f;
-			out._31 = in.m[0][2]; out._32 = in.m[1][2]; out._33 = in.m[2][2]; out._34 = 0.0f;
-			out._41 = in.m[0][3]; out._42 = in.m[1][3]; out._43 = in.m[2][3]; out._44 = 1.0f;
-		}
+		return Box.IsValid &&
+			Point.x >= Box.Min.x && Point.x <= Box.Max.x &&
+			Point.y >= Box.Min.y && Point.y <= Box.Max.y &&
+			Point.z >= Box.Min.z && Point.z <= Box.Max.z;
 	}
 
-	// used for bulletholes
-	bool patches::pre_drawprim_call()
+	Vector ClosestPointOnBox(const game::FBox& Box, const Vector& Point)
 	{
-		const auto& dev = shared::globals::d3d_device;
-
-		IDirect3DBaseTexture9* bound_tex = nullptr;
-		dev->GetTexture(0, &bound_tex);
-
-		if (!bound_tex) {
-			return true;
-		}
-
-		//const auto& im = imgui::get();
-		//const auto& patches = patches::get();
-
-		/* if (!im->m_is_rendering)
-		{
-			shared::float3x4* to_world = reinterpret_cast<shared::float3x4*>(0x5776F0);
-
-			D3DXMATRIX transworld = {};
-			shared::utils::transpose_float3x4_to_d3dxmatrix(*to_world, transworld);
-			dev->SetTransform(D3DTS_WORLD, &transworld);
-
-			dev->GetVertexShader(&ff_og_shader);
-			dev->SetVertexShader(nullptr);
-			dev->GetPixelShader(&ff_og_psshader);
-			dev->SetPixelShader(nullptr);
-
-			//dev->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, 0u);
-			ff_was_modified = true;
-		} */
-
-		return false;
+		Vector result;
+		result.x = std::clamp(Point.x, Box.Min.x, Box.Max.x);
+		result.y = std::clamp(Point.y, Box.Min.y, Box.Max.y);
+		result.z = std::clamp(Point.z, Box.Min.z, Box.Max.z);
+		return result;
 	}
 
-	void patches::post_drawprim_call()
+	struct FLeafAndNodeIndices
 	{
-		if (ff_was_modified)
+		std::vector<int> Leaves;
+		std::vector<int> Nodes;
+	};
+
+	FLeafAndNodeIndices CollectLeavesAndNodesInRadius(game::FRenderState& RenderState, Vector PlayerPos, float Radius)
+	{
+		FLeafAndNodeIndices Result;
+		FLOAT RadiusSquared = Radius * Radius;
+
+		// Collect leaves
+		for (INT iLeaf = 0; iLeaf < RenderState.Model->Leaves.ArrayNum; iLeaf++)
 		{
-			const auto& dev = shared::globals::d3d_device;
-			if (ff_was_modified)
+			game::FBox LeafBounds;
+			auto FoundBounds = false;
+			for (INT iNode = 0; iNode < RenderState.Model->Nodes.ArrayNum; iNode++)
 			{
-				dev->SetVertexShader(ff_og_shader);
-				dev->SetPixelShader(ff_og_psshader);
+				auto* n = &RenderState.Model->Nodes.Data[iNode];
+				if (RenderState.Model->Nodes.Data[iNode].iLeaf[0] == iLeaf || RenderState.Model->Nodes.Data[iNode].iLeaf[1] == iLeaf)
+				{
+					if (RenderState.Model->Nodes.Data[iNode].iRenderBound != -1) // INDEX_NONE
+					{
+						LeafBounds = RenderState.Model->Bounds.Data[RenderState.Model->Nodes.Data[iNode].iRenderBound];
+						FoundBounds = true;
+						break;
+					}
+				}
 			}
 
-			ff_was_modified = false;
-		}
-	}
-
-
-	bool patches::pre_drawindexedprim_call(
-		[[maybe_unused]] D3DPRIMITIVETYPE PrimitiveType, 
-		[[maybe_unused]] INT BaseVertexIndex, 
-		[[maybe_unused]] UINT MinVertexIndex, 
-		[[maybe_unused]] UINT NumVertices, 
-		[[maybe_unused]] UINT startIndex, 
-		[[maybe_unused]] UINT primCount)
-	{
-		const auto& dev = shared::globals::d3d_device;
-
-		IDirect3DBaseTexture9* bound_tex = nullptr;
-		dev->GetTexture(0, &bound_tex);
-
-		if (!bound_tex) { 
-			return true;
+			if (FoundBounds && LeafBounds.IsValid)
+			{
+				if (IsPointInsideBox(LeafBounds, PlayerPos)) {
+					Result.Leaves.push_back(iLeaf); // do not add
+				}
+				else
+				{
+					Vector ClosestPoint = ClosestPointOnBox(LeafBounds, PlayerPos);
+					float DistanceSquared = (ClosestPoint - PlayerPos).LengthSqr();
+					if (DistanceSquared <= RadiusSquared)
+					{
+						Result.Leaves.push_back(iLeaf);
+					}
+				}
+			}
 		}
 
-		//const auto& im = imgui::get();
-		//const auto& patches = patches::get(); 
-
-		dev->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, 0u);
-		return false;
-	}
-
-
-	// called right after device->DrawIndexedPrimitive
-	void patches::post_drawindexedprim_call()
-	{
-		/*const auto& dev = shared::globals::d3d_device;
-		if (ff_was_modified)
+		// Collect nodes
+		for (INT iNode = 0; iNode < RenderState.Model->Nodes.ArrayNum; iNode++)
 		{
-			dev->SetVertexShader(ff_og_shader);
-			dev->SetPixelShader(ff_og_psshader);
+			game::FBspNode& Node = RenderState.Model->Nodes.Data[iNode];
+			if (Node.iRenderBound != -1 && Node.iSurf != -1 && Node.iSection != -1 && Node.iSection < RenderState.Model->Sections.ArrayNum) // INDEX_NONE
+			{
+				game::FBox NodeBounds = RenderState.Model->Bounds.Data[Node.iRenderBound];
+
+				if (IsPointInsideBox(NodeBounds, PlayerPos)) {
+					//Result.Nodes.push_back(iNode); // do not add 
+				}
+				else
+				{
+					Vector ClosestPoint = ClosestPointOnBox(NodeBounds, PlayerPos);
+					float DistanceSquared = (ClosestPoint - PlayerPos).LengthSqr();
+					if (DistanceSquared <= RadiusSquared)
+					{
+						Result.Nodes.push_back(iNode);
+					}
+				}
+
+			}
 		}
 
-		ff_is_hud = false;
-		ff_was_modified = false;
-		ff_was_viewmodel = false;
-		patches::get()->m_ff_use_shader = false;*/
+		return Result;
 	}
 
-
-	void post_get_view_frustum_hk(game::FConvexVolume* frustum)
+	void post_bsp_traversal_hk(game::FRenderState* RenderState)
 	{
+		const auto im = imgui::get();
+
+		g_forcedLeaves.clear();
+		g_forcedNodes.clear();
+
+		Vector PlayerPos = RenderState->SceneNode->ViewOrigin;
+		FLOAT Radius = im->m_render_area_dist;
+		FLeafAndNodeIndices Indices = CollectLeavesAndNodesInRadius(*RenderState, PlayerPos, Radius);
+
+		g_forcedLeaves = Indices.Leaves;
+		g_forcedNodes = Indices.Nodes;
+
+		if (im->m_enable_leaf_forcing)
+		{
+			for (const auto& l : g_forcedLeaves)
+			{
+				const auto OriginalInvisibleZone = RenderState->SceneNode->InvisibleZone;
+				RenderState->SceneNode->InvisibleZone = -1;
+
+				// ProcessLeaf
+				shared::utils::hook::call<void __cdecl(game::FRenderState* RenderState, int iLeaf)>(ENGINE_BASE + 0x1FAF60)(RenderState, l);
+
+				RenderState->SceneNode->InvisibleZone = OriginalInvisibleZone;
+			}
+		}
+
+		//if (im->m_enable_node_forcing)
+		//{
+		//	for (const auto& n : g_forcedNodes)
+		//	{
+		//		// ProcessNode -- FDynamicLight, FProjectorRenderInfo
+		//		shared::utils::hook::call<void __cdecl(game::FRenderState* RenderState, int iNode, void** a3, int NumDynamicLights, void** a5, int NumDynamicProjectors)>(ENGINE_BASE + 0x1F6A20)(RenderState, n, nullptr, 0, nullptr, 0);
+		//	}
+		//}
+
+		if (im->m_enable_node_forcing)
+		{
+			for (const auto& node_idx : g_forcedNodes)
+			{
+				{
+					game::FBspNode* Node = &RenderState->Model->Nodes.Data[node_idx];
+					game::FBspSurf* Surf = &RenderState->Model->Surfs.Data[Node->iSurf];
+
+					//for (auto i = 0; i < RenderState->Model->Nodes.ArrayNum; i++) 
+					//{
+					//	RenderState->Model->Nodes.Data[i].ZoneMask = -1;
+					//	RenderState->Model->Nodes.Data[i].ExclusiveSphereBound.dist += 10000.0f;
+					//	RenderState->Model->Nodes.Data[i].iRenderBound = -1;
+
+					//	// setting izone for all to 0 makes everything visible but also kills me lmao
+					//	//RenderState->Model->Nodes.Data[i].iZone[0] = 0;
+					//	//RenderState->Model->Nodes.Data[i].iZone[1] = 0;
+					//}
+
+					// can be used to visualize portal surfaces
+					/*for (auto i = 0; i < RenderState->Model->Surfs.ArrayNum; i++)
+					{
+						if (RenderState->Model->Surfs.Data[i].PolyFlags & game::PF_Portal)
+						{
+							RenderState->Model->Surfs.Data[i].PolyFlags &= ~game::PF_Invisible;
+						}
+					}*/
+
+
+
+					/*for (auto i = 0; i < 64 ; i++)
+					{
+						RenderState->Zones[i].Portals = nullptr;
+					}
+					RenderState->ActiveZoneMask = -1;*/
+
+
+
+
+
+					/* later drawn like
+					 
+					 for(TList<INT>* SectionList = RenderState.SectionDrawList;SectionList;SectionList = SectionList->Next)
+						RenderState.BspDrawLists[SectionList->Element]->Render(RenderState.SceneNode,RI);
+					 
+					if (NumTriangles > 0)
+					{
+						FBspSection& Section = Model->Sections(SectionIndex);*/
+
+
+
+
+
+					if (Node && Surf && Surf->Material && Surf->Material->to_vtbl && Surf->Material->to_vtbl->mat_vtbl
+						&& Node->iSection != -1 && !(Surf->PolyFlags & game::PF_Invisible))
+					{
+						if (Surf->Material && Surf->Material->to_vtbl->mat_vtbl->RequiresSorting(Surf->Material))
+						{
+							int x = 0;
+							// Add the node to the translucent draw list.
+
+							/*FTranslucentDrawItem	TranslucentNodeItem;
+							TranslucentNodeItem.BSP = 1;
+							TranslucentNodeItem.iNode = iNode;
+							TranslucentNodeItem.NumDynamicLights = NumDynamicLights;
+							TranslucentNodeItem.NumDynamicProjectors = NumDynamicProjectors;*/
+						}
+						else
+						{
+							// Add the node to it's section's draw list.
+
+							if (!RenderState->BspDrawLists[Node->iSection])
+							{
+								game::FBspDrawList* list_mem = nullptr;
+								game::FBspDrawList* list_out = nullptr;
+
+								// FMemStack::PushBytes(&GSceneMem, 28, 8);
+								list_mem = static_cast<game::FBspDrawList*>(shared::utils::hook::call<void* __fastcall(void* gscenemem, void* ecx, int, int)>(ENGINE_BASE + 0x3049B4)
+									(game::GSceneMem, nullptr, 28, 8));
+
+								if (list_mem)
+								{
+									// FBspDrawList::FBspDrawList
+									list_out = shared::utils::hook::call<game::FBspDrawList * __fastcall(game::FBspDrawList * pthis, void* ecx, game::UModel*, int)>(ENGINE_BASE + 0x16C7)
+										(list_mem, nullptr, RenderState->Model, Node->iSection);
+								}
+
+								auto BspDrawLists = RenderState->BspDrawLists;
+								auto iSection = Node->iSection;
+								BspDrawLists[iSection] = list_out;
+
+								game::TList<int>* section_list_mem = nullptr;
+								// FMemStack::PushBytes(&GSceneMem, 8, 8);
+								section_list_mem = static_cast<game::TList<int>*>(shared::utils::hook::call<void* __fastcall(void* gscenemem, void* ecx, int, int)>(ENGINE_BASE + 0x3049B4)
+									(game::GSceneMem, nullptr, 8, 8));
+
+								if (section_list_mem)
+								{
+									auto SectionDrawList = RenderState->SectionDrawList;
+									section_list_mem->Element = Node->iSection;
+									section_list_mem->Next = SectionDrawList;
+								}
+
+								RenderState->SectionDrawList = section_list_mem;
+
+
+								//RenderState->BspDrawLists[Node.iSection] = new(game::GSceneMem) game::FBspDrawList(RenderState->Model, Node.iSection);
+								//RenderState->SectionDrawList = new(game::GSceneMem) TList<INT>(Node.iSection, RenderState->SectionDrawList);
+							}
+
+							//RenderState->BspDrawLists[Node.iSection]->AddNode(node_idx, nullptr, 0, nullptr, 0, RenderState->SceneNode);
+							// void __thiscall FBspDrawList::AddNode(FBspDrawList *this, int NodeIndex, FDynamicLight **InDynamicLights, FProjectorRenderInfo *NumDynamicLights, FProjectorRenderInfo **InDynamicProjectors, int NumDynamicProjectors, FLevelSceneNode *SceneNode)
+							// 5227
+
+
+
+							//shared::utils::hook::call<void* __fastcall(game::FBspDrawList* pthis, void* ecx, int NodeIndex, void** InDynamicLights, int NumDynamicLights, void** InDynamicProjectors, int NumDynamicProjectors, game::FLevelSceneNode* SceneNode)>(ENGINE_BASE + 0x5227)
+							//	(RenderState->BspDrawLists[Node->iSection], nullptr, node_idx, nullptr, 0, nullptr, 0, RenderState->SceneNode);
+
+							// this is what the func above does minus the actor crap
+							const auto pthis = RenderState->BspDrawLists[Node->iSection];
+							game::FBspNode& nn = pthis->Model->Nodes.Data[node_idx];
+
+							if (nn.iFirstVertex != -1)
+							{
+								pthis->Nodes[pthis->NumNodes++] = node_idx;
+								pthis->NumTriangles += nn.NumVertices - 2;
+							}
+
+							int xx = 1;
+						}
+					}
+				}
+			}
+		}
+
+		if (im->m_manual_node_forcing)
+		{
+			auto node_idx = std::clamp(im->m_manual_node_forcing_index, 0, RenderState->Model->Nodes.ArrayNum - 1);
+
+			// ProcessNode -- FDynamicLight, FProjectorRenderInfo
+			/*shared::utils::hook::call<void __cdecl(game::FRenderState* RenderState, int iNode, void** a3, int NumDynamicLights, void** a5, int NumDynamicProjectors)>
+				(ENGINE_BASE + 0x1F6A20)(RenderState, node_idx, nullptr, 0, nullptr, 0);*/
+
+			// noclipping into a wall fills outside actors 
+
+			{
+				RenderState->ActiveZoneMask = 1;
+				RenderState->ActiveZones->Element = 0;
+				RenderState->ActiveZones->Next = nullptr;
+			}
+
+			{
+				game::FBspNode* Node = &RenderState->Model->Nodes.Data[node_idx];
+				game::FBspSurf* Surf = &RenderState->Model->Surfs.Data[Node->iSurf];
+
+				//for (auto i = 0; i < RenderState->Model->Nodes.ArrayNum; i++) 
+				//{
+				//	RenderState->Model->Nodes.Data[i].ZoneMask = -1;
+				//	RenderState->Model->Nodes.Data[i].ExclusiveSphereBound.dist += 10000.0f;
+				//	RenderState->Model->Nodes.Data[i].iRenderBound = -1;
+
+				//	// setting izone for all to 0 makes everything visible but also kills me lmao
+				//	//RenderState->Model->Nodes.Data[i].iZone[0] = 0;
+				//	//RenderState->Model->Nodes.Data[i].iZone[1] = 0;
+				//}
+
+				// can be used to visualize portal surfaces
+				/*for (auto i = 0; i < RenderState->Model->Surfs.ArrayNum; i++)
+				{
+					if (RenderState->Model->Surfs.Data[i].PolyFlags & game::PF_Portal)
+					{
+						RenderState->Model->Surfs.Data[i].PolyFlags &= ~game::PF_Invisible;
+					}
+				}*/
+
+
+
+				/*for (auto i = 0; i < 64 ; i++)
+				{
+					RenderState->Zones[i].Portals = nullptr;
+				}
+				RenderState->ActiveZoneMask = -1;*/
+
+
+
+				if (Node && Surf && Surf->Material && Surf->Material->to_vtbl && Surf->Material->to_vtbl->mat_vtbl)
+				{
+					if (Surf->Material && Surf->Material->to_vtbl->mat_vtbl->RequiresSorting(Surf->Material))
+					{
+						int x = 0;
+						// Add the node to the translucent draw list.
+
+						/*FTranslucentDrawItem	TranslucentNodeItem;
+						TranslucentNodeItem.BSP = 1;
+						TranslucentNodeItem.iNode = iNode;
+						TranslucentNodeItem.NumDynamicLights = NumDynamicLights;
+						TranslucentNodeItem.NumDynamicProjectors = NumDynamicProjectors;*/
+					}
+					else
+					{
+						// Add the node to it's section's draw list.
+
+						if (!RenderState->BspDrawLists[Node->iSection])
+						{
+							game::FBspDrawList* list_mem = nullptr;
+							game::FBspDrawList* list_out = nullptr;
+
+							// FMemStack::PushBytes(&GSceneMem, 28, 8);
+							list_mem = static_cast<game::FBspDrawList*>(shared::utils::hook::call<void* __fastcall(void* gscenemem, void* ecx, int, int)>(ENGINE_BASE + 0x3049B4)
+								(game::GSceneMem, nullptr, 28, 8));
+
+							if (list_mem)
+							{
+								// FBspDrawList::FBspDrawList
+								list_out = shared::utils::hook::call<game::FBspDrawList * __fastcall(game::FBspDrawList * pthis, void* ecx, game::UModel*, int)>(ENGINE_BASE + 0x16C7)
+									(list_mem, nullptr, RenderState->Model, Node->iSection);
+							}
+
+							auto BspDrawLists = RenderState->BspDrawLists;
+							auto iSection = Node->iSection;
+							BspDrawLists[iSection] = list_out;
+
+							game::TList<int>* section_list_mem = nullptr;
+							// FMemStack::PushBytes(&GSceneMem, 8, 8);
+							section_list_mem = static_cast<game::TList<int>*>(shared::utils::hook::call<void* __fastcall(void* gscenemem, void* ecx, int, int)>(ENGINE_BASE + 0x3049B4)
+								(game::GSceneMem, nullptr, 8, 8));
+
+							if (section_list_mem)
+							{
+								auto SectionDrawList = RenderState->SectionDrawList;
+								section_list_mem->Element = Node->iSection;
+								section_list_mem->Next = SectionDrawList;
+							}
+
+							RenderState->SectionDrawList = section_list_mem;
+
+
+							//RenderState->BspDrawLists[Node.iSection] = new(game::GSceneMem) game::FBspDrawList(RenderState->Model, Node.iSection);
+							//RenderState->SectionDrawList = new(game::GSceneMem) TList<INT>(Node.iSection, RenderState->SectionDrawList);
+						}
+
+						//RenderState->BspDrawLists[Node.iSection]->AddNode(node_idx, nullptr, 0, nullptr, 0, RenderState->SceneNode);
+						// void __thiscall FBspDrawList::AddNode(FBspDrawList *this, int NodeIndex, FDynamicLight **InDynamicLights, FProjectorRenderInfo *NumDynamicLights, FProjectorRenderInfo **InDynamicProjectors, int NumDynamicProjectors, FLevelSceneNode *SceneNode)
+						// 5227
+
+						shared::utils::hook::call<void* __fastcall(game::FBspDrawList* pthis, void* ecx, int NodeIndex, void** InDynamicLights, int NumDynamicLights, void** InDynamicProjectors, int NumDynamicProjectors, game::FLevelSceneNode* SceneNode)>(ENGINE_BASE + 0x5227)
+							(RenderState->BspDrawLists[Node->iSection], nullptr, node_idx, nullptr, 0, nullptr, 0, RenderState->SceneNode);
+
+						int xx = 1;
+					}
+				}
+			}
+		}
+	}
+
+	HOOK_RETN_PLACE_DEF(post_bsp_traversal_retn_addr);
+	__declspec(naked) void post_bsp_traversal_stub()
+	{
+		__asm
+		{
+			pushad;
+			push	eax;
+			call	post_bsp_traversal_hk;
+			add		esp, 4;
+			popad;
+
+			mov     ecx, [eax];
+			mov     edx, [ecx + 4];
+			jmp		post_bsp_traversal_retn_addr;
+		}
+	}
+
+	// --------------------------
+
+	void post_get_view_frustum_hk(game::FRenderState* RenderState, game::FLevelSceneNode* node, game::FConvexVolume* frustum)
+	{
+		/*if (node->ViewZone > 15)
+		{
+			node->ViewZone = 0;
+		}*/
+
 		const auto& im = imgui::get();
 
 		if (im->m_cull_disable_frustum)
@@ -184,8 +476,12 @@ namespace mods::swat4
 		{
 			pushad;
 			push	eax;
+			mov     edx, [ebp + 8];
+			push	edx;
+			lea     edx, [ebp - 0xA60];
+			push    edx;
 			call	post_get_view_frustum_hk;
-			add		esp, 4;
+			add		esp, 12;
 			popad;
 
 			mov		[edi], eax;
@@ -205,6 +501,12 @@ namespace mods::swat4
 
 		// uhm .. this crashes the game when pressing num7 or 8 on the numpad lmao (just 
 		shared::common::remix_api::initialize(begin_scene_cb, end_scene_cb, present_scene_cb, true);
+
+
+
+		shared::utils::hook(ENGINE_BASE + 0x1FC3FE, post_bsp_traversal_stub, HOOK_JUMP).install()->quick();
+		HOOK_RETN_PLACE(post_bsp_traversal_retn_addr, ENGINE_BASE + 0x1FC403);
+
 
 		// this fixes frustum culling
 		shared::utils::hook(ENGINE_BASE + 0x1FDB19, post_get_view_frustum_stub, HOOK_JUMP).install()->quick();

@@ -118,6 +118,15 @@ namespace mods::swat4
 				ImGui::Checkbox("Disable Frustum Culling", &im->m_cull_disable_frustum);
 				SET_CHILD_WIDGET_WIDTH_MAN(140.0f); ImGui::DragFloat("Frustum Plane Offset", &im->m_cull_frustum_tweak_distance_offset, 1.0f, 0.0f, 50000.0f, "%.0f");
 
+				ImGui::Separator();
+
+				ImGui::Checkbox("Enable Leaf Forcing", &im->m_enable_leaf_forcing);
+				ImGui::Checkbox("Enable Node Forcing", &im->m_enable_node_forcing);
+				SET_CHILD_WIDGET_WIDTH_MAN(140.0f); ImGui::DragFloat("Forcing Distance", &im->m_render_area_dist, 0.2f, 0.0f, 50000.0f, "%.0f");
+
+				ImGui::Checkbox("Enable Manual Node Forcing", &im->m_manual_node_forcing);
+				ImGui::SliderInt("SliderInt", &im->m_manual_node_forcing_index, 0, 300);
+
 			}, true, ICON_FA_ELLIPSIS_H, &im->ImGuiCol_ContainerBackground, & im->ImGuiCol_ContainerBorder);
 		}
 

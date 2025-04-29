@@ -444,26 +444,18 @@ namespace mods::swat4
 	// bulletholes
 	HRESULT d3d9ex::D3D9Device::DrawPrimitive([[maybe_unused]] D3DPRIMITIVETYPE PrimitiveType, [[maybe_unused]] UINT StartVertex, [[maybe_unused]] UINT PrimitiveCount)
 	{
-		//return D3D_OK;
-
-		//const bool skip = patches::pre_drawprim_call();
-		auto hr = D3D_OK;
-
-		//if (!skip) {
-			hr = m_pIDirect3DDevice9->DrawPrimitive(PrimitiveType, StartVertex, PrimitiveCount);
-		//}
-		//patches::post_drawprim_call();
-
+		auto hr = m_pIDirect3DDevice9->DrawPrimitive(PrimitiveType, StartVertex, PrimitiveCount);
+		m_pIDirect3DDevice9->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 		return hr;
 	}
 
 	// also renders fx and hud
 	HRESULT d3d9ex::D3D9Device::DrawIndexedPrimitive(D3DPRIMITIVETYPE PrimitiveType, INT BaseVertexIndex, UINT MinVertexIndex, UINT NumVertices, UINT startIndex, UINT primCount)
 	{
-		//const bool skip = patches::pre_drawindexedprim_call(PrimitiveType, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
-
 		IDirect3DBaseTexture9* bound_tex = nullptr;
 		m_pIDirect3DDevice9->GetTexture(0, &bound_tex);
+
+		//m_pIDirect3DDevice9->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 
 		auto hr = D3D_OK;
 		if (bound_tex) 
@@ -471,8 +463,6 @@ namespace mods::swat4
 			hr = m_pIDirect3DDevice9->DrawIndexedPrimitive(PrimitiveType, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
 			m_pIDirect3DDevice9->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, 0u);
 		}
-
-		//patches::post_drawindexedprim_call();
 		return hr;
 	}
 
