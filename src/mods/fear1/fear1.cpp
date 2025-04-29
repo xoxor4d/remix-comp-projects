@@ -11,9 +11,6 @@ namespace mods::fear1
 			shared::globals::root_path = path; shared::utils::erase_substring(shared::globals::root_path, "FEAR.exe");
 		}
 
-		//shared::common::console();
-		game::init_game_addresses();
-
 		shared::common::loader::module_loader::register_module(std::make_unique<imgui>());
 		shared::common::loader::module_loader::register_module(std::make_unique<patches>());
 

@@ -2,6 +2,8 @@
 
 namespace shared::globals
 {
+	int game_version = -1;
+
 	D3DXMATRIX IDENTITY =
 	{
 		1.0f, 0.0f, 0.0f, 0.0f,
@@ -30,6 +32,5 @@ namespace shared::globals
 	HWND main_window = nullptr;
 
 	HMODULE dll_hmodule;
-
 	IDirect3DDevice9* d3d_device = nullptr;
 }

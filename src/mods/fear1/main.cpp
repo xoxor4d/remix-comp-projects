@@ -35,7 +35,9 @@ namespace mods::fear1
 		GetModuleFileNameA(nullptr, exe_path, MAX_PATH); // Current process executable
 		const std::string sha1 = shared::utils::hash_file_sha1(exe_path);
 
-		if (sha1 == "cc74990b4df5378caf4d5342fd3fc73f410a3eca")
+		if ( shared::globals::check_game_support_by_sha1(sha1,
+			"cc74990b4df5378caf4d5342fd3fc73f410a3eca",
+			"e5ac870a39aead28391a76a7eaaa9c5d6a9470f6"))
 		{
 			while (!shared::globals::main_window)
 			{
@@ -47,7 +49,7 @@ namespace mods::fear1
 				if (T >= 30000)
 				{
 					Beep(300, 100); Sleep(100); Beep(200, 100);
-					shared::common::console(); std::cout << "[!][INIT FAILED] Not loading RTX Compatibility Mod\n";
+					shared::common::console(); std::cout << "[!][INIT FAILED] Failed to find the main window. Not loading RTX Compatibility Mod\n";
 					return TRUE;
 				}
 			}
@@ -55,7 +57,7 @@ namespace mods::fear1
 		else
 		{
 			Beep(300, 100); Sleep(100); Beep(200, 100);
-			shared::common::console(); std::cout << "[!][INIT FAILED] Unsupported Game or Version of the Game!\n";
+			shared::common::console(); std::cout << "[!][INIT FAILED] Unsupported Game or Version of the Game!\n> SHA1 was: " << sha1 << "\n";
 			return TRUE;
 		}
 
