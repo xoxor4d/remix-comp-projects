@@ -40,6 +40,8 @@ namespace mods::swat4
 		bool m_manual_node_forcing = false;
 		int m_manual_node_forcing_index = 0;
 
+		bool m_debug_stuff = false;
+
 		bool is_imgui_game_input_allowed() const {
 			return m_im_allow_game_input;
 		}

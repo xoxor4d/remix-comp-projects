@@ -45,6 +45,76 @@ namespace mods::swat4
 
 	// --------------------------
 
+	void pre_vis_hk(game::FRenderState* RenderState)
+	{
+		const auto im = imgui::get();
+		if (im->m_debug_stuff)
+		{
+			RenderState->SceneNode->InvisibleZone = -1;
+			//RenderState->ActiveZoneMask = 0x00000001000;
+
+			for (auto a = RenderState->ActiveZones; a && RenderState->ActiveZones->Element >= 0; a = RenderState->ActiveZones->Next)
+			{
+				//RenderState->SceneNode->ViewZone = 999;
+				
+				for (auto i = 0; i < 30; i++)
+				{
+					RenderState->Zones[a->Element].Portals->Element->BoundingPlanes[i].dist = 10000;
+					RenderState->Zones[a->Element].Portals->Element->BoundingPlanes[i].xyz[0] = 0;
+					RenderState->Zones[a->Element].Portals->Element->BoundingPlanes[i].xyz[1] = 1;
+					RenderState->Zones[a->Element].Portals->Element->BoundingPlanes[i].xyz[2] = 1;
+				}
+
+				int x = 1;
+			}
+ 			//if (RenderState->ActiveZones->Element == 1)
+			//{
+			//	//RenderState->SceneNode->ViewZone = 999;
+			//	RenderState->SceneNode->InvisibleZone = -1;
+			//	for (auto i = 0; i < 30; i++)
+			//	{
+			//		RenderState->Zones[1].Portals->Element->BoundingPlanes[i].dist = 1000000;
+			//		RenderState->Zones[1].Portals->Element->BoundingPlanes[i].xyz[0] = 0;
+			//		RenderState->Zones[1].Portals->Element->BoundingPlanes[i].xyz[1] = 0;
+			//		RenderState->Zones[1].Portals->Element->BoundingPlanes[i].xyz[2] = 1;
+			//	}
+			//}
+			
+			//RenderState->ActiveZones->Element = 0;
+			//RenderState->ActiveZones->Next = nullptr;
+			//RenderState->Zones[1].AntiPortals = nullptr;
+			//RenderState->Zones[1].Portals = nullptr;
+			//RenderState->SceneNode->ViewZone = 0;
+			//RenderState->ActiveZones->Element = 3;
+			//RenderState->ActiveZones->Next = nullptr;
+			//RenderState->ActiveZoneMask = (1LL << 64) - 1;
+
+			//RenderState->ActiveZoneMask = -1;
+			//RenderState->ActiveZoneMask = 0x0000000000000001; //0x0000000008000000;
+			int x = 1;
+		}
+	}
+
+	HOOK_RETN_PLACE_DEF(pre_vis_retn_addr);
+	__declspec(naked) void pre_vis_stub()
+	{
+		__asm
+		{
+			pushad;
+			lea     eax, [ebp - 0xA60];
+			push	eax; // RenderState
+			call	pre_vis_hk;
+			add		esp, 4;
+			popad;
+
+			mov		[ecx], edx;
+			mov     ecx, [ebp - 0x4C];
+			jmp		pre_vis_retn_addr;
+		}
+	}
+
+	// --------------------------
+
 	std::vector<int> g_forcedLeaves;
 	std::vector<int> g_forcedNodes;
 
@@ -247,6 +317,7 @@ namespace mods::swat4
 						{
 							// Add the node to it's section's draw list.
 
+#if 1
 							if (!RenderState->BspDrawLists[Node->iSection])
 							{
 								game::FBspDrawList* list_mem = nullptr;
@@ -261,29 +332,60 @@ namespace mods::swat4
 									// FBspDrawList::FBspDrawList
 									list_out = shared::utils::hook::call<game::FBspDrawList * __fastcall(game::FBspDrawList * pthis, void* ecx, game::UModel*, int)>(ENGINE_BASE + 0x16C7)
 										(list_mem, nullptr, RenderState->Model, Node->iSection);
+
+									if (list_out)
+									{
+										auto BspDrawLists = RenderState->BspDrawLists;
+										auto iSection = Node->iSection;
+										BspDrawLists[iSection] = list_out;
+
+										game::TList<int>* section_list_mem = nullptr;
+										// FMemStack::PushBytes(&GSceneMem, 8, 8);
+										section_list_mem = static_cast<game::TList<int>*>(shared::utils::hook::call<void* __fastcall(void* gscenemem, void* ecx, int, int)>(ENGINE_BASE + 0x3049B4)
+											(game::GSceneMem, nullptr, 8, 8));
+
+										if (section_list_mem)
+										{
+											auto SectionDrawList = RenderState->SectionDrawList;
+											section_list_mem->Element = Node->iSection;
+											section_list_mem->Next = SectionDrawList;
+										}
+
+										RenderState->SectionDrawList = section_list_mem;
+									}
 								}
-
-								auto BspDrawLists = RenderState->BspDrawLists;
-								auto iSection = Node->iSection;
-								BspDrawLists[iSection] = list_out;
-
-								game::TList<int>* section_list_mem = nullptr;
-								// FMemStack::PushBytes(&GSceneMem, 8, 8);
-								section_list_mem = static_cast<game::TList<int>*>(shared::utils::hook::call<void* __fastcall(void* gscenemem, void* ecx, int, int)>(ENGINE_BASE + 0x3049B4)
-									(game::GSceneMem, nullptr, 8, 8));
-
-								if (section_list_mem)
-								{
-									auto SectionDrawList = RenderState->SectionDrawList;
-									section_list_mem->Element = Node->iSection;
-									section_list_mem->Next = SectionDrawList;
-								}
-
-								RenderState->SectionDrawList = section_list_mem;
-
 
 								//RenderState->BspDrawLists[Node.iSection] = new(game::GSceneMem) game::FBspDrawList(RenderState->Model, Node.iSection);
 								//RenderState->SectionDrawList = new(game::GSceneMem) TList<INT>(Node.iSection, RenderState->SectionDrawList);
+							}
+#endif
+
+							if (RenderState->BspDrawLists[Node->iSection])
+							{
+								const auto pthis = RenderState->BspDrawLists[Node->iSection];
+
+								bool exits = false;
+								for (auto i = 0; i < pthis->NumNodes; i++)
+								{
+									if (pthis->Nodes[i] == node_idx)
+									{
+										exits = true;
+										break;
+									}
+								}
+
+								// adding a node a second time would crash the game when it tries to render the nodes
+								// prob. because the game filters out duplicated nodes but we increased the numnodes so it goes out of bounds?
+
+								if (!exits) 
+								{
+									game::FBspNode& nn = pthis->Model->Nodes.Data[node_idx];
+									if (nn.iFirstVertex != -1)
+									{
+										pthis->Nodes[pthis->NumNodes++] = node_idx;
+										pthis->NumTriangles += nn.NumVertices - 2;
+									}
+								}
 							}
 
 							//RenderState->BspDrawLists[Node.iSection]->AddNode(node_idx, nullptr, 0, nullptr, 0, RenderState->SceneNode);
@@ -296,14 +398,14 @@ namespace mods::swat4
 							//	(RenderState->BspDrawLists[Node->iSection], nullptr, node_idx, nullptr, 0, nullptr, 0, RenderState->SceneNode);
 
 							// this is what the func above does minus the actor crap
-							const auto pthis = RenderState->BspDrawLists[Node->iSection];
+							/*const auto pthis = RenderState->BspDrawLists[Node->iSection];
 							game::FBspNode& nn = pthis->Model->Nodes.Data[node_idx];
 
 							if (nn.iFirstVertex != -1)
 							{
 								pthis->Nodes[pthis->NumNodes++] = node_idx;
 								pthis->NumTriangles += nn.NumVertices - 2;
-							}
+							}*/
 
 							int xx = 1;
 						}
@@ -314,6 +416,7 @@ namespace mods::swat4
 
 		if (im->m_manual_node_forcing)
 		{
+			// 612
 			auto node_idx = std::clamp(im->m_manual_node_forcing_index, 0, RenderState->Model->Nodes.ArrayNum - 1);
 
 			// ProcessNode -- FDynamicLight, FProjectorRenderInfo
@@ -322,11 +425,11 @@ namespace mods::swat4
 
 			// noclipping into a wall fills outside actors 
 
-			{
+			/*{
 				RenderState->ActiveZoneMask = 1;
 				RenderState->ActiveZones->Element = 0;
 				RenderState->ActiveZones->Next = nullptr;
-			}
+			}*/
 
 			{
 				game::FBspNode* Node = &RenderState->Model->Nodes.Data[node_idx];
@@ -379,6 +482,7 @@ namespace mods::swat4
 					{
 						// Add the node to it's section's draw list.
 
+#if 0
 						if (!RenderState->BspDrawLists[Node->iSection])
 						{
 							game::FBspDrawList* list_mem = nullptr;
@@ -417,13 +521,37 @@ namespace mods::swat4
 							//RenderState->BspDrawLists[Node.iSection] = new(game::GSceneMem) game::FBspDrawList(RenderState->Model, Node.iSection);
 							//RenderState->SectionDrawList = new(game::GSceneMem) TList<INT>(Node.iSection, RenderState->SectionDrawList);
 						}
+#endif
+						if (RenderState->BspDrawLists[Node->iSection])
+						{
+							const auto pthis = RenderState->BspDrawLists[Node->iSection];
+							game::FBspNode& nn = pthis->Model->Nodes.Data[node_idx];
+
+							if (nn.iFirstVertex != -1)
+							{
+								pthis->Nodes[pthis->NumNodes++] = node_idx;
+								pthis->NumTriangles += nn.NumVertices - 2;
+							}
+						}
 
 						//RenderState->BspDrawLists[Node.iSection]->AddNode(node_idx, nullptr, 0, nullptr, 0, RenderState->SceneNode);
 						// void __thiscall FBspDrawList::AddNode(FBspDrawList *this, int NodeIndex, FDynamicLight **InDynamicLights, FProjectorRenderInfo *NumDynamicLights, FProjectorRenderInfo **InDynamicProjectors, int NumDynamicProjectors, FLevelSceneNode *SceneNode)
 						// 5227
 
-						shared::utils::hook::call<void* __fastcall(game::FBspDrawList* pthis, void* ecx, int NodeIndex, void** InDynamicLights, int NumDynamicLights, void** InDynamicProjectors, int NumDynamicProjectors, game::FLevelSceneNode* SceneNode)>(ENGINE_BASE + 0x5227)
-							(RenderState->BspDrawLists[Node->iSection], nullptr, node_idx, nullptr, 0, nullptr, 0, RenderState->SceneNode);
+
+
+						//shared::utils::hook::call<void* __fastcall(game::FBspDrawList* pthis, void* ecx, int NodeIndex, void** InDynamicLights, int NumDynamicLights, void** InDynamicProjectors, int NumDynamicProjectors, game::FLevelSceneNode* SceneNode)>(ENGINE_BASE + 0x5227)
+						//	(RenderState->BspDrawLists[Node->iSection], nullptr, node_idx, nullptr, 0, nullptr, 0, RenderState->SceneNode);
+
+						// this is what the func above does minus the actor crap
+						/*const auto pthis = RenderState->BspDrawLists[Node->iSection];
+						game::FBspNode& nn = pthis->Model->Nodes.Data[node_idx];
+
+						if (nn.iFirstVertex != -1)
+						{
+							pthis->Nodes[pthis->NumNodes++] = node_idx;
+							pthis->NumTriangles += nn.NumVertices - 2;
+						}*/
 
 						int xx = 1;
 					}
@@ -503,6 +631,8 @@ namespace mods::swat4
 		shared::common::remix_api::initialize(begin_scene_cb, end_scene_cb, present_scene_cb, true);
 
 
+		shared::utils::hook(ENGINE_BASE + 0x1FDC5D, pre_vis_stub, HOOK_JUMP).install()->quick();
+		HOOK_RETN_PLACE(pre_vis_retn_addr, ENGINE_BASE + 0x1FDC62);
 
 		shared::utils::hook(ENGINE_BASE + 0x1FC3FE, post_bsp_traversal_stub, HOOK_JUMP).install()->quick();
 		HOOK_RETN_PLACE(post_bsp_traversal_retn_addr, ENGINE_BASE + 0x1FC403);
@@ -517,6 +647,26 @@ namespace mods::swat4
 
 		// ^ + 0x1F6AEC (nop5)
 		// ^ + 0x1F6AF1 set bytes to B8 01 00 00 00 (mov eax,00000001)
+
+
+		shared::utils::hook::nop(ENGINE_BASE + 0x1F6B10, 6);
+		shared::utils::hook::nop(ENGINE_BASE + 0x1F75D7, 6);
+		shared::utils::hook::nop(ENGINE_BASE + 0x1F75E1, 6);
+		shared::utils::hook::nop(ENGINE_BASE + 0x1F75F7, 6);
+		shared::utils::hook::nop(ENGINE_BASE + 0x1F6E46, 6);
+		shared::utils::hook::nop(ENGINE_BASE + 0x1F6E51, 6);
+		shared::utils::hook::nop(ENGINE_BASE + 0x1FB33A, 6);
+
+		// 1F726D nop2 (might cause issues (sky flicker issue))
+
+
+		// draw more lights?
+		// 1FB5E0 jmp (E9 D3 00 00 00 90)
+
+		// this keeps lights active longer but there is a limit so newer ones wont draw?
+		// jmp (0xE9 EB 00 00 00 90) to disable these lights completely
+		shared::utils::hook::nop(ENGINE_BASE + 0x1FB5B6, 6); 
+
 
 
 		printf("[Module] patches loaded.\n");

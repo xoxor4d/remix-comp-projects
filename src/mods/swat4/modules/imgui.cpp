@@ -125,7 +125,9 @@ namespace mods::swat4
 				SET_CHILD_WIDGET_WIDTH_MAN(140.0f); ImGui::DragFloat("Forcing Distance", &im->m_render_area_dist, 0.2f, 0.0f, 50000.0f, "%.0f");
 
 				ImGui::Checkbox("Enable Manual Node Forcing", &im->m_manual_node_forcing);
-				ImGui::SliderInt("SliderInt", &im->m_manual_node_forcing_index, 0, 300);
+				ImGui::SliderInt("SliderInt", &im->m_manual_node_forcing_index, 0, 2000);
+
+				ImGui::Checkbox("Debug stuff", &im->m_debug_stuff);
 
 			}, true, ICON_FA_ELLIPSIS_H, &im->ImGuiCol_ContainerBackground, & im->ImGuiCol_ContainerBorder);
 		}
