@@ -45,18 +45,16 @@ namespace mods::swat4
 
 	// --------------------------
 
-	void pre_vis_hk(game::FRenderState* RenderState)
+	void pre_vis_hk([[maybe_unused]] game::FRenderState* RenderState)
 	{
+#if 0
 		const auto im = imgui::get();
 		if (im->m_debug_stuff)
 		{
-			RenderState->SceneNode->InvisibleZone = -1;
-			//RenderState->ActiveZoneMask = 0x00000001000;
 
+			RenderState->SceneNode->InvisibleZone = -1;
 			for (auto a = RenderState->ActiveZones; a && RenderState->ActiveZones->Element >= 0; a = RenderState->ActiveZones->Next)
 			{
-				//RenderState->SceneNode->ViewZone = 999;
-				
 				for (auto i = 0; i < 30; i++)
 				{
 					RenderState->Zones[a->Element].Portals->Element->BoundingPlanes[i].dist = 10000;
@@ -64,35 +62,9 @@ namespace mods::swat4
 					RenderState->Zones[a->Element].Portals->Element->BoundingPlanes[i].xyz[1] = 1;
 					RenderState->Zones[a->Element].Portals->Element->BoundingPlanes[i].xyz[2] = 1;
 				}
-
-				int x = 1;
 			}
- 			//if (RenderState->ActiveZones->Element == 1)
-			//{
-			//	//RenderState->SceneNode->ViewZone = 999;
-			//	RenderState->SceneNode->InvisibleZone = -1;
-			//	for (auto i = 0; i < 30; i++)
-			//	{
-			//		RenderState->Zones[1].Portals->Element->BoundingPlanes[i].dist = 1000000;
-			//		RenderState->Zones[1].Portals->Element->BoundingPlanes[i].xyz[0] = 0;
-			//		RenderState->Zones[1].Portals->Element->BoundingPlanes[i].xyz[1] = 0;
-			//		RenderState->Zones[1].Portals->Element->BoundingPlanes[i].xyz[2] = 1;
-			//	}
-			//}
-			
-			//RenderState->ActiveZones->Element = 0;
-			//RenderState->ActiveZones->Next = nullptr;
-			//RenderState->Zones[1].AntiPortals = nullptr;
-			//RenderState->Zones[1].Portals = nullptr;
-			//RenderState->SceneNode->ViewZone = 0;
-			//RenderState->ActiveZones->Element = 3;
-			//RenderState->ActiveZones->Next = nullptr;
-			//RenderState->ActiveZoneMask = (1LL << 64) - 1;
-
-			//RenderState->ActiveZoneMask = -1;
-			//RenderState->ActiveZoneMask = 0x0000000000000001; //0x0000000008000000;
-			int x = 1;
 		}
+#endif
 	}
 
 	HOOK_RETN_PLACE_DEF(pre_vis_retn_addr);
@@ -118,20 +90,20 @@ namespace mods::swat4
 	std::vector<int> g_forcedLeaves;
 	std::vector<int> g_forcedNodes;
 
-	bool IsPointInsideBox(const game::FBox& Box, const Vector& Point)
+	bool is_point_inside_box(const game::FBox& box, const Vector& pt)
 	{
-		return Box.IsValid &&
-			Point.x >= Box.Min.x && Point.x <= Box.Max.x &&
-			Point.y >= Box.Min.y && Point.y <= Box.Max.y &&
-			Point.z >= Box.Min.z && Point.z <= Box.Max.z;
+		return box.IsValid &&
+			pt.x >= box.Min.x && pt.x <= box.Max.x &&
+			pt.y >= box.Min.y && pt.y <= box.Max.y &&
+			pt.z >= box.Min.z && pt.z <= box.Max.z;
 	}
 
-	Vector ClosestPointOnBox(const game::FBox& Box, const Vector& Point)
+	Vector closest_point_on_box(const game::FBox& box, const Vector& pt)
 	{
 		Vector result;
-		result.x = std::clamp(Point.x, Box.Min.x, Box.Max.x);
-		result.y = std::clamp(Point.y, Box.Min.y, Box.Max.y);
-		result.z = std::clamp(Point.z, Box.Min.z, Box.Max.z);
+		result.x = std::clamp(pt.x, box.Min.x, box.Max.x);
+		result.y = std::clamp(pt.y, box.Min.y, box.Max.y);
+		result.z = std::clamp(pt.z, box.Min.z, box.Max.z);
 		return result;
 	}
 
@@ -141,72 +113,193 @@ namespace mods::swat4
 		std::vector<int> Nodes;
 	};
 
-	FLeafAndNodeIndices CollectLeavesAndNodesInRadius(game::FRenderState& RenderState, Vector PlayerPos, float Radius)
+	FLeafAndNodeIndices collect_leaves_and_nodes_within_radius(const game::FRenderState& RenderState, const Vector& player_pos, const float radius)
 	{
-		FLeafAndNodeIndices Result;
-		FLOAT RadiusSquared = Radius * Radius;
+		FLeafAndNodeIndices result;
+		const float radius_squared = radius * radius;
 
 		// Collect leaves
 		for (INT iLeaf = 0; iLeaf < RenderState.Model->Leaves.ArrayNum; iLeaf++)
 		{
-			game::FBox LeafBounds;
-			auto FoundBounds = false;
+			game::FBox leaf_bounds;
+			auto found_bounds = false;
+
 			for (INT iNode = 0; iNode < RenderState.Model->Nodes.ArrayNum; iNode++)
 			{
 				auto* n = &RenderState.Model->Nodes.Data[iNode];
-				if (RenderState.Model->Nodes.Data[iNode].iLeaf[0] == iLeaf || RenderState.Model->Nodes.Data[iNode].iLeaf[1] == iLeaf)
+				if (n->iLeaf[0] == iLeaf || n->iLeaf[1] == iLeaf)
 				{
-					if (RenderState.Model->Nodes.Data[iNode].iRenderBound != -1) // INDEX_NONE
+					if (n->iRenderBound != -1) // INDEX_NONE
 					{
-						LeafBounds = RenderState.Model->Bounds.Data[RenderState.Model->Nodes.Data[iNode].iRenderBound];
-						FoundBounds = true;
+						leaf_bounds = RenderState.Model->Bounds.Data[n->iRenderBound];
+						found_bounds = true;
 						break;
 					}
 				}
 			}
 
-			if (FoundBounds && LeafBounds.IsValid)
+			if (found_bounds && leaf_bounds.IsValid)
 			{
-				if (IsPointInsideBox(LeafBounds, PlayerPos)) {
-					Result.Leaves.push_back(iLeaf); // do not add
+				if (is_point_inside_box(leaf_bounds, player_pos)) {
+					result.Leaves.push_back(iLeaf);
 				}
 				else
 				{
-					Vector ClosestPoint = ClosestPointOnBox(LeafBounds, PlayerPos);
-					float DistanceSquared = (ClosestPoint - PlayerPos).LengthSqr();
-					if (DistanceSquared <= RadiusSquared)
-					{
-						Result.Leaves.push_back(iLeaf);
+					Vector closest_point = closest_point_on_box(leaf_bounds, player_pos);
+					const float distance_squared = (closest_point - player_pos).LengthSqr();
+
+					if (distance_squared <= radius_squared) {
+						result.Leaves.push_back(iLeaf);
 					}
 				}
 			}
 		}
 
 		// Collect nodes
-		for (INT iNode = 0; iNode < RenderState.Model->Nodes.ArrayNum; iNode++)
+		for (auto inode = 0; inode < RenderState.Model->Nodes.ArrayNum; inode++)
 		{
-			game::FBspNode& Node = RenderState.Model->Nodes.Data[iNode];
-			if (Node.iRenderBound != -1 && Node.iSurf != -1 && Node.iSection != -1 && Node.iSection < RenderState.Model->Sections.ArrayNum) // INDEX_NONE
+			game::FBspNode& node = RenderState.Model->Nodes.Data[inode];
+			if (node.iRenderBound != -1 && node.iSurf != -1 && node.iSection != -1 && node.iSection < RenderState.Model->Sections.ArrayNum) // INDEX_NONE
 			{
-				game::FBox NodeBounds = RenderState.Model->Bounds.Data[Node.iRenderBound];
+				game::FBox node_bounds = RenderState.Model->Bounds.Data[node.iRenderBound];
 
-				if (IsPointInsideBox(NodeBounds, PlayerPos)) {
-					//Result.Nodes.push_back(iNode); // do not add 
+				if (is_point_inside_box(node_bounds, player_pos)) {
+					result.Nodes.push_back(inode);
 				}
 				else
 				{
-					Vector ClosestPoint = ClosestPointOnBox(NodeBounds, PlayerPos);
-					float DistanceSquared = (ClosestPoint - PlayerPos).LengthSqr();
-					if (DistanceSquared <= RadiusSquared)
-					{
-						Result.Nodes.push_back(iNode);
+					Vector closest_point = closest_point_on_box(node_bounds, player_pos);
+					const float distance_squared = (closest_point - player_pos).LengthSqr();
+
+					if (distance_squared <= radius_squared) {
+						result.Nodes.push_back(inode);
 					}
 				}
-
 			}
 		}
 
-		return Result;
+		return result;
+	}
+
+	void force_node_bspdrawlist(game::FRenderState* RenderState, const int node_idx)
+	{
+		game::FBspNode* Node = &RenderState->Model->Nodes.Data[node_idx];
+		game::FBspSurf* Surf = &RenderState->Model->Surfs.Data[Node->iSurf];
+
+		// can be used to visualize portal surfaces
+		/*for (auto i = 0; i < RenderState->Model->Surfs.ArrayNum; i++)
+		{
+			if (RenderState->Model->Surfs.Data[i].PolyFlags & game::PF_Portal)
+			{
+				RenderState->Model->Surfs.Data[i].PolyFlags &= ~game::PF_Invisible;
+			}
+		}*/
+
+		/* later drawn like
+		 for(TList<INT>* SectionList = RenderState.SectionDrawList;SectionList;SectionList = SectionList->Next)
+			RenderState.BspDrawLists[SectionList->Element]->Render(RenderState.SceneNode,RI);*/
+
+		if (Node && Surf && Surf->Material && Surf->Material->to_vtbl && Surf->Material->to_vtbl->mat_vtbl
+			&& Node->iSection != -1 && !(Surf->PolyFlags & game::PF_Invisible))
+		{
+			if (Surf->Material && Surf->Material->to_vtbl->mat_vtbl->RequiresSorting(Surf->Material))
+			{
+				// Add the node to the translucent draw list.
+				// ~ renders some weird nodes - does not seem to help with anything anyway
+#if 0
+				game::FTranslucentDrawItem TranslucentNodeItem;
+				TranslucentNodeItem.BSP = 1;
+				TranslucentNodeItem.iNode = node_idx;
+				TranslucentNodeItem.NumDynamicLights = 0;
+				TranslucentNodeItem.NumDynamicProjectors = 0;
+
+				const auto tlist = static_cast<game::TList<game::FTranslucentDrawItem>*>(shared::utils::hook::call<void* __fastcall(void* gscenemem, void* ecx, int, int)>(ENGINE_BASE + 0x3049B4)
+					(game::GSceneMem, nullptr, 32, 8));
+
+				if (tlist)
+				{
+					const auto TranslucentDrawList = RenderState->TranslucentDrawList;
+					memcpy(tlist, &TranslucentNodeItem, 0x1Cu);
+					tlist->Next = TranslucentDrawList;
+					RenderState->TranslucentDrawList = tlist;
+				}
+#endif
+			}
+			else
+			{
+				// Add the node to it's section's draw list.
+
+				// RenderState->BspDrawLists[Node.iSection] = new(game::GSceneMem) game::FBspDrawList(RenderState->Model, Node.iSection);
+				// RenderState->SectionDrawList = new(game::GSceneMem) TList<INT>(Node.iSection, RenderState->SectionDrawList);
+
+				if (!RenderState->BspDrawLists[Node->iSection])
+				{
+					// FMemStack::PushBytes(&GSceneMem, 28, 8); (alloc new scene memory)
+					game::FBspDrawList* list_mem = static_cast<game::FBspDrawList*>(shared::utils::hook::call<void* __fastcall(void* gscenemem, void* ecx, int, int)>(ENGINE_BASE + 0x3049B4)
+						(game::GSceneMem, nullptr, 28, 8));
+
+					if (list_mem)
+					{
+						// FBspDrawList::FBspDrawList (init drawlist)
+						game::FBspDrawList* list_out = shared::utils::hook::call<game::FBspDrawList * __fastcall(game::FBspDrawList * pthis, void* ecx, game::UModel*, int)>(ENGINE_BASE + 0x16C7)
+							(list_mem, nullptr, RenderState->Model, Node->iSection);
+
+						if (list_out)
+						{
+							auto BspDrawLists = RenderState->BspDrawLists;
+							auto iSection = Node->iSection;
+							BspDrawLists[iSection] = list_out;
+
+							//game::TList<int>* section_list_mem = nullptr;
+							// FMemStack::PushBytes(&GSceneMem, 8, 8); (alloc new scene memory)
+							game::TList<int>*  section_list_mem = static_cast<game::TList<int>*>(shared::utils::hook::call<void* __fastcall(void* gscenemem, void* ecx, int, int)>(ENGINE_BASE + 0x3049B4)
+								(game::GSceneMem, nullptr, 8, 8));
+
+							if (section_list_mem)
+							{
+								auto SectionDrawList = RenderState->SectionDrawList;
+								section_list_mem->Element = Node->iSection;
+								section_list_mem->Next = SectionDrawList;
+								RenderState->SectionDrawList = section_list_mem;
+							}
+						}
+					}
+				}
+
+				if (RenderState->BspDrawLists[Node->iSection])
+				{
+					const auto drawlist = RenderState->BspDrawLists[Node->iSection];
+
+					bool exits = false;
+					for (auto i = 0; i < drawlist->NumNodes; i++)
+					{
+						if (drawlist->Nodes[i] == node_idx)
+						{
+							exits = true;
+							break;
+						}
+					}
+
+					// adding a node a second time would crash the game when it tries to render the nodes
+					// prob. because the game filters out duplicated nodes but we increased the numnodes so it goes out of bounds?
+
+					if (!exits) // AddNode logic
+					{
+						game::FBspNode& nn = drawlist->Model->Nodes.Data[node_idx];
+						if (nn.iFirstVertex != -1)
+						{
+							drawlist->Nodes[drawlist->NumNodes++] = node_idx;
+							drawlist->NumTriangles += nn.NumVertices - 2;
+						}
+					}
+
+					// ~ does the same as the above but that is the func used by the game which also adds dynamic lights etc - we dont need that
+					// ~ RenderState->BspDrawLists[Node.iSection]->AddNode(node_idx, nullptr, 0, nullptr, 0, RenderState->SceneNode);
+					// shared::utils::hook::call<void* __fastcall(game::FBspDrawList* pthis, void* ecx, int NodeIndex, void** InDynamicLights, int NumDynamicLights, void** InDynamicProjectors, int NumDynamicProjectors, game::FLevelSceneNode* SceneNode)>(ENGINE_BASE + 0x5227)
+					//		(RenderState->BspDrawLists[Node->iSection], nullptr, node_idx, nullptr, 0, nullptr, 0, RenderState->SceneNode);
+				}
+			}
+		}
 	}
 
 	void post_bsp_traversal_hk(game::FRenderState* RenderState)
@@ -216,13 +309,13 @@ namespace mods::swat4
 		g_forcedLeaves.clear();
 		g_forcedNodes.clear();
 
-		Vector PlayerPos = RenderState->SceneNode->ViewOrigin;
-		FLOAT Radius = im->m_render_area_dist;
-		FLeafAndNodeIndices Indices = CollectLeavesAndNodesInRadius(*RenderState, PlayerPos, Radius);
+		Vector player_pos = RenderState->SceneNode->ViewOrigin;
+		const FLeafAndNodeIndices indices = collect_leaves_and_nodes_within_radius(*RenderState, player_pos, im->m_render_area_dist);
 
-		g_forcedLeaves = Indices.Leaves;
-		g_forcedNodes = Indices.Nodes;
+		g_forcedLeaves = indices.Leaves;
+		g_forcedNodes = indices.Nodes;
 
+#if 0	// does nothing
 		if (im->m_enable_leaf_forcing)
 		{
 			for (const auto& l : g_forcedLeaves)
@@ -236,327 +329,30 @@ namespace mods::swat4
 				RenderState->SceneNode->InvisibleZone = OriginalInvisibleZone;
 			}
 		}
+#endif
 
+		// does not check if node is already added -> will crash
 		//if (im->m_enable_node_forcing)
 		//{
 		//	for (const auto& n : g_forcedNodes)
 		//	{
 		//		// ProcessNode -- FDynamicLight, FProjectorRenderInfo
-		//		shared::utils::hook::call<void __cdecl(game::FRenderState* RenderState, int iNode, void** a3, int NumDynamicLights, void** a5, int NumDynamicProjectors)>(ENGINE_BASE + 0x1F6A20)(RenderState, n, nullptr, 0, nullptr, 0);
+		//		shared::utils::hook::call<void __cdecl(game::FRenderState* RenderState, int iNode, void** a3, int NumDynamicLights, void** a5, int NumDynamicProjectors)>
+		//			(ENGINE_BASE + 0x1F6A20)(RenderState, node_idx, nullptr, 0, nullptr, 0);
 		//	}
 		//}
 
 		if (im->m_enable_node_forcing)
 		{
-			for (const auto& node_idx : g_forcedNodes)
-			{
-				{
-					game::FBspNode* Node = &RenderState->Model->Nodes.Data[node_idx];
-					game::FBspSurf* Surf = &RenderState->Model->Surfs.Data[Node->iSurf];
-
-					//for (auto i = 0; i < RenderState->Model->Nodes.ArrayNum; i++) 
-					//{
-					//	RenderState->Model->Nodes.Data[i].ZoneMask = -1;
-					//	RenderState->Model->Nodes.Data[i].ExclusiveSphereBound.dist += 10000.0f;
-					//	RenderState->Model->Nodes.Data[i].iRenderBound = -1;
-
-					//	// setting izone for all to 0 makes everything visible but also kills me lmao
-					//	//RenderState->Model->Nodes.Data[i].iZone[0] = 0;
-					//	//RenderState->Model->Nodes.Data[i].iZone[1] = 0;
-					//}
-
-					// can be used to visualize portal surfaces
-					/*for (auto i = 0; i < RenderState->Model->Surfs.ArrayNum; i++)
-					{
-						if (RenderState->Model->Surfs.Data[i].PolyFlags & game::PF_Portal)
-						{
-							RenderState->Model->Surfs.Data[i].PolyFlags &= ~game::PF_Invisible;
-						}
-					}*/
-
-
-
-					/*for (auto i = 0; i < 64 ; i++)
-					{
-						RenderState->Zones[i].Portals = nullptr;
-					}
-					RenderState->ActiveZoneMask = -1;*/
-
-
-
-
-
-					/* later drawn like
-					 
-					 for(TList<INT>* SectionList = RenderState.SectionDrawList;SectionList;SectionList = SectionList->Next)
-						RenderState.BspDrawLists[SectionList->Element]->Render(RenderState.SceneNode,RI);
-					 
-					if (NumTriangles > 0)
-					{
-						FBspSection& Section = Model->Sections(SectionIndex);*/
-
-
-
-
-
-					if (Node && Surf && Surf->Material && Surf->Material->to_vtbl && Surf->Material->to_vtbl->mat_vtbl
-						&& Node->iSection != -1 && !(Surf->PolyFlags & game::PF_Invisible))
-					{
-						if (Surf->Material && Surf->Material->to_vtbl->mat_vtbl->RequiresSorting(Surf->Material))
-						{
-							int x = 0;
-							// Add the node to the translucent draw list.
-
-							/*FTranslucentDrawItem	TranslucentNodeItem;
-							TranslucentNodeItem.BSP = 1;
-							TranslucentNodeItem.iNode = iNode;
-							TranslucentNodeItem.NumDynamicLights = NumDynamicLights;
-							TranslucentNodeItem.NumDynamicProjectors = NumDynamicProjectors;*/
-						}
-						else
-						{
-							// Add the node to it's section's draw list.
-
-#if 1
-							if (!RenderState->BspDrawLists[Node->iSection])
-							{
-								game::FBspDrawList* list_mem = nullptr;
-								game::FBspDrawList* list_out = nullptr;
-
-								// FMemStack::PushBytes(&GSceneMem, 28, 8);
-								list_mem = static_cast<game::FBspDrawList*>(shared::utils::hook::call<void* __fastcall(void* gscenemem, void* ecx, int, int)>(ENGINE_BASE + 0x3049B4)
-									(game::GSceneMem, nullptr, 28, 8));
-
-								if (list_mem)
-								{
-									// FBspDrawList::FBspDrawList
-									list_out = shared::utils::hook::call<game::FBspDrawList * __fastcall(game::FBspDrawList * pthis, void* ecx, game::UModel*, int)>(ENGINE_BASE + 0x16C7)
-										(list_mem, nullptr, RenderState->Model, Node->iSection);
-
-									if (list_out)
-									{
-										auto BspDrawLists = RenderState->BspDrawLists;
-										auto iSection = Node->iSection;
-										BspDrawLists[iSection] = list_out;
-
-										game::TList<int>* section_list_mem = nullptr;
-										// FMemStack::PushBytes(&GSceneMem, 8, 8);
-										section_list_mem = static_cast<game::TList<int>*>(shared::utils::hook::call<void* __fastcall(void* gscenemem, void* ecx, int, int)>(ENGINE_BASE + 0x3049B4)
-											(game::GSceneMem, nullptr, 8, 8));
-
-										if (section_list_mem)
-										{
-											auto SectionDrawList = RenderState->SectionDrawList;
-											section_list_mem->Element = Node->iSection;
-											section_list_mem->Next = SectionDrawList;
-										}
-
-										RenderState->SectionDrawList = section_list_mem;
-									}
-								}
-
-								//RenderState->BspDrawLists[Node.iSection] = new(game::GSceneMem) game::FBspDrawList(RenderState->Model, Node.iSection);
-								//RenderState->SectionDrawList = new(game::GSceneMem) TList<INT>(Node.iSection, RenderState->SectionDrawList);
-							}
-#endif
-
-							if (RenderState->BspDrawLists[Node->iSection])
-							{
-								const auto pthis = RenderState->BspDrawLists[Node->iSection];
-
-								bool exits = false;
-								for (auto i = 0; i < pthis->NumNodes; i++)
-								{
-									if (pthis->Nodes[i] == node_idx)
-									{
-										exits = true;
-										break;
-									}
-								}
-
-								// adding a node a second time would crash the game when it tries to render the nodes
-								// prob. because the game filters out duplicated nodes but we increased the numnodes so it goes out of bounds?
-
-								if (!exits) 
-								{
-									game::FBspNode& nn = pthis->Model->Nodes.Data[node_idx];
-									if (nn.iFirstVertex != -1)
-									{
-										pthis->Nodes[pthis->NumNodes++] = node_idx;
-										pthis->NumTriangles += nn.NumVertices - 2;
-									}
-								}
-							}
-
-							//RenderState->BspDrawLists[Node.iSection]->AddNode(node_idx, nullptr, 0, nullptr, 0, RenderState->SceneNode);
-							// void __thiscall FBspDrawList::AddNode(FBspDrawList *this, int NodeIndex, FDynamicLight **InDynamicLights, FProjectorRenderInfo *NumDynamicLights, FProjectorRenderInfo **InDynamicProjectors, int NumDynamicProjectors, FLevelSceneNode *SceneNode)
-							// 5227
-
-
-
-							//shared::utils::hook::call<void* __fastcall(game::FBspDrawList* pthis, void* ecx, int NodeIndex, void** InDynamicLights, int NumDynamicLights, void** InDynamicProjectors, int NumDynamicProjectors, game::FLevelSceneNode* SceneNode)>(ENGINE_BASE + 0x5227)
-							//	(RenderState->BspDrawLists[Node->iSection], nullptr, node_idx, nullptr, 0, nullptr, 0, RenderState->SceneNode);
-
-							// this is what the func above does minus the actor crap
-							/*const auto pthis = RenderState->BspDrawLists[Node->iSection];
-							game::FBspNode& nn = pthis->Model->Nodes.Data[node_idx];
-
-							if (nn.iFirstVertex != -1)
-							{
-								pthis->Nodes[pthis->NumNodes++] = node_idx;
-								pthis->NumTriangles += nn.NumVertices - 2;
-							}*/
-
-							int xx = 1;
-						}
-					}
-				}
+			for (const auto& node_idx : g_forcedNodes) {
+				force_node_bspdrawlist(RenderState, node_idx);
 			}
 		}
 
 		if (im->m_manual_node_forcing)
 		{
-			// 612
-			auto node_idx = std::clamp(im->m_manual_node_forcing_index, 0, RenderState->Model->Nodes.ArrayNum - 1);
-
-			// ProcessNode -- FDynamicLight, FProjectorRenderInfo
-			/*shared::utils::hook::call<void __cdecl(game::FRenderState* RenderState, int iNode, void** a3, int NumDynamicLights, void** a5, int NumDynamicProjectors)>
-				(ENGINE_BASE + 0x1F6A20)(RenderState, node_idx, nullptr, 0, nullptr, 0);*/
-
-			// noclipping into a wall fills outside actors 
-
-			/*{
-				RenderState->ActiveZoneMask = 1;
-				RenderState->ActiveZones->Element = 0;
-				RenderState->ActiveZones->Next = nullptr;
-			}*/
-
-			{
-				game::FBspNode* Node = &RenderState->Model->Nodes.Data[node_idx];
-				game::FBspSurf* Surf = &RenderState->Model->Surfs.Data[Node->iSurf];
-
-				//for (auto i = 0; i < RenderState->Model->Nodes.ArrayNum; i++) 
-				//{
-				//	RenderState->Model->Nodes.Data[i].ZoneMask = -1;
-				//	RenderState->Model->Nodes.Data[i].ExclusiveSphereBound.dist += 10000.0f;
-				//	RenderState->Model->Nodes.Data[i].iRenderBound = -1;
-
-				//	// setting izone for all to 0 makes everything visible but also kills me lmao
-				//	//RenderState->Model->Nodes.Data[i].iZone[0] = 0;
-				//	//RenderState->Model->Nodes.Data[i].iZone[1] = 0;
-				//}
-
-				// can be used to visualize portal surfaces
-				/*for (auto i = 0; i < RenderState->Model->Surfs.ArrayNum; i++)
-				{
-					if (RenderState->Model->Surfs.Data[i].PolyFlags & game::PF_Portal)
-					{
-						RenderState->Model->Surfs.Data[i].PolyFlags &= ~game::PF_Invisible;
-					}
-				}*/
-
-
-
-				/*for (auto i = 0; i < 64 ; i++)
-				{
-					RenderState->Zones[i].Portals = nullptr;
-				}
-				RenderState->ActiveZoneMask = -1;*/
-
-
-
-				if (Node && Surf && Surf->Material && Surf->Material->to_vtbl && Surf->Material->to_vtbl->mat_vtbl)
-				{
-					if (Surf->Material && Surf->Material->to_vtbl->mat_vtbl->RequiresSorting(Surf->Material))
-					{
-						int x = 0;
-						// Add the node to the translucent draw list.
-
-						/*FTranslucentDrawItem	TranslucentNodeItem;
-						TranslucentNodeItem.BSP = 1;
-						TranslucentNodeItem.iNode = iNode;
-						TranslucentNodeItem.NumDynamicLights = NumDynamicLights;
-						TranslucentNodeItem.NumDynamicProjectors = NumDynamicProjectors;*/
-					}
-					else
-					{
-						// Add the node to it's section's draw list.
-
-#if 0
-						if (!RenderState->BspDrawLists[Node->iSection])
-						{
-							game::FBspDrawList* list_mem = nullptr;
-							game::FBspDrawList* list_out = nullptr;
-
-							// FMemStack::PushBytes(&GSceneMem, 28, 8);
-							list_mem = static_cast<game::FBspDrawList*>(shared::utils::hook::call<void* __fastcall(void* gscenemem, void* ecx, int, int)>(ENGINE_BASE + 0x3049B4)
-								(game::GSceneMem, nullptr, 28, 8));
-
-							if (list_mem)
-							{
-								// FBspDrawList::FBspDrawList
-								list_out = shared::utils::hook::call<game::FBspDrawList * __fastcall(game::FBspDrawList * pthis, void* ecx, game::UModel*, int)>(ENGINE_BASE + 0x16C7)
-									(list_mem, nullptr, RenderState->Model, Node->iSection);
-							}
-
-							auto BspDrawLists = RenderState->BspDrawLists;
-							auto iSection = Node->iSection;
-							BspDrawLists[iSection] = list_out;
-
-							game::TList<int>* section_list_mem = nullptr;
-							// FMemStack::PushBytes(&GSceneMem, 8, 8);
-							section_list_mem = static_cast<game::TList<int>*>(shared::utils::hook::call<void* __fastcall(void* gscenemem, void* ecx, int, int)>(ENGINE_BASE + 0x3049B4)
-								(game::GSceneMem, nullptr, 8, 8));
-
-							if (section_list_mem)
-							{
-								auto SectionDrawList = RenderState->SectionDrawList;
-								section_list_mem->Element = Node->iSection;
-								section_list_mem->Next = SectionDrawList;
-							}
-
-							RenderState->SectionDrawList = section_list_mem;
-
-
-							//RenderState->BspDrawLists[Node.iSection] = new(game::GSceneMem) game::FBspDrawList(RenderState->Model, Node.iSection);
-							//RenderState->SectionDrawList = new(game::GSceneMem) TList<INT>(Node.iSection, RenderState->SectionDrawList);
-						}
-#endif
-						if (RenderState->BspDrawLists[Node->iSection])
-						{
-							const auto pthis = RenderState->BspDrawLists[Node->iSection];
-							game::FBspNode& nn = pthis->Model->Nodes.Data[node_idx];
-
-							if (nn.iFirstVertex != -1)
-							{
-								pthis->Nodes[pthis->NumNodes++] = node_idx;
-								pthis->NumTriangles += nn.NumVertices - 2;
-							}
-						}
-
-						//RenderState->BspDrawLists[Node.iSection]->AddNode(node_idx, nullptr, 0, nullptr, 0, RenderState->SceneNode);
-						// void __thiscall FBspDrawList::AddNode(FBspDrawList *this, int NodeIndex, FDynamicLight **InDynamicLights, FProjectorRenderInfo *NumDynamicLights, FProjectorRenderInfo **InDynamicProjectors, int NumDynamicProjectors, FLevelSceneNode *SceneNode)
-						// 5227
-
-
-
-						//shared::utils::hook::call<void* __fastcall(game::FBspDrawList* pthis, void* ecx, int NodeIndex, void** InDynamicLights, int NumDynamicLights, void** InDynamicProjectors, int NumDynamicProjectors, game::FLevelSceneNode* SceneNode)>(ENGINE_BASE + 0x5227)
-						//	(RenderState->BspDrawLists[Node->iSection], nullptr, node_idx, nullptr, 0, nullptr, 0, RenderState->SceneNode);
-
-						// this is what the func above does minus the actor crap
-						/*const auto pthis = RenderState->BspDrawLists[Node->iSection];
-						game::FBspNode& nn = pthis->Model->Nodes.Data[node_idx];
-
-						if (nn.iFirstVertex != -1)
-						{
-							pthis->Nodes[pthis->NumNodes++] = node_idx;
-							pthis->NumTriangles += nn.NumVertices - 2;
-						}*/
-
-						int xx = 1;
-					}
-				}
-			}
+			const auto node_idx = std::clamp(im->m_manual_node_forcing_index, 0, RenderState->Model->Nodes.ArrayNum - 1);
+			force_node_bspdrawlist(RenderState, node_idx);
 		}
 	}
 
@@ -579,15 +375,9 @@ namespace mods::swat4
 
 	// --------------------------
 
-	void post_get_view_frustum_hk(game::FRenderState* RenderState, game::FLevelSceneNode* node, game::FConvexVolume* frustum)
+	void post_get_view_frustum_hk([[maybe_unused]] game::FRenderState* RenderState, [[maybe_unused]] game::FLevelSceneNode* node, game::FConvexVolume* frustum)
 	{
-		/*if (node->ViewZone > 15)
-		{
-			node->ViewZone = 0;
-		}*/
-
 		const auto& im = imgui::get();
-
 		if (im->m_cull_disable_frustum)
 		{
 			for (auto i = 0u; i < 5; i++) {
@@ -637,16 +427,9 @@ namespace mods::swat4
 		shared::utils::hook(ENGINE_BASE + 0x1FC3FE, post_bsp_traversal_stub, HOOK_JUMP).install()->quick();
 		HOOK_RETN_PLACE(post_bsp_traversal_retn_addr, ENGINE_BASE + 0x1FC403);
 
-
 		// this fixes frustum culling
 		shared::utils::hook(ENGINE_BASE + 0x1FDB19, post_get_view_frustum_stub, HOOK_JUMP).install()->quick();
 		HOOK_RETN_PLACE(post_get_view_frustum_retn_addr, ENGINE_BASE + 0x1FDB1E);
-
-		// ENGINE + 0x1F6ABB (nop2)
-		// ^ + 0x1F6ACD+3 to byte 01 (to mov [ebp-20],00000001)
-
-		// ^ + 0x1F6AEC (nop5)
-		// ^ + 0x1F6AF1 set bytes to B8 01 00 00 00 (mov eax,00000001)
 
 
 		shared::utils::hook::nop(ENGINE_BASE + 0x1F6B10, 6);
@@ -667,8 +450,9 @@ namespace mods::swat4
 		// jmp (0xE9 EB 00 00 00 90) to disable these lights completely
 		shared::utils::hook::nop(ENGINE_BASE + 0x1FB5B6, 6); 
 
+		// disable sky
+		//  1F6BF6 -> E9 C1 09 00 00 90  .... or enabled .... 0F 85 C0 09 00 00
 
-
-		printf("[Module] patches loaded.\n");
+		std::cout << "[Module] patches loaded.\n";
 	}
 }

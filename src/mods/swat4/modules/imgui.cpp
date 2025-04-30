@@ -1,6 +1,7 @@
 #include "std_include.hpp"
 #include "imgui.hpp"
 
+#include "shared/common/flags.hpp"
 #include "shared/imgui/imgui_helper.hpp"
 #include "shared/imgui/font_awesome_solid_900.hpp"
 #include "shared/imgui/font_defines.hpp"
@@ -120,14 +121,25 @@ namespace mods::swat4
 
 				ImGui::Separator();
 
-				ImGui::Checkbox("Enable Leaf Forcing", &im->m_enable_leaf_forcing);
+				//ImGui::Checkbox("Enable Leaf Forcing", &im->m_enable_leaf_forcing);
 				ImGui::Checkbox("Enable Node Forcing", &im->m_enable_node_forcing);
 				SET_CHILD_WIDGET_WIDTH_MAN(140.0f); ImGui::DragFloat("Forcing Distance", &im->m_render_area_dist, 0.2f, 0.0f, 50000.0f, "%.0f");
 
 				ImGui::Checkbox("Enable Manual Node Forcing", &im->m_manual_node_forcing);
 				ImGui::SliderInt("SliderInt", &im->m_manual_node_forcing_index, 0, 2000);
 
-				ImGui::Checkbox("Debug stuff", &im->m_debug_stuff);
+				if (ImGui::Checkbox("Disable Skybox", &im->m_disable_sky))
+				{
+					// disable sky
+					//  1F6BF6 -> E9 C1 09 00 00 90  .... or enabled .... 0F 85 C0 09 00 00
+
+					if (im->m_disable_sky) {
+						shared::utils::hook::set(ENGINE_BASE + 0x1F6BF6, 0xE9, 0xC1, 0x09, 0x00, 0x00, 0x90);
+					} else {
+						shared::utils::hook::set(ENGINE_BASE + 0x1F6BF6, 0x0F, 0x85, 0xC0, 0x09, 0x00, 0x00);
+					}
+				}
+				//ImGui::Checkbox("Debug stuff", &im->m_debug_stuff);
 
 			}, true, ICON_FA_ELLIPSIS_H, &im->ImGuiCol_ContainerBackground, & im->ImGuiCol_ContainerBorder);
 		}
@@ -460,6 +472,10 @@ namespace mods::swat4
 		ImGui_ImplWin32_Init(shared::globals::main_window);
 		g_game_wndproc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(shared::globals::main_window, GWLP_WNDPROC, LONG_PTR(wnd_proc_hk)));
 
-		printf("[Module] imgui loaded.\n");
+		if (shared::common::flags::has_flag("disable_sky")) {
+			this->m_disable_sky = true;
+		}
+
+		std::cout << "[Module] imgui loaded.\n";
 	}
 }

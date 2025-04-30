@@ -9,10 +9,6 @@ How does a shader based game work with remix? By manually reimplementing fixed f
 
 <br>
 
-![img](.github/img/01.png)
-
-<br>
-
 If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![ko-fi](https://xoxor4d.github.io/assets/img/social/kofi.png)](https://ko-fi.com/xoxor4d)
 </div>
 
@@ -23,9 +19,10 @@ If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![k
 <div align="center" markdown="1"> 
 
 # Mods:
+<br>
 
 ### Bioshock 1 (GOG)  
-![img](.github/img/bioshock1.jpg)
+![img](.github/img/01.png)
 
 </div>
 
@@ -38,6 +35,26 @@ If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![k
 - _"Broken"_ vertex normals (Normals are packed and that is currently not supported by remix)
 - Some stuff appears emissive and might flicker from time to time
 - Hash of (og.) emissive textures changes
+
+<br>
+<br>
+
+<div align="center" markdown="1"> 
+
+### SWAT 4 - Gold (GOG)  
+![img](.github/img/swat4.jpg)
+
+</div>
+
+###### The good:  
+- The game works pretty good out of the box so this mod _only_ features:
+- Disabled / adjustable frustum culling
+- Forcing of BSP surfaces within a certain distance around the player to help with light leakage (wip)
+- Option to disable the skybox (commandline arg `-disable_sky` to disable it by default)
+
+###### The bad:
+- Remix bug: with the sky enabled, unfocusing the game will render only the skybox for a frame and leak a little vram.  
+This can also happen randomly when walking through doorways which will ultimativly fill up the entire gpu memory.
 
 <br>
 <br>
@@ -103,10 +120,27 @@ If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![k
 
 <br>
 
-## Overall usage
-- Press `F5` to open the in-game gui for some compatibility tweaks or debug settings
-  - Using the fake camera will most likely enable remix path tracing 
+## Installing
+- If there are [Releases](https://github.com/xoxor4d/remix-comp-projects/releases) - grab the latest one and follow the instructions found there
+- Installing [Action builds](https://github.com/xoxor4d/remix-comp-projects/actions) requires a GitHub account (to download the artifact)
+  - Download the latest [Action build](https://github.com/xoxor4d/remix-comp-projects/actions)
+  - Download the latest [remix release](https://github.com/NVIDIAGameWorks/rtx-remix/tags) from github and place the files into your game folder (next to your game executable)
+  - Delete the `d3d8to9.dll` that comes with remix
+  - Extract the files within the game mod folder (eg. `bioshock1`) next to the game executable and override files when prompted
+  - Extract and place the game mod file (eg. `bioshock1-rtx.dll`) next to the game executable
+  - Some game mod folders contain a `_not_root_folder` folder with additional configuration files used by the game. Place accordingly
+  - Run the game using the run-with-rtx.bat
 
+<br>
+
+## Overall usage
+- Press `F5` or `F4` to open the in-game gui for some compatibility tweaks or debug settings
+  - Using the fake camera will most likely enable remix path tracing
+
+#### ⚠️ Note
+
+- Heavy wip
+- Most of the mods don't work very well (if at all) 
 
 <br>
 
@@ -116,13 +150,6 @@ If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![k
 - Compile the mod of your choice
 - Copy the mod dll into your game directory along with the files in the `assets/<Mod>` folder
   - check if `assets/<Mod>` contains `_not_root_folder` and place the files in there accordingly
-
-<br>
-
-#### ⚠️ Note
-
-- Heavy wip
-- Most of the mods don't work very well (if at all) 
 
 <br>
 

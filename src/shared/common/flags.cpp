@@ -3,13 +3,19 @@
 
 namespace shared::common
 {
-	std::vector<std::string> flags::enabled_flags;
+	std::vector<std::string> flags::m_enabled_flags;
+
+	// gets the singleton instance
+	flags& flags::get()
+	{
+		static flags instance;
+		return instance;
+	}
 
 	bool flags::has_flag(const std::string& flag)
 	{
-		parse_flags();
-
-		for (const auto& entry : enabled_flags)
+		get().parse_flags();
+		for (const auto& entry : m_enabled_flags)
 		{
 			if (utils::str_to_lower(entry) == utils::str_to_lower(flag)) {
 				return true;
@@ -37,7 +43,7 @@ namespace shared::common
 					if (wide_flag[0] == L'-')
 					{
 						wide_flag.erase(wide_flag.begin());
-						enabled_flags.emplace_back(utils::convert_wstring(wide_flag));
+						m_enabled_flags.emplace_back(utils::convert_wstring(wide_flag));
 					}
 				}
 

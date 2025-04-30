@@ -495,6 +495,17 @@ namespace mods::swat4::game
 		}
 	};
 
+	struct FTranslucentDrawItem
+	{
+		int	BSP;
+		int	iNode;
+		void** DynamicLights; // FDynamicLight
+		int	NumDynamicLights;
+		void** DynamicProjectors; // FProjectorRenderInfo
+		int NumDynamicProjectors;
+		void* DynamicActor; // FDynamicActor
+	};
+
 	struct FBspNodeList
 	{
 		UModel* Model;
@@ -590,7 +601,7 @@ namespace mods::swat4::game
 		TList_FConvexVolume__* AntiPortals;
 	};
 
-	struct __declspec(align(4)) FRenderState
+	struct /*__declspec(align(4))*/ FRenderState
 	{
 		FLevelSceneNode* SceneNode;
 		FRenderInterface* RI;
@@ -607,9 +618,10 @@ namespace mods::swat4::game
 		//FDynamicLight*** LeafLights;
 		//FProjectorRenderInfo*** LeafProjectors;
 		//TList_FDynamicActor__* ActorDrawList;
-		//TList_FTranslucentDrawItem_* TranslucentDrawList;
+		int pad1[3];
+		TList<FTranslucentDrawItem>* TranslucentDrawList;
 		//FStaticMeshBatchList StaticMeshBatchList;
-		int pad[9];
+		int pad[5];
 		FBspDrawList** BspDrawLists;
 		TList<INT>* SectionDrawList;
 		//TList_FBspStencilDrawList__* StencilDrawLists;
@@ -617,6 +629,7 @@ namespace mods::swat4::game
 	};
 
 	STATIC_ASSERT_OFFSET(FRenderState, Zones, 0x1C);
+	STATIC_ASSERT_OFFSET(FRenderState, TranslucentDrawList, 0x33C);
 	STATIC_ASSERT_OFFSET(FRenderState, BspDrawLists, 0x354);
 
 }

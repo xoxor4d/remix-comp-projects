@@ -42,11 +42,11 @@ namespace mods::swat4
 	{
 		std::uint32_t T = 0;
 
-		char exe_path[MAX_PATH];
-		GetModuleFileNameA(nullptr, exe_path, MAX_PATH); // Current process executable
+		char exe_path[MAX_PATH]; GetModuleFileNameA(nullptr, exe_path, MAX_PATH);
 		const std::string sha1 = shared::utils::hash_file_sha1(exe_path);
 
-		if (sha1 == "94d1a40f8f60b6664f539cab4c38a444b7c4a1e7")
+		if (shared::globals::check_game_support_by_sha1(sha1, 
+			"94d1a40f8f60b6664f539cab4c38a444b7c4a1e7")) // gog gold base game
 		{
 			while (!shared::globals::main_window)
 			{
@@ -82,7 +82,7 @@ namespace mods::swat4
 		Beep(523, 100);
 #endif
 
-		SetWindowTextA(shared::globals::main_window, "Swat 4 - RTX");
+		SetWindowTextA(shared::globals::main_window, "SWAT4 - RTX");
 		mods::swat4::main();
 		return 0;
 	}
@@ -92,7 +92,6 @@ BOOL APIENTRY DllMain(HMODULE hmodule, const DWORD ul_reason_for_call, LPVOID)
 {
 	if (ul_reason_for_call == DLL_PROCESS_ATTACH) 
 	{
-
 		shared::globals::dll_hmodule = hmodule;
 
 		if (const auto MH_INIT_STATUS = MH_Initialize(); MH_INIT_STATUS != MH_STATUS::MH_OK)
