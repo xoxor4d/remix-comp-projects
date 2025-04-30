@@ -313,8 +313,8 @@ namespace mods::bioshock1
 			!patches->m_ff_use_shader && game::rg)
 		{
 			{
-				// only valid on 16:9 - TODO
-				if (shared::utils::float_equal(game::rg->projMatrix.m[0][0], 0.750000060f))
+				// does this work on other resolutions?
+				if (shared::utils::float_equal(game::rg->projMatrix.m[1][1], 1.33333337f /*0.750000060f*/))
 				{
 					dev->GetVertexShader(&ff_og_shader);
 					dev->SetVertexShader(nullptr);
@@ -330,11 +330,11 @@ namespace mods::bioshock1
 					dev->GetRenderState(D3DRS_DESTBLEND, &og_destblend);
 
 					// do not allow emissive surfaces - helps with meshes getting emissive when using plasmids
-					if (og_srcblend == D3DBLEND_ONE && og_destblend == D3DBLEND_ONE)
-					{
-						dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);
-						//return true;
-					}
+					//if (og_srcblend == D3DBLEND_ONE && og_destblend == D3DBLEND_ONE) 
+					//{
+					//	dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO); // FIXME! this breaks particles and decals 
+					//	//return true;
+					//}
 
 					//dev->SetRenderState(D3DRS_ALPHABLENDENABLE, 0);
 					//dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
@@ -535,7 +535,13 @@ namespace mods::bioshock1
 		// this fixes frustum culling
 		shared::utils::hook(0x10AE27EE, post_get_view_frustum_stub, HOOK_JUMP).install()->quick();
 
-		
+
+		// render more of the map to fix light leakage (imgui anti cull tweak #1)
+		shared::utils::hook::nop(0x10AEC1DC, 2);
+		shared::utils::hook::nop(0x10AE7D5D, 6);
+		shared::utils::hook::set<BYTE>(0x10AE7D23, 0xEB);
+		// shared::utils::hook::set<BYTE>(0x10AEC7E3, 0xEB); + that renders the entire map 
+
 
 		// FIX VERTEX EXPLOSIONS!
 		shared::utils::hook::set(0x10AE8D25, 0xE9, 0x29, 0x01, 0x0, 0x0, 0x90);

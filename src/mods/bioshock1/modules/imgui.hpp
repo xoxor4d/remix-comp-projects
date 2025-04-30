@@ -50,6 +50,9 @@ namespace mods::bioshock1
 		float m_viewmodel_proj_near_plane = 1.0f;   // Near clipping plane
 		float m_viewmodel_proj_far_plane = 1000.0f; // Far clipping plane
 
+		bool m_anti_culling_tweak1 = true;
+		bool m_anti_culling_tweak2 = false;
+
 		bool is_imgui_game_input_allowed() const {
 			return m_im_allow_game_input;
 		}

@@ -176,12 +176,45 @@ namespace mods::bioshock1
 #endif
 	}
 
+	void cont_cull_quickcommands()
+	{
+		const auto& im = imgui::get();
+
+		if (ImGui::Checkbox("Use Anti Culling Tweak #1", &im->m_anti_culling_tweak1))
+		{
+			if (im->m_anti_culling_tweak1)
+			{
+				shared::utils::hook::nop(0x10AEC1DC, 2);
+				shared::utils::hook::nop(0x10AE7D5D, 6);
+				shared::utils::hook::set<BYTE>(0x10AE7D23, 0xEB);
+			}
+			else
+			{
+				shared::utils::hook::set(0x10AEC1DC, 0x74, 0x21);
+				shared::utils::hook::set(0x10AE7D5D, 0x0F, 0x84, 0xF1, 0x09, 0x00, 0x00);
+				shared::utils::hook::set(0x10AE7D23, 0x75, 0x15);
+			}
+		}
+
+		if (ImGui::Checkbox("Use Anti Culling Tweak #2", &im->m_anti_culling_tweak2))
+		{
+			shared::utils::hook::set<BYTE>(0x10AEC7E3, im->m_anti_culling_tweak2 ? 0xEB : 0x75);
+		} TT("Using both will render the entire map.");
+	}
+
 	void imgui::tab_general()
 	{
 		// quick commands
 		{
 			static float cont_quickcmd_height = 0.0f;
 			cont_quickcmd_height = ImGui::Widget_ContainerWithCollapsingTitle("Quick Commands", cont_quickcmd_height, cont_general_quickcommands,
+				true, ICON_FA_TERMINAL, &ImGuiCol_ContainerBackground, &ImGuiCol_ContainerBorder);
+		}
+
+		// culling tweaks
+		{
+			static float cont_cull_height = 0.0f;
+			cont_cull_height = ImGui::Widget_ContainerWithCollapsingTitle("Culling Tweaks", cont_cull_height, cont_cull_quickcommands,
 				true, ICON_FA_TERMINAL, &ImGuiCol_ContainerBackground, &ImGuiCol_ContainerBorder);
 		}
 	}

@@ -29,12 +29,12 @@ If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![k
 ###### The good:  
 - Pretty stable
 - Most things rendered via fixed function
-- Reduced culling
+- No Frustum Culling
+- More Anti-Culling Tweaks (Tweakable via ImGui `F5`)
 
 ###### The bad:
 - _"Broken"_ vertex normals (Normals are packed and that is currently not supported by remix)
-- Some stuff appears emissive and might flicker from time to time
-- Hash of (og.) emissive textures changes
+- Hash of orig. emissive textures changes
 
 <br>
 <br>
