@@ -383,64 +383,127 @@ workspace "remix-comp-proj"
 	group ""
 
 
-		---------------------------
+	---------------------------
 
-		project "swat4-rtx"
-		kind "SharedLib"
-		language "C++"
-	
-		linkoptions {
-			"/PDBCompress"
-		}
-	
-		pchheader "std_include.hpp"
-		pchsource "src/mods/swat4/std_include.cpp"
-	
-		files {
-			"./src/mods/swat4/**.hpp",
-			"./src/mods/swat4/**.cpp",
-		}
-	
-		includedirs {
-			"%{prj.location}/src",
-			"./src",
-		}
-	
-		links {
-			"_shared"
-		}
-	
-		resincludedirs {
-			"$(ProjectDir)src"
-		}
-	
-		buildoptions { 
-			"/Zm100 -Zm100" 
-		}
-	
-		filter "configurations:Debug or configurations:Release"
-			if(os.getenv("SWAT4_ROOT")) then
-				print ("Setup paths using environment variable 'SWAT4_ROOT' :: '" .. os.getenv("SWAT4_ROOT") .. "'")
-				targetdir(os.getenv("SWAT4_ROOT"))
-				debugdir (os.getenv("SWAT4_ROOT"))
-				debugcommand (os.getenv("SWAT4_ROOT") .. "/" .. "Swat4.exe")
-			end
-		filter {}
-	
-		-- Specific configurations
-		flags { 
-			"UndefinedIdentifiers" 
-		}
-	
-		warnings "Extra"
+	project "swat4-rtx"
+	kind "SharedLib"
+	language "C++"
 
-		-- Post-build
-		postbuildcommands {
-			"MOVE /Y \"$(TargetDir)swat4-rtx.dll\" \"$(TargetDir)swat4-rtx.asi\"",
-		}
+	linkoptions {
+		"/PDBCompress"
+	}
+
+	pchheader "std_include.hpp"
+	pchsource "src/mods/swat4/std_include.cpp"
+
+	files {
+		"./src/mods/swat4/**.hpp",
+		"./src/mods/swat4/**.cpp",
+	}
+
+	includedirs {
+		"%{prj.location}/src",
+		"./src",
+	}
+
+	links {
+		"_shared"
+	}
+
+	resincludedirs {
+		"$(ProjectDir)src"
+	}
+
+	buildoptions { 
+		"/Zm100 -Zm100" 
+	}
+
+	filter "configurations:Debug or configurations:Release"
+		if(os.getenv("SWAT4_ROOT")) then
+			print ("Setup paths using environment variable 'SWAT4_ROOT' :: '" .. os.getenv("SWAT4_ROOT") .. "'")
+			targetdir(os.getenv("SWAT4_ROOT"))
+			debugdir (os.getenv("SWAT4_ROOT"))
+			debugcommand (os.getenv("SWAT4_ROOT") .. "/" .. "Swat4.exe")
+		end
+	filter {}
+
+	-- Specific configurations
+	flags { 
+		"UndefinedIdentifiers" 
+	}
+
+	warnings "Extra"
+
+	-- Post-build
+	postbuildcommands {
+		"MOVE /Y \"$(TargetDir)swat4-rtx.dll\" \"$(TargetDir)swat4-rtx.asi\"",
+	}
+
+	dependencies.imports()
+
+	group "Dependencies"
+		dependencies.projects()
+	group ""
+
 	
-		dependencies.imports()
-	
-		group "Dependencies"
-			dependencies.projects()
-		group ""
+	---------------------------
+
+	project "killingfloor1-rtx"
+	kind "SharedLib"
+	language "C++"
+
+	linkoptions {
+		"/PDBCompress"
+	}
+
+	pchheader "std_include.hpp"
+	pchsource "src/mods/killingfloor1/std_include.cpp"
+
+	files {
+		"./src/mods/killingfloor1/**.hpp",
+		"./src/mods/killingfloor1/**.cpp",
+	}
+
+	includedirs {
+		"%{prj.location}/src",
+		"./src",
+	}
+
+	links {
+		"_shared"
+	}
+
+	resincludedirs {
+		"$(ProjectDir)src"
+	}
+
+	buildoptions { 
+		"/Zm100 -Zm100" 
+	}
+
+	filter "configurations:Debug or configurations:Release"
+		if(os.getenv("KILLINGFLOOR1_ROOT")) then
+			print ("Setup paths using environment variable 'KILLINGFLOOR1_ROOT' :: '" .. os.getenv("KILLINGFLOOR1_ROOT") .. "'")
+			targetdir(os.getenv("KILLINGFLOOR1_ROOT"))
+			debugdir (os.getenv("KILLINGFLOOR1_ROOT"))
+			debugcommand (os.getenv("KILLINGFLOOR1_ROOT") .. "/" .. "KillingFloor.exe")
+		end
+	filter {}
+
+	-- Specific configurations
+	flags { 
+		"UndefinedIdentifiers" 
+	}
+
+	warnings "Extra"
+
+	-- Post-build
+	postbuildcommands {
+		"MOVE /Y \"$(TargetDir)killingfloor1-rtx.dll\" \"$(TargetDir)killingfloor1-rtx.asi\"",
+	}
+
+	dependencies.imports()
+
+	group "Dependencies"
+		dependencies.projects()
+	group ""

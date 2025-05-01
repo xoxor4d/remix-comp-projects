@@ -109,13 +109,17 @@ namespace shared::utils
 		Fn virtual_function(void* inst, size_t index) {
 			return reinterpret_cast<Fn>(virtual_table(inst)[index]);
 		}
+
+		// ------
+
+		DWORD find_pattern_in_module(const HMODULE module_name, const std::string_view& signature, DWORD offset = 0u);
 	}
 
 	class hook
 	{
 	public:
 
-		hook() : initialized(false), installed(false), place(nullptr), stub(nullptr), original(nullptr), useJump(false), protection(0) { ZeroMemory(this->buffer, sizeof(this->buffer)); }
+		hook() : initialized(false), installed(false), place(nullptr), stub(nullptr), original(nullptr), trampoline(nullptr), useJump(false), protection(0) { ZeroMemory(this->buffer, sizeof(this->buffer)); }
 
 		hook(void* place, void* stub, bool useJump = true) : hook() { this->initialize(place, stub, useJump); }
 		hook(void* place, void(*stub)(), bool useJump = true) : hook(place, reinterpret_cast<void*>(stub), useJump) {}
@@ -132,7 +136,10 @@ namespace shared::utils
 		hook* uninstall(bool unprotect = true);
 
 		void* get_address();
-		void quick();
+		hook* quick();
+
+		DWORD create_trampoline();
+		void* get_trampoline() { return this->trampoline; }
 
 		template <typename T> static std::function<T> call(DWORD function)
 		{
@@ -225,6 +232,7 @@ namespace shared::utils
 		void* place;
 		void* stub;
 		void* original;
+		void* trampoline;
 		char buffer[5];
 		bool useJump;
 

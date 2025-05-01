@@ -1,4 +1,5 @@
 #include "std_include.hpp"
+#include <psapi.h>
 
 namespace shared::utils
 {
@@ -7,12 +8,94 @@ namespace shared::utils
 		void** virtual_table(mem::addr_t inst) {
 			return inst.read<void**>();
 		}
+
+		DWORD find_pattern_in_module(const HMODULE module, const std::string_view& signature, DWORD offset)
+		{
+			if (!module) {
+				throw std::runtime_error("No or invalid module specified");
+			}
+
+			DWORD size = 0u;
+			uint8_t* base = nullptr;
+
+			{
+				const auto dos_header = reinterpret_cast<PIMAGE_DOS_HEADER>(module);
+				if (dos_header->e_magic != IMAGE_DOS_SIGNATURE) {
+					throw std::runtime_error("Invalid IMAGE_DOS_SIGNATURE");
+				}
+
+				const auto nt_headers = reinterpret_cast<PIMAGE_NT_HEADERS>(reinterpret_cast<BYTE*>(module) + dos_header->e_lfanew);
+
+				if (nt_headers->Signature != IMAGE_NT_SIGNATURE) {
+					throw std::runtime_error("Invalid IMAGE_NT_SIGNATURE");
+				}
+
+				size = nt_headers->OptionalHeader.SizeOfImage;
+				base = reinterpret_cast<uint8_t*>(module);
+			}
+
+			// parse signature into bytes and mask
+			std::vector<uint8_t> pattern_bytes;
+			std::vector<bool> mask; // true = wildcard, false = match byte
+
+			for (size_t i = 0; i < signature.length();)
+			{
+				if (signature[i] == ' ')
+				{
+					++i;
+					continue;
+				}
+
+				if (signature[i] == '?')
+				{
+					pattern_bytes.push_back(0); // dummy value for wildcard
+					mask.push_back(true);
+					++i;
+
+					if (i < signature.length() && signature[i] == '?') { // handle ??
+						++i;
+					}
+				}
+				else
+				{
+					// two hex digits as a byte
+					const char hex[3] = { signature[i], i + 1 < signature.length() ? signature[i + 1] : '0', 0 };
+					pattern_bytes.push_back(static_cast<uint8_t>(std::strtol(hex, nullptr, 16)));
+					mask.push_back(false);
+					i += 2;
+				}
+			}
+
+			const size_t pattern_length = pattern_bytes.size();
+			if (pattern_length == 0 || pattern_length > size) {
+				return 0;
+			}
+
+			// scan memory
+			for (size_t i = 0; i <= size - pattern_length; ++i)
+			{
+				bool found = true;
+				for (size_t j = 0; j < pattern_length; ++j)
+				{
+					if (!mask[j] && base[i + j] != pattern_bytes[j])
+					{
+						found = false;
+						break;
+					}
+				}
+
+				if (found) {
+					return reinterpret_cast<DWORD>(base + i + offset);
+				}
+			}
+
+			return 0;
+		}
 	}
 
 	hook::~hook()
 	{
-		if (this->initialized)
-		{
+		if (this->initialized) {
 			this->uninstall();
 		}
 	}
@@ -67,11 +150,37 @@ namespace shared::utils
 		return this;
 	}
 
-	void hook::quick()
+	hook* hook::quick()
 	{
 		if (hook::installed) {
 			hook::installed = false;
 		}
+
+		return this;
+	}
+
+	DWORD hook::create_trampoline()
+	{
+		if (this->trampoline) {
+			throw std::runtime_error("Already created a trampoline for this hook!");
+		}
+
+		// alloc memory for trampoline (original 5 bytes + jmp)
+		this->trampoline = VirtualAlloc(nullptr, sizeof(this->buffer) + 5, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+		if (!this->trampoline) {
+			return 0;
+		}
+
+		// copy original 5 bytes
+		std::memcpy(this->trampoline, this->buffer, sizeof(this->buffer));
+
+		// append jmp to the address after the hook (place + 5)
+		char* trampoline_code = static_cast<char*>(this->trampoline) + sizeof(this->buffer);
+		*trampoline_code = static_cast<char>(0xE9); // JMP
+		*reinterpret_cast<size_t*>(trampoline_code + 1) = reinterpret_cast<size_t>(this->place) + 5 - (reinterpret_cast<size_t>(trampoline_code) + 5);
+
+		FlushInstructionCache(GetCurrentProcess(), this->trampoline, sizeof(this->buffer) + 5);
+		return reinterpret_cast<DWORD>(this->trampoline);
 	}
 
 	hook* hook::uninstall(bool unprotect)
@@ -92,6 +201,14 @@ namespace shared::utils
 
 		if (unprotect) {
 			VirtualProtect(this->place, sizeof(this->buffer), this->protection, &this->protection);
+		}
+
+		{
+			if (this->trampoline)
+			{
+				VirtualFree(this->trampoline, 0, MEM_RELEASE);
+				this->trampoline = nullptr;
+			}
 		}
 
 		FlushInstructionCache(GetCurrentProcess(), this->place, sizeof(this->buffer));
