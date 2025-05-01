@@ -507,3 +507,57 @@ workspace "remix-comp-proj"
 	group "Dependencies"
 		dependencies.projects()
 	group ""
+
+
+	---------------------------
+
+	project "ue2fixes-rtx"
+	kind "SharedLib"
+	language "C++"
+
+	linkoptions {
+		"/PDBCompress"
+	}
+
+	pchheader "std_include.hpp"
+	pchsource "src/mods/ue2fixes/std_include.cpp"
+
+	files {
+		"./src/mods/ue2fixes/**.hpp",
+		"./src/mods/ue2fixes/**.cpp",
+	}
+
+	includedirs {
+		"%{prj.location}/src",
+		"./src",
+	}
+
+	links {
+		"_shared"
+	}
+
+	resincludedirs {
+		"$(ProjectDir)src"
+	}
+
+	buildoptions { 
+		"/Zm100 -Zm100" 
+	}
+
+	-- Specific configurations
+	flags { 
+		"UndefinedIdentifiers" 
+	}
+
+	warnings "Extra"
+
+	-- Post-build
+	postbuildcommands {
+		"MOVE /Y \"$(TargetDir)ue2fixes-rtx.dll\" \"$(TargetDir)a_ue2fixes-rtx.asi\"",
+	}
+
+	dependencies.imports()
+
+	group "Dependencies"
+		dependencies.projects()
+	group ""

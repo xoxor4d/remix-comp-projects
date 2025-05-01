@@ -113,6 +113,7 @@ namespace shared::utils
 		// ------
 
 		DWORD find_pattern_in_module(const HMODULE module_name, const std::string_view& signature, DWORD offset = 0u);
+		DWORD find_import_addr(const HMODULE hmodule, const char* dll_name, const char* func_name);
 	}
 
 	class hook

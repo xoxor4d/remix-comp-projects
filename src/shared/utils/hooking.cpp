@@ -91,6 +91,57 @@ namespace shared::utils
 
 			return 0;
 		}
+
+		DWORD find_import_addr(const HMODULE hmodule, const char* dll_name, const char* func_name)
+		{
+			BYTE* base = (BYTE*)hmodule;
+
+			IMAGE_DOS_HEADER* dos_header = (IMAGE_DOS_HEADER*)base;
+
+			if (dos_header->e_magic != IMAGE_DOS_SIGNATURE) {
+				return 0;
+			}
+
+			// Parse NT headers
+			IMAGE_NT_HEADERS* nt_headers = (IMAGE_NT_HEADERS*)(base + dos_header->e_lfanew);
+			if (nt_headers->Signature != IMAGE_NT_SIGNATURE) {
+				return 0;
+			}
+
+			// get import directory
+			IMAGE_DATA_DIRECTORY import_dir = nt_headers->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+			if (import_dir.VirtualAddress == 0) {
+				return 0;
+			}
+
+			// iterate through import descriptors
+			IMAGE_IMPORT_DESCRIPTOR* descriptor = (IMAGE_IMPORT_DESCRIPTOR*)(base + import_dir.VirtualAddress);
+			while (descriptor->Name) 
+			{
+				if (const char* module_name = (const char*)(base + descriptor->Name); 
+					_stricmp(module_name, dll_name) == 0)
+				{
+					// found the module (e.g., d3d9.dll)
+					IMAGE_THUNK_DATA* thunk = (IMAGE_THUNK_DATA*)(base + descriptor->FirstThunk);
+					IMAGE_THUNK_DATA* origThunk = (IMAGE_THUNK_DATA*)(base + (descriptor->OriginalFirstThunk ? descriptor->OriginalFirstThunk : descriptor->FirstThunk));
+
+					for (; origThunk->u1.AddressOfData; ++thunk, ++origThunk) 
+					{
+						if (!(origThunk->u1.Ordinal & IMAGE_ORDINAL_FLAG)) 
+						{
+							IMAGE_IMPORT_BY_NAME* imp = (IMAGE_IMPORT_BY_NAME*)(base + origThunk->u1.AddressOfData);
+
+							if (strcmp((const char*)imp->Name, func_name) == 0) {
+								return (DWORD)thunk;
+							}
+						}
+					}
+				}
+				++descriptor;
+			}
+
+			return 0;
+		}
 	}
 
 	hook::~hook()
