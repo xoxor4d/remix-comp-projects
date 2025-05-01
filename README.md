@@ -31,9 +31,10 @@ If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![k
 - Most things rendered via fixed function
 - No Frustum Culling
 - More Anti-Culling Tweaks (Tweakable via ImGui `F5`)
+- Use commandline arg `-disable_normal_hack` to disable vertex normal fixup if you run into weird vertex explosion issues or if this is no longer required due to remix advancements
 
 ###### The bad:
-- _"Broken"_ vertex normals (Normals are packed and that is currently not supported by remix)
+- ~~_"Broken"_ vertex normals (Normals are packed and that is currently not supported by remix)~~
 - Hash of orig. emissive textures changes
 
 <br>
