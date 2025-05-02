@@ -177,6 +177,8 @@ namespace shared::utils
 		static void redirect_jump(void* place, void* stub);
 		static void redirect_jump(DWORD place, void* stub);
 
+		static bool conditional_jump_to_jmp(DWORD place);
+
 		template <typename T> static void set(void* place, T value)
 		{
 			DWORD oldProtect;

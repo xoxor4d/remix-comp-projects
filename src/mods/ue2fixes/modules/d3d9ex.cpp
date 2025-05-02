@@ -2,9 +2,6 @@
 #include "d3d9ex.hpp"
 
 #include "imgui.hpp"
-#include "patches.hpp"
-#include "shared/common/flags.hpp"
-#include "shared/common/remix.hpp"
 
 namespace mods::ue2fixes
 {
@@ -922,6 +919,10 @@ namespace mods::ue2fixes
 		{
 			shared::utils::hook::set(d3d9_import_addr, direct3d_create9_stub);
 			std::cout << "[D3D9] Successfully hooked 'Direct3DCreate9'\n";
+		}
+		else
+		{
+			std::cout << "[D3D9] Could not find 'Direct3DCreate9' import -> ImGui will not work.\n";
 		}
 	}
 }
