@@ -7,28 +7,6 @@
 
 namespace mods::ue2fixes
 {
-	namespace tex_addons
-	{
-		LPDIRECT3DTEXTURE9 sky_gray_up;
-	}
-
-	void patches::init_texture_addons(bool release)
-	{
-		if (release)
-		{
-			if (tex_addons::sky_gray_up) tex_addons::sky_gray_up->Release();
-			return;
-		}
-
-		if (!m_textures_initialized)
-		{
-			const auto dev = shared::globals::d3d_device;
-			D3DXCreateTextureFromFileA(dev, "killingfloor1-rtx\\textures\\graycloud_up.jpg", &tex_addons::sky_gray_up);
-
-			m_textures_initialized = true;
-		}
-	}
-
 	// -----
 
 	void begin_scene_cb()
@@ -382,9 +360,6 @@ namespace mods::ue2fixes
 	{
 		p_this = this;
 
-		// init addon textures
-		//init_texture_addons();
-
 		// uhm .. this crashes the game when pressing num7 or 8 on the numpad lmao (just 
 		//shared::common::remix_api::initialize(begin_scene_cb, end_scene_cb, present_scene_cb, true);
 
@@ -400,10 +375,15 @@ namespace mods::ue2fixes
 		//HOOK_RETN_PLACE(post_get_view_frustum_retn_addr, ENGINE_BASE + 0x1C3F34);
 
 		{
-			const auto offset = shared::utils::mem::find_pattern_in_module((HMODULE)game::engine_module, "FF ?? ?? 89 ?? 89 ?? 04 8B ?? EB 0D 33 C0 89 ?? 89 ?? 04 8B ?? EB 02", 3);
+			auto offset = shared::utils::mem::find_pattern_in_module((HMODULE)game::engine_module, "FF ?? ?? 89 ?? 89 ?? 04 8B ?? EB 0D 33 C0 89 ?? 89 ?? 04 8B ?? EB 02", 3);
+
+			if (!offset) {
+				offset = shared::utils::mem::find_pattern_in_module((HMODULE)game::engine_module, "68 ?? ?? ?? ?? B9 ?? ?? ?? ?? FF 15 ?? ?? ?? ?? 3B ?? 74 ?? 8B ?? 50 8B ?? FF ?? ?? 89 ?? 89 ?? 04", 28);
+			}
+
 			if (offset)
 			{
-				std::cout << "[PATCHES] installed view frustum hook!\n";
+				std::cout << "[PATCHES] installed view frustum hook @ 0x" << std::uppercase << std::hex << offset << "!\n";
 				shared::utils::hook captainhook(offset, post_get_view_frustum_stub, HOOK_JUMP);
 				HOOK_RETN_PLACE(post_get_view_frustum_retn_addr, captainhook.install()->quick()->create_trampoline());
 			}
