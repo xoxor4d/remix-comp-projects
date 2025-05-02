@@ -21,6 +21,10 @@ If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![k
 # Mods:
 <br>
 
+</div>
+
+<div align="center" markdown="1"> 
+
 ### Bioshock 1 (GOG)  
 ![img](.github/img/01.png)
 
@@ -120,6 +124,24 @@ This can also happen randomly when walking through doorways which will ultimativ
 - still very broken and very WIP
 
 <br>
+<br>
+
+<div align="center" markdown="1"> 
+
+### ue2fixes
+
+</div>
+
+###### Description and features:
+- Tries to fix certain aspects of ue2-2.5 games were no standalone mod is available
+- Can currently fix frustum culling on swat4, killingfloor, r6 raven .. other games are untested
+- ImGui menu (`F5`) if the game is using d3d9
+
+> To install, just grab an asi loader of your choice and drop `a_ue2fixes-rtx.asi` next to your game's exe.  
+
+
+<br>
+<br>
 
 ## Installing
 - If there are [Releases](https://github.com/xoxor4d/remix-comp-projects/releases) - grab the latest one and follow the instructions found there
@@ -127,8 +149,7 @@ This can also happen randomly when walking through doorways which will ultimativ
   - Download the latest [Action build](https://github.com/xoxor4d/remix-comp-projects/actions)
   - Download the latest [remix release](https://github.com/NVIDIAGameWorks/rtx-remix/tags) from github and place the files into your game folder (next to your game executable)
   - Delete the `d3d8to9.dll` that comes with remix
-  - Extract the files within the game mod folder (eg. `bioshock1`) next to the game executable and override files when prompted
-  - Extract and place the game mod file (eg. `bioshock1-rtx.dll`) next to the game executable
+  - Take a look at the `_README` within the game mod folder (eg. `bioshock1`) for further instructions
   - Some game mod folders contain a `_not_root_folder` folder with additional configuration files used by the game. Place accordingly
   - Run the game using the run-with-rtx.bat
 
