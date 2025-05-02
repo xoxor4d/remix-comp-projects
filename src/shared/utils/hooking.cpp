@@ -390,10 +390,11 @@ namespace shared::utils
 			return false;
 		}
 
+#if DEBUG
 		// log the jump type
 		const char* jump_name = it->second;
 
-#if DEBUG
+
 		// log old bytes
 		std::cout << "[HOOK-CondJumpToJMP] Old bytes at 0x" << std::hex << place << ": ";
 		for (int i = 0; i < 6; i++) {
