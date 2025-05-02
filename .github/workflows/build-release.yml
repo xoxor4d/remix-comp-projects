@@ -43,6 +43,7 @@ jobs:
       - name: Move build files 
         run: |
           move build/bin/${{matrix.configuration}}/*.dll ./assets/
+          move build/bin/${{matrix.configuration}}/*.asi ./assets/
           move build/bin/${{matrix.configuration}}/*.pdb ./assets/
 
       - name: Upload ${{matrix.configuration}}-binaries-comp-rtx
