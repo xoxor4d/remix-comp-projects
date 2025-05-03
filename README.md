@@ -139,8 +139,12 @@ This can also happen randomly when walking through doorways which will ultimativ
 
 ###### Description and features:
 - Tries to fix certain aspects of ue2-2.5 games were no standalone mod is available
-- Can currently fix frustum culling on swat4, killingfloor, r6 raven .. other games are untested
+- Can currently fix frustum and backface culling on swat4, killingfloor, r6 raven .. other games are untested
 - ImGui menu (`F5`) if the game is using d3d9
+
+- Commandline arguments:
+- `disable_sky` to disable the skybox (required for `anticullex` and fixes remix vram leak)
+- `anticullex` cull even less
 
 > To install, just grab an asi loader of your choice and drop `a_ue2fixes-rtx.asi` next to your game's exe.  
 

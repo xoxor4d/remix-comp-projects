@@ -1,5 +1,6 @@
 #include "std_include.hpp"
 #include "modules/imgui.hpp"
+#include "shared/common/flags.hpp"
 
 namespace mods::ue2fixes
 {
@@ -212,20 +213,63 @@ namespace mods::ue2fixes
 		}
 #endif
 
-#if 0		// this still has issues with culling zones that are visible .. needs anticulling#1 + mask + box patch .. and old anticulling#7 but that will cripple fps
+#if 1
 		{	// backface culling
-			auto offset = shared::utils::mem::find_pattern_in_module((HMODULE)game::engine_module, "DE C1 D8 ?? ?? D9 55 ?? D8 1D ?? ?? ?? 00 DF E0 F6 C4 41 75 ??", 19); // swat4 + killingfloor
-			if (!offset) { offset = shared::utils::mem::find_pattern_in_module((HMODULE)game::engine_module, "D9 55 ?? D8 1D ?? ?? ?? 00 DF E0 F6 C4 41 75 ?? C7 ?? ?? ?? ?? 00 00", 14); } // r6
+			auto offset = shared::utils::mem::find_pattern_in_module((HMODULE)game::engine_module, "75 ?? 8B ?? C8 01 00 00 85 ?? 0F 85 ?? ?? 00 00 8B ?? C8 01 00 00", 0); // swat4 + killingfloor
+			if (!offset) { offset = shared::utils::mem::find_pattern_in_module((HMODULE)game::engine_module, "75 ?? 8B ?? 39 ?? ?? 01 00 00 74 ?? 8B ?? ?? F6 ?? ?? ?? 00 00 01", 0); } // r6
 			if (offset)
 			{
 				std::cout << "[SIG] installed backface culling patch @ 0x" << std::uppercase << std::hex << offset << "!\n";
-				shared::utils::hook::nop(offset, 2);
+				shared::utils::hook::set<BYTE>(offset, 0xEB);
 				install_counter++;
 			}
 
 			total_patch_amount++;
 		}
 #endif
+
+		
+		{	// disable sky
+			if (shared::common::flags::has_flag("disable_sky") || shared::common::flags::has_flag("anticullex"))
+			{
+				auto offset = shared::utils::mem::find_pattern_in_module((HMODULE)game::engine_module, "85 ?? 0F 84 CD ?? 00 00 F6 ?? ?? ?? ?? 00 01 0F 85 ?? ?? 00 00 8B", 15); // swat4 + killingfloor
+				if (!offset) { offset = shared::utils::mem::find_pattern_in_module((HMODULE)game::engine_module, "F6 ?? ?? ?? 00 00 01 0F 85 ?? ?? 00 00 8B ?? ?? ?? ?? 00 85 ?? 0F 84 ?? ?? 00 00", 7); } // r6
+				if (offset)
+				{
+					if (shared::utils::hook::conditional_jump_to_jmp(offset))
+					{
+						std::cout << "[SIG] installed disable sky patch @ 0x" << std::uppercase << std::hex << offset << "!\n";
+						install_counter++;
+					}
+				}
+
+				total_patch_amount++;
+			}
+		}
+
+
+		{	// #7 - extended anticulling
+			if (shared::common::flags::has_flag("anticullex"))
+			{	
+				auto offset = shared::utils::mem::find_pattern_in_module((HMODULE)game::engine_module, "8D ?? ?? ?? ?? 00 56 FF ?? ?? 85 ?? 0F 84 ?? ?? ?? 00 8B ?? D9 ?? ?? ?? ?? ?? 8B ?? ?? 8B ?? D8", 12); // swat4
+				if (!offset) { offset = shared::utils::mem::find_pattern_in_module((HMODULE)game::engine_module, "FF ?? 08 85 C0 0F 84 ?? ?? ?? 00 8B ?? 08 8B ?? 8B ?? 04", 5); } // killingfloor
+				if (!offset) { offset = shared::utils::mem::find_pattern_in_module((HMODULE)game::engine_module, "FF ?? 08 85 C0 0F 84 ?? ?? ?? 00 8B ?? 8B ?? 04", 5); } // r6raven
+
+				if (offset)
+				{
+					if (*reinterpret_cast<BYTE*>(offset) == 0x0F)
+					{
+						std::cout << "[SIG] installed anti culling patch #7 @ 0x" << std::uppercase << std::hex << offset << "!\n";
+						shared::utils::hook::nop(offset, 6);
+						install_counter++;
+					}
+					else std::cout << "[SIG] unexpected instruction @ anti culling patch #7 - was " << std::uppercase << std::hex << *reinterpret_cast<BYTE*>(offset + 11) << "\n";
+				}
+
+				total_patch_amount++;
+			}
+		}
+		
 
 		// ------------------
 		std::cout << "[SIG] Installed " << std::to_string(install_counter) << "/" << std::to_string(total_patch_amount) << " signature patches.\n";

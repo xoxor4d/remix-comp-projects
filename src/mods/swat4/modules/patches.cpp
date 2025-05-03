@@ -495,13 +495,13 @@ namespace mods::swat4
 		// cull even less
 		if (shared::common::flags::has_flag("anticull1")) 
 		{
-			shared::utils::hook::set<BYTE>(ENGINE_BASE + 0x1FBD97, 0xEB);
-			shared::utils::hook::conditional_jump_to_jmp(ENGINE_BASE + 0x1FBDCA);
+			shared::utils::hook::set<BYTE>(ENGINE_BASE + 0x1FBD97, 0xEB); // vis mask tests
+			shared::utils::hook::conditional_jump_to_jmp(ENGINE_BASE + 0x1FBDCA); // box tests
 		}
 
 		// draw more static meshes in normally culled areas
 		if (shared::common::flags::has_flag("anticull2")) {
-			shared::utils::hook::nop(ENGINE_BASE + 0x1FB33A, 6);
+			shared::utils::hook::nop(ENGINE_BASE + 0x1FB33A, 6); // ac 7
 		}
 
 
