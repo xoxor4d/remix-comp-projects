@@ -384,13 +384,13 @@ namespace shared::utils
 		const auto it = jump_opcodes.find(opcode);
 		if (it == jump_opcodes.end())
 		{
-#if DEBUG
+//#if DEBUG
 			std::cout << "[HOOK-CondJumpToJMP] Conditional Instruction at 0x" << std::hex << place << " is not a supported long conditional jump (opcode: " << std::hex << opcode << ")" << std::dec << std::endl;
-#endif
+//#endif
 			return false;
 		}
 
-#if DEBUG
+//#if DEBUG
 		// log the jump type
 		const char* jump_name = it->second;
 
@@ -400,7 +400,7 @@ namespace shared::utils
 		for (int i = 0; i < 6; i++) {
 			std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)code[i] << " ";
 		} std::cout << std::dec << std::endl;
-#endif
+//#endif
 
 		// read the 4-byte relative offset (little-endian)
 		std::int32_t jmp_offset;
@@ -427,9 +427,9 @@ namespace shared::utils
 		DWORD old_protect;
 		if (!VirtualProtect((void*)place, sizeof(new_instruction), PAGE_EXECUTE_READWRITE, &old_protect))
 		{
-#if DEBUG
+//#if DEBUG
 			std::cout << "[HOOK-CondJumpToJMP] Failed to change memory protection at 0x" << std::hex << place << std::dec << std::endl;
-#endif
+//#endif
 			return false;
 		}
 
@@ -441,12 +441,12 @@ namespace shared::utils
 		// Flush instruction cache
 		FlushInstructionCache(GetCurrentProcess(), (void*)place, sizeof(new_instruction));
 
-#if DEBUG
+//#if DEBUG
 		std::cout << "[HOOK-CondJumpToJMP] Patched " << jump_name << " to JMP at 0x" << std::hex << place << ": ";
 		for (int i = 0; i < 6; i++) {
 			std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)new_instruction[i] << " ";
 		} std::cout << std::dec << std::endl;
-#endif
+//#endif
 		return true;
 	}
 
