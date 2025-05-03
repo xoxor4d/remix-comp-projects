@@ -46,4 +46,8 @@ namespace shared::globals
 
 	extern HMODULE dll_hmodule;
 	extern IDirect3DDevice9* d3d_device;
+
+	extern bool imgui_is_rendering;
+	extern bool imgui_menu_open;
+	extern bool imgui_allow_input_bypass;
 }

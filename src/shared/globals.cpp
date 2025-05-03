@@ -33,4 +33,8 @@ namespace shared::globals
 
 	HMODULE dll_hmodule;
 	IDirect3DDevice9* d3d_device = nullptr;
+
+	bool imgui_is_rendering = false;
+	bool imgui_menu_open = false;
+	bool imgui_allow_input_bypass = false;
 }
