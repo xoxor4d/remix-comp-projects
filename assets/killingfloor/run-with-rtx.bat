@@ -1,0 +1,1 @@
+START KillingFloor.exe -disable_sky

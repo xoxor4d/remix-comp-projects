@@ -1,0 +1,1 @@
+START Swat4.exe -nointro -disable_sky
