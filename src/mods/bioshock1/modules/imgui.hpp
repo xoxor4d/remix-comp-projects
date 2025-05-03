@@ -15,9 +15,9 @@ namespace mods::bioshock1
 		void devgui();
 		bool input_message(UINT message_type, WPARAM wparam, LPARAM lparam, bool& inout_pass_msg_to_game);
 
-		bool m_menu_active = false;
+		//bool m_menu_active = false;
 		bool m_initialized_device = false;
-		bool m_is_rendering = false;
+		//bool m_is_rendering = false;
 
 		void style_xo();
 
@@ -30,38 +30,30 @@ namespace mods::bioshock1
 		Vector m_debug_vector = { 0.0f, 0.0f, 0.0f };
 		Vector m_debug_vector2 = { 0.0f, 0.0f, 0.0f };
 
-		bool m_dbg_use_fake_camera = false;
-
-		// View matrix parameters
-		float m_dbg_camera_pos[3] = { 0.0f, 0.0f, 2.0f }; // X, Y, Z
-		float m_dbg_camera_yaw = 0.0f;   // Rotation around Y (degrees)
-		float m_dbg_camera_pitch = 0.0f; // Rotation around X (degrees, downward tilt)
-
-		// Projection matrix parameters
-		float m_dbg_camera_fov = 90.0f;         // Vertical FOV in degrees
-		float m_dbg_camera_aspect = 1.777f;     // 16:9 aspect ratio
-		float m_dbg_camera_near_plane = 1.0f;   // Near clipping plane
-		float m_dbg_camera_far_plane = 1000.0f; // Far clipping plane
+		// world projection matrix parameters
+		bool  m_world_use_custom_proj = false;
+		float m_world_proj_fov = 90.0f;         // vertical FOV in degrees
+		float m_world_proj_aspect = 1.777f;     // 16:9 aspect ratio
 
 		// viewmodel projection matrix parameters
 		bool m_viewmodel_use_custom_proj = false;
-		float m_viewmodel_proj_fov = 90.0f;         // Vertical FOV in degrees
+		float m_viewmodel_proj_fov = 90.0f;         // vertical FOV in degrees
 		float m_viewmodel_proj_aspect = 1.777f;     // 16:9 aspect ratio
-		float m_viewmodel_proj_near_plane = 1.0f;   // Near clipping plane
-		float m_viewmodel_proj_far_plane = 1000.0f; // Far clipping plane
+		float m_viewmodel_proj_near_plane = 1.0f;   // near clipping plane
+		float m_viewmodel_proj_far_plane = 1000.0f; // far clipping plane
 
 		bool m_anti_culling_tweak1 = true;
 		bool m_anti_culling_tweak2 = false;
 
-		bool is_imgui_game_input_allowed() const {
+		/*bool is_imgui_game_input_allowed() const {
 			return m_im_allow_game_input;
-		}
+		}*/
 
 	private:
 		void tab_general();
 		bool m_im_window_focused = false;
 		bool m_im_window_hovered = false;
-		bool m_im_allow_game_input = false;
+		//bool m_im_allow_game_input = false;
 		std::string m_devgui_custom_footer_content;
 
 		static void questionmark(const char* desc)

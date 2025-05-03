@@ -105,7 +105,10 @@ namespace mods::bioshock1
 
 	HRESULT d3d9ex::D3D9Device::Present(CONST RECT* pSourceRect, CONST RECT* pDestRect, HWND hDestWindowOverride, CONST RGNDATA* pDirtyRegion)
 	{
-		imgui::get()->on_present();
+		if (const auto im = imgui::get(); im) {
+			im->on_present();
+		}
+		
 		return m_pIDirect3DDevice9->Present(pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion);
 	}
 
@@ -238,12 +241,15 @@ namespace mods::bioshock1
 
 	HRESULT d3d9ex::D3D9Device::BeginScene()
 	{
+		if (const auto p = patches::get(); p) {
+			p->on_begin_scene();
+		}
+
 		return m_pIDirect3DDevice9->BeginScene();
 	}
 
 	HRESULT d3d9ex::D3D9Device::EndScene()
 	{
-		//gui::render_loop();
 		return m_pIDirect3DDevice9->EndScene();
 	}
 

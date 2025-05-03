@@ -11,9 +11,8 @@ namespace mods::bioshock1
 		static inline patches* p_this = nullptr;
 		static patches* get() { return p_this; }
 
+		static void on_begin_scene();
 		static bool pre_drawindexedprim_call();
 		static void post_drawindexedprim_call();
-
-		bool m_ff_use_shader = false;
 	};
 }

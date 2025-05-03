@@ -3,6 +3,8 @@
 
 #include "modules/d3d9ex.hpp"
 
+std::unordered_set<HWND> wnd_class_list; // so we don't print the same window strings over and over again
+
 BOOL CALLBACK enum_windows_proc(HWND hwnd, LPARAM lParam)
 {
 	DWORD window_pid, target_pid = static_cast<DWORD>(lParam);
@@ -10,13 +12,19 @@ BOOL CALLBACK enum_windows_proc(HWND hwnd, LPARAM lParam)
 
 	if (window_pid == target_pid && IsWindowVisible(hwnd))
 	{
-		char class_name[256]; char debug_msg[256];
+		char class_name[256];
 		GetClassNameA(hwnd, class_name, sizeof(class_name));
-		wsprintfA(debug_msg, "HWND: %p, PID: %u, Class: %s, Visible: %d", hwnd, window_pid, class_name, IsWindowVisible(hwnd));
-		shared::common::console(); std::cout << debug_msg << "\n";
+
+		if (!wnd_class_list.contains(hwnd))
+		{
+			char debug_msg[256];
+			wsprintfA(debug_msg, "|> HWND: %p, PID: %u, Class: %s, Visible: %d \n", hwnd, window_pid, class_name, IsWindowVisible(hwnd));
+			std::cout << debug_msg;
+			wnd_class_list.insert(hwnd);
+		}
 
 		// BioshockUnrealWWindowsViewportWindow
-		if (std::string_view(class_name) == "BioshockUnrealWWindowsViewportWindow"s)
+		if (std::string_view(class_name).contains("UnrealWWindows"))
 		{
 			shared::globals::main_window = hwnd;
 			return FALSE;
@@ -36,17 +44,18 @@ DWORD WINAPI find_game_window_by_sha1([[maybe_unused]] LPVOID lpParam)
 
 	if (sha1 == "9df7b1406ab76e547034a193cf5360d2dc4a126a")
 	{
+		std::cout << "[MAIN] Waiting for window with classname containing 'UnrealWWindows' ... \n";
 		while (!shared::globals::main_window)
 		{
 			EnumWindows(enum_windows_proc, static_cast<LPARAM>(GetCurrentProcessId()));
 			if (!shared::globals::main_window) {
-				Sleep(100); T += 100;
+				Sleep(10u); T += 10u;
 			}
 
 			if (T >= 30000) 
 			{
 				Beep(300, 100); Sleep(100); Beep(200, 100);
-				shared::common::console(); std::cout << "[!][INIT FAILED] Not loading RTX Compatibility Mod\n";
+				shared::common::console(); std::cout << "[MAIN] Could not find UnrealWindow. Not loading RTX Compatibility Mod.\n";
 				return TRUE;
 			}
 		}
@@ -71,13 +80,18 @@ BOOL APIENTRY DllMain(HMODULE, const DWORD ul_reason_for_call, LPVOID)
 {
 	if (ul_reason_for_call == DLL_PROCESS_ATTACH) 
 	{
+#if DEBUG
+		shared::common::console();
+#endif
+
 		if (const auto MH_INIT_STATUS = MH_Initialize(); MH_INIT_STATUS != MH_STATUS::MH_OK)
 		{
-			shared::common::console(); std::cout << "[!][INIT FAILED] MinHook failed to initialize with code: " << MH_INIT_STATUS << std::endl;
+			std::cout << "[!][INIT FAILED] MinHook failed to initialize with code: " << MH_INIT_STATUS << std::endl;
 			return TRUE;
 		}
 
 		mods::bioshock1::module_loader::register_module(std::make_unique<mods::bioshock1::d3d9ex>());
+		mods::bioshock1::init_early_hooks();
 
 		if (const auto t = CreateThread(nullptr, 0, find_game_window_by_sha1, nullptr, 0, nullptr); t) {
 			CloseHandle(t);

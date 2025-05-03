@@ -46,7 +46,7 @@ namespace mods::bioshock1
 			break;
 
 		case WM_MOUSEACTIVATE: 
-			if (ImGui::GetIO().WantCaptureMouse || !imgui::get()->m_menu_active)
+			if (ImGui::GetIO().WantCaptureMouse || !shared::globals::imgui_menu_open)
 			{
 				pass_msg_to_game = true;
 			}
@@ -63,34 +63,21 @@ namespace mods::bioshock1
 		return CallWindowProc(g_game_wndproc, window, message_type, wparam, lparam);
 	}
 
-	void center_cursor()
-	{
-		RECT rect;
-		if (GetClientRect(shared::globals::main_window, &rect))
-		{
-			POINT center;
-			center.x = (rect.right - rect.left) / 2;
-			center.y = (rect.bottom - rect.top) / 2;
-
-			ClientToScreen(shared::globals::main_window, &center);
-			SetCursorPos(center.x, center.y);
-		}
-	}
-
 	bool imgui::input_message(const UINT message_type, const WPARAM wparam, const LPARAM lparam, [[maybe_unused]] bool& inout_pass_msg_to_game)
 	{
 		if (message_type == WM_KEYUP && wparam == VK_F5) 
 		{
 			const auto& io = ImGui::GetIO();
 			if (!io.MouseDown[1]) {
-				m_menu_active = !m_menu_active;
+				shared::globals::imgui_menu_open = !shared::globals::imgui_menu_open;
 			}
 
 			else {
 				ImGui_ImplWin32_WndProcHandler(shared::globals::main_window, message_type, wparam, lparam);
 			}
 		}
-		if (m_menu_active)
+
+		if (shared::globals::imgui_menu_open)
 		{
 			const auto& io = ImGui::GetIO();
 
@@ -100,14 +87,14 @@ namespace mods::bioshock1
 			if (!m_im_window_hovered && io.MouseDown[1])
 			{
 				ImGui::SetWindowFocus(); // unfocus input text
-				m_im_allow_game_input = true;
+				shared::globals::imgui_allow_input_bypass = true;
 				return false;
 			}
 
 			// ^ wait until mouse is up and call set_cursor_always_visible once
-			if (m_im_allow_game_input && !io.MouseDown[1])
+			if (shared::globals::imgui_allow_input_bypass && !io.MouseDown[1])
 			{
-				m_im_allow_game_input = false;
+				shared::globals::imgui_allow_input_bypass = false;
 				return false;
 			}
 
@@ -119,10 +106,10 @@ namespace mods::bioshock1
 			//}
 		}
 		else {
-			m_im_allow_game_input = false; // always reset if there is no imgui window open
+			shared::globals::imgui_allow_input_bypass = false; // always reset if there is no imgui window open
 		}
 
-		return m_menu_active;
+		return shared::globals::imgui_menu_open;
 	}
 
 	// ------
@@ -131,27 +118,11 @@ namespace mods::bioshock1
 	{
 		const auto& im = imgui::get();
 
-		ImGui::Checkbox("Use Fake Camera", &im->m_dbg_use_fake_camera);
+		ImGui::Checkbox("Use Custom World Projection", &im->m_world_use_custom_proj);
+		ImGui::SliderFloat("World FOV", &im->m_world_proj_fov, 10.0f, 120.0f);
 
-		ImGui::SliderFloat3("Camera Position (X, Y, Z)", im->m_dbg_camera_pos, -200.0f, 200.0f);
-		ImGui::SliderFloat("Yaw (Y-axis)", &im->m_dbg_camera_yaw, -180.0f, 180.0f);
-		ImGui::SliderFloat("Pitch (X-axis)", &im->m_dbg_camera_pitch, -90.0f, 90.0f);
-
-		// Projection matrix adjustments
-		ImGui::SliderFloat("FOV", &im->m_dbg_camera_fov, 10.0f, 120.0f);
-		ImGui::SliderFloat("Aspect Ratio", &im->m_dbg_camera_aspect, 0.5f, 2.5f);
-		ImGui::SliderFloat("Near Plane", &im->m_dbg_camera_near_plane, 0.1f, 10.0f);
-		ImGui::SliderFloat("Far Plane", &im->m_dbg_camera_far_plane, 100.0f, 2000.0f);
-
-
-		ImGui::SeparatorText("Custom Viewmodel Projection");
-		ImGui::PushID("VMProj");
-		ImGui::Checkbox("Use Custom Projection", &im->m_viewmodel_use_custom_proj);
-		ImGui::SliderFloat("FOV", &im->m_viewmodel_proj_fov, 10.0f, 120.0f);
-		ImGui::SliderFloat("Aspect Ratio", &im->m_viewmodel_proj_aspect, 0.5f, 2.5f);
-		ImGui::SliderFloat("Near Plane", &im->m_viewmodel_proj_near_plane, 0.1f, 10.0f);
-		ImGui::SliderFloat("Far Plane", &im->m_viewmodel_proj_far_plane, 100.0f, 2000.0f);
-		ImGui::PopID();
+		ImGui::Checkbox("Use Custom Viewmodel Projection", &im->m_viewmodel_use_custom_proj);
+		ImGui::SliderFloat("Viewmodel FOV", &im->m_viewmodel_proj_fov, 10.0f, 120.0f);
 
 #if DEBUG
 		{
@@ -223,8 +194,8 @@ namespace mods::bioshock1
 	{
 		ImGui::SetNextWindowSize(ImVec2(900, 800), ImGuiCond_FirstUseEver);
 
-		bool old_active_state = m_menu_active;
-		if (!ImGui::Begin("Devgui", &m_menu_active, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollWithMouse/*, &shared::imgui::draw_window_blur_callback*/))
+		bool old_active_state = shared::globals::imgui_menu_open;
+		if (!ImGui::Begin("Devgui", &shared::globals::imgui_menu_open, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollWithMouse/*, &shared::imgui::draw_window_blur_callback*/))
 		{
 			ImGui::End();
 			return;
@@ -232,9 +203,9 @@ namespace mods::bioshock1
 
 		// HACK when using the menu close button instead of the hotkey to close the devgui
 		// :: use logic in 'imgui::input_message' to toggle the menu by sending a msg
-		if (old_active_state != m_menu_active && !m_menu_active) 
+		if (old_active_state != shared::globals::imgui_menu_open && !shared::globals::imgui_menu_open)
 		{ 
-			m_menu_active = true; // we have to re-set this back to true. We would instantly reopen the gui otherwise
+			shared::globals::imgui_menu_open = true; // we have to re-set this back to true. We would instantly reopen the gui otherwise
 			SendMessage(shared::globals::main_window, WM_KEYUP, VK_F5, 0);
 		}
 
@@ -334,6 +305,10 @@ namespace mods::bioshock1
 
 				if (im->m_initialized_device)
 				{
+					DWORD og_samp, og_srgb;
+					dev->GetSamplerState(0, D3DSAMP_SRGBTEXTURE, &og_samp);
+					dev->GetRenderState(D3DRS_SRGBWRITEENABLE, &og_srgb);
+
 					// fix imgui colors / background if no hud elem is visible
 					dev->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, 1);
 					dev->SetRenderState(D3DRS_SRGBWRITEENABLE, 1);
@@ -344,18 +319,24 @@ namespace mods::bioshock1
 
 					auto& io = ImGui::GetIO();
 
-					if (im->m_menu_active) {
+					if (shared::globals::imgui_menu_open) 
+					{
 						io.MouseDrawCursor = true;
 						im->devgui();
-					} else {
+					}
+					else {
 						io.MouseDrawCursor = false;
 					}
 
-					im->m_is_rendering = true;
+					shared::globals::imgui_is_rendering = true;
 					ImGui::EndFrame();
 					ImGui::Render();
 					ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
-					im->m_is_rendering = false;
+					shared::globals::imgui_is_rendering = false;
+
+					// restore
+					dev->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, og_samp);
+					dev->SetRenderState(D3DRS_SRGBWRITEENABLE, og_srgb);
 				}
 			}
 		}
@@ -511,6 +492,6 @@ namespace mods::bioshock1
 		ImGui_ImplWin32_Init(shared::globals::main_window);
 		g_game_wndproc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(shared::globals::main_window, GWLP_WNDPROC, LONG_PTR(wnd_proc_hk)));
 
-		printf("[Module] imgui loaded.\n");
+		std::cout << "[Module] imgui loaded.\n";
 	}
 }
