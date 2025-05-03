@@ -71,7 +71,10 @@ namespace mods::ue2fixes
 		if (!game::rendev_module)
 		{
 			GET_MODULE_HANDLE_WITH_FALLBACK(game::rendev_module, "D3D9Drv.dll", "D3DDrv.dll", T);
-			shared::common::loader::module_loader::register_module(std::make_unique<mods::ue2fixes::d3d9ex>());
+
+			if (!shared::common::flags::has_flag("nod3d")) {
+				shared::common::loader::module_loader::register_module(std::make_unique<mods::ue2fixes::d3d9ex>());
+			}
 		}
 
 		std::cout << "[MAIN] Waiting for window with classname containing 'UnrealWWindows' ... \n";
