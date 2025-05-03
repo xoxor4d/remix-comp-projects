@@ -2,8 +2,17 @@
 #include "patches.hpp"
 
 #include "imgui.hpp"
+#include "shared/common/flags.hpp"
 #include "shared/common/remix.hpp"
 #include "shared/common/remix_api.hpp"
+
+// extended anti culling 0x1FBD97 jmp
+// ^ 0x1FBDCA jmp
+
+// disable backface culling without issues:
+// 0x1F6AD4 jmp (0xEB)
+
+
 
 namespace mods::swat4
 {
@@ -408,6 +417,36 @@ namespace mods::swat4
 		}
 	}
 
+	void ProcessLeaf_wrapper([[maybe_unused]] game::FBspNode* Node, [[maybe_unused]] game::FRenderState* RenderState, [[maybe_unused]] int iLeaf)
+	{
+		// ProcessLeaf
+		shared::utils::hook::call<void __cdecl(game::FRenderState* RenderState, int iLeaf)>(ENGINE_BASE + 0x1FAF60)(RenderState, iLeaf);
+
+		auto backside = Node->iLeaf[0] != iLeaf ? Node->iLeaf[0] : Node->iLeaf[1];
+		if (backside != -1)
+		{
+			shared::utils::hook::call<void __cdecl(game::FRenderState* RenderState, int iLeaf)>(ENGINE_BASE + 0x1FAF60)(RenderState, backside);
+		}
+	}
+
+	HOOK_RETN_PLACE_DEF(process_leaf_retn_addr);
+	__declspec(naked) void process_leaf_stub()
+	{
+		__asm
+		{
+			pushad;
+			push    ecx;
+			push    edx;
+			push	esi; // node
+			call	ProcessLeaf_wrapper;
+			add 	esp, 12;
+			popad;
+
+			
+			jmp		process_leaf_retn_addr;
+		}
+	}
+
 	// ---
 
 	patches::patches()
@@ -432,16 +471,44 @@ namespace mods::swat4
 		HOOK_RETN_PLACE(post_get_view_frustum_retn_addr, ENGINE_BASE + 0x1FDB1E);
 
 
-		shared::utils::hook::nop(ENGINE_BASE + 0x1F6B10, 6);
-		shared::utils::hook::nop(ENGINE_BASE + 0x1F75D7, 6);
-		shared::utils::hook::nop(ENGINE_BASE + 0x1F75E1, 6);
-		shared::utils::hook::nop(ENGINE_BASE + 0x1F75F7, 6);
-		shared::utils::hook::nop(ENGINE_BASE + 0x1F6E46, 6);
-		shared::utils::hook::nop(ENGINE_BASE + 0x1F6E51, 6);
-		shared::utils::hook::nop(ENGINE_BASE + 0x1FB33A, 6);
+		//shared::utils::hook::nop(ENGINE_BASE + 0x1F6B10, 6); // this for anti backface
+		//shared::utils::hook::nop(ENGINE_BASE + 0x1F75D7, 6);
+		//shared::utils::hook::nop(ENGINE_BASE + 0x1F75E1, 6);
+		//shared::utils::hook::nop(ENGINE_BASE + 0x1F75F7, 6);
+		//shared::utils::hook::nop(ENGINE_BASE + 0x1F6E46, 6);
+		//shared::utils::hook::nop(ENGINE_BASE + 0x1F6E51, 6);
+		//shared::utils::hook::nop(ENGINE_BASE + 0x1FB33A, 6); // this to draw more objects
+
+
+		// disable skybox because a. anticull1 needs it and b. remix will leak vram with the sky enabled 
+		if (shared::common::flags::has_flag("disable_sky") || shared::common::flags::has_flag("anticull1")) {
+			shared::utils::hook::conditional_jump_to_jmp(ENGINE_BASE + 0x1F6BF6);
+		}
+
+		// do not disable backface culling if flag is set
+		if (!shared::common::flags::has_flag("backface_culling")) 
+		{
+			shared::utils::hook::set<BYTE>(ENGINE_BASE + 0x1F6AD4, 0xEB); // disable backface culling
+			shared::utils::hook::nop(ENGINE_BASE + 0x1F6B10, 6); // anti cull 1
+		}
+
+		// cull even less
+		if (shared::common::flags::has_flag("anticull1")) 
+		{
+			shared::utils::hook::set<BYTE>(ENGINE_BASE + 0x1FBD97, 0xEB);
+			shared::utils::hook::conditional_jump_to_jmp(ENGINE_BASE + 0x1FBDCA);
+		}
+
+		// draw more static meshes in normally culled areas
+		if (shared::common::flags::has_flag("anticull2")) {
+			shared::utils::hook::nop(ENGINE_BASE + 0x1FB33A, 6);
+		}
+
 
 		// 1F726D nop2 (might cause issues (sky flicker issue))
 
+		//shared::utils::hook(ENGINE_BASE + 0x1FC2CE, process_leaf_stub, HOOK_JUMP).install()->quick();
+		//HOOK_RETN_PLACE(process_leaf_retn_addr, ENGINE_BASE + 0x1FC2D3);
 
 		// draw more lights?
 		// 1FB5E0 jmp (E9 D3 00 00 00 90)
@@ -449,7 +516,7 @@ namespace mods::swat4
 		// this keeps lights active longer but there is a limit so newer ones wont draw?
 		// jmp (0xE9 EB 00 00 00 90) to disable these lights completely
 		shared::utils::hook::nop(ENGINE_BASE + 0x1FB5B6, 6); 
-
+		
 		// disable sky
 		//  1F6BF6 -> E9 C1 09 00 00 90  .... or enabled .... 0F 85 C0 09 00 00
 

@@ -51,11 +51,16 @@ If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![k
 
 </div>
 
-###### The good:  
-- The game works pretty good out of the box so this mod _only_ features:
-- Disabled / adjustable frustum culling
-- Forcing of BSP surfaces within a certain distance around the player to help with light leakage (wip)
-- Option to disable the skybox (commandline arg `-disable_sky` to disable it by default)
+###### The good - game works pretty good out of the box so this mod _only_ features:  
+- Disabled frustum culling, backface culling (enabled by default)
+- More optional anti culling features
+- Forcing of BSP surfaces within a certain distance around the player to help with light leakage
+- Commandline arguments:
+- `disable_sky` to disable the skybox (required for `anticull1` and fixes remix vram leak)
+- `anticull1` to cull even less
+- `anticull2` to cull less static actors in normally culled zones
+- `backface_culling` to enable backface culling by default (who would want that?)
+> All of the above can be tweaked within the ImGui `F4` menu
 
 ###### The bad:
 - Remix bug: with the sky enabled, unfocusing the game will render only the skybox for a frame and leak a little vram.  

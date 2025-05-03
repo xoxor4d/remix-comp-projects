@@ -119,6 +119,30 @@ namespace mods::swat4
 				ImGui::Checkbox("Disable Frustum Culling", &im->m_cull_disable_frustum);
 				SET_CHILD_WIDGET_WIDTH_MAN(140.0f); ImGui::DragFloat("Frustum Plane Offset", &im->m_cull_frustum_tweak_distance_offset, 1.0f, 0.0f, 50000.0f, "%.0f");
 
+				if (ImGui::Checkbox("Backface Culling", &im->m_backface_culling)) {
+					shared::utils::hook::set<BYTE>(ENGINE_BASE + 0x1F6AD4, im->m_backface_culling ? 0x75 : 0xEB);
+				}
+
+				if (ImGui::Checkbox("Extended Anticull #1", &im->m_extended_anticull1)) 
+				{
+					shared::utils::hook::set<BYTE>(ENGINE_BASE + 0x1FBD97, im->m_extended_anticull1 ? 0xEB : 0x74);
+
+					if (im->m_extended_anticull1) {
+						shared::utils::hook::conditional_jump_to_jmp(ENGINE_BASE + 0x1FBDCA);
+					} else {
+						shared::utils::hook::set(ENGINE_BASE + 0x1FBDCA, 0x0F, 0x84, 0x94, 0x00, 0x00, 0x00);
+					}
+				} TT("Disables visibility mask and box testing. Skybox needs to be disabled for this to work!");
+
+				if (ImGui::Checkbox("Extended Anticull #2", &im->m_extended_anticull2)) 
+				{
+					if (im->m_extended_anticull2) {
+						shared::utils::hook::nop(ENGINE_BASE + 0x1FB33A, 6);
+					} else {
+						shared::utils::hook::set(ENGINE_BASE + 0x1FB33A, 0x0F, 0x84, 0xE9, 0x00, 0x00, 0x00);
+					}
+				} TT("Will draw more static meshes in normally culled areas/zones.");
+
 				ImGui::Separator();
 
 				//ImGui::Checkbox("Enable Leaf Forcing", &im->m_enable_leaf_forcing);
@@ -134,7 +158,7 @@ namespace mods::swat4
 					//  1F6BF6 -> E9 C1 09 00 00 90  .... or enabled .... 0F 85 C0 09 00 00
 
 					if (im->m_disable_sky) {
-						shared::utils::hook::set(ENGINE_BASE + 0x1F6BF6, 0xE9, 0xC1, 0x09, 0x00, 0x00, 0x90);
+						shared::utils::hook::conditional_jump_to_jmp(ENGINE_BASE + 0x1F6BF6);
 					} else {
 						shared::utils::hook::set(ENGINE_BASE + 0x1F6BF6, 0x0F, 0x85, 0xC0, 0x09, 0x00, 0x00);
 					}
@@ -472,9 +496,11 @@ namespace mods::swat4
 		ImGui_ImplWin32_Init(shared::globals::main_window);
 		g_game_wndproc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(shared::globals::main_window, GWLP_WNDPROC, LONG_PTR(wnd_proc_hk)));
 
-		if (shared::common::flags::has_flag("disable_sky")) {
-			this->m_disable_sky = true;
-		}
+
+		this->m_disable_sky = shared::common::flags::has_flag("disable_sky") || shared::common::flags::has_flag("anticull1");
+		this->m_backface_culling = shared::common::flags::has_flag("backface_culling"); // enable backface culling if flag is set
+		this->m_extended_anticull1 = shared::common::flags::has_flag("anticull1");
+		this->m_extended_anticull2 = shared::common::flags::has_flag("anticull2");
 
 		std::cout << "[Module] imgui loaded.\n";
 	}

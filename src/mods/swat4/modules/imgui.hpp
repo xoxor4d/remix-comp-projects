@@ -33,7 +33,7 @@ namespace mods::swat4
 		bool m_cull_disable_frustum = true;
 		float m_cull_frustum_tweak_distance_offset = 10000.0f;
 
-		float m_render_area_dist = 5000.0f;
+		float m_render_area_dist = 2000.0f;
 		bool m_enable_leaf_forcing = false;
 		bool m_enable_node_forcing = true;
 
@@ -41,6 +41,10 @@ namespace mods::swat4
 		int m_manual_node_forcing_index = 0;
 
 		bool m_disable_sky = false;
+		bool m_backface_culling = true;
+		bool m_extended_anticull1 = false;
+		bool m_extended_anticull2 = false;
+
 		bool m_debug_stuff = false;
 
 		bool is_imgui_game_input_allowed() const {
