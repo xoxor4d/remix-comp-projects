@@ -60,6 +60,16 @@ namespace mods::ue2fixes
 		} \
 	}
 
+	BOOL engine_signature_patches()
+	{
+		std::cout << "[DllMain] Get Engine.dll handle ... \n";
+
+		std::uint32_t T = 0;
+		GET_MODULE_HANDLE(mods::ue2fixes::game::engine_module, "Engine.dll", T);
+		mods::ue2fixes::install_signature_patches();
+		return false;
+	}
+
 	DWORD WINAPI find_game_window_by_sha1([[maybe_unused]] LPVOID lpParam)
 	{
 		shared::common::console();
@@ -67,6 +77,14 @@ namespace mods::ue2fixes
 
 		char exe_path[MAX_PATH]; GetModuleFileNameA(nullptr, exe_path, MAX_PATH);
 		const std::string sha1 = shared::utils::hash_file_sha1(exe_path);
+
+		// async loading of signature patches
+		if (shared::common::flags::has_flag("async"))
+		{
+			if (mods::ue2fixes::engine_signature_patches()) {
+				return TRUE;
+			}
+		}
 
 		if (!game::rendev_module)
 		{
@@ -118,11 +136,13 @@ BOOL APIENTRY DllMain(HMODULE hmodule, const DWORD ul_reason_for_call, LPVOID)
 			return TRUE;
 		}
 
-		std::cout << "[DllMain] Get Engine.dll handle ... \n";
-
-		std::uint32_t T = 0;
-		GET_MODULE_HANDLE(mods::ue2fixes::game::engine_module, "Engine.dll", T);
-		mods::ue2fixes::install_signature_patches();
+		// if not async loading signature patches
+		if (!shared::common::flags::has_flag("async")) 
+		{
+			if (mods::ue2fixes::engine_signature_patches()) {
+				return TRUE;
+			}
+		}
 
 		if (const auto t = CreateThread(nullptr, 0, mods::ue2fixes::find_game_window_by_sha1, nullptr, 0, nullptr); t) {
 			CloseHandle(t);
