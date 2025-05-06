@@ -142,9 +142,11 @@ This can also happen randomly when walking through doorways which will ultimativ
 - Can currently fix frustum and backface culling on swat4, killingfloor, r6 raven .. other games are untested
 - ImGui menu (`F5`) if the game is using d3d9
 
-- Commandline arguments:
+###### Commandline arguments:
 - `disable_sky` to disable the skybox (required for `anticullex` and fixes remix vram leak)
 - `anticullex` cull even less
+- `nod3d` do not hook the d3d9 interface (imgui wont work), if you are having issues with that
+- `async` load signature patches asynchronously - use if the game gets stuck on trying to find the engine.dll
 
 > To install, just grab an asi loader of your choice and drop `a_ue2fixes-rtx.asi` next to your game's exe.  
 
