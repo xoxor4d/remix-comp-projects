@@ -31,7 +31,23 @@ namespace shared::globals
 	std::string root_path;
 	HWND main_window = nullptr;
 
+	HMODULE exe_hmodule;
+	DWORD exe_module_addr;
+
+	void setup_exe_module()
+	{
+		exe_hmodule = GetModuleHandleA(nullptr);
+		exe_module_addr = (DWORD)exe_hmodule;
+	}
+
 	HMODULE dll_hmodule;
+	DWORD dll_module_addr;
+	void setup_dll_module(const HMODULE mod)
+	{
+		dll_hmodule = mod;
+		dll_module_addr = (DWORD)dll_hmodule;
+	}
+
 	IDirect3DDevice9* d3d_device = nullptr;
 
 	bool imgui_is_rendering = false;
