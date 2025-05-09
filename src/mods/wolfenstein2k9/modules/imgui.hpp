@@ -32,7 +32,7 @@ namespace mods::wolfenstein2k9
 
 
 
-		bool m_dbg_use_fake_camera = false;
+		bool m_dbg_use_fake_camera = true;
 		float m_dbg_camera_pos[3] = { 0.0f, 0.0f, 1.0f }; // X, Y, Z
 		float m_dbg_camera_yaw = 0.0f;   // Rotation around Y (degrees)
 		float m_dbg_camera_pitch = 0.0f; // Rotation around X (degrees, downward tilt)

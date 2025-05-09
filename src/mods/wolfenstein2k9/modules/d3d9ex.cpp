@@ -457,10 +457,10 @@ namespace mods::wolfenstein2k9
 		//IDirect3DBaseTexture9* bound_tex = nullptr;
 		//m_pIDirect3DDevice9->GetTexture(0, &bound_tex);
 
-		pre_drawindexedprim();
+		const auto skip = pre_drawindexedprim();
 
 		auto hr = D3D_OK;
-		//if (bound_tex) 
+		if (!skip)
 		{
 			hr = m_pIDirect3DDevice9->DrawIndexedPrimitive(PrimitiveType, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
 			//m_pIDirect3DDevice9->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, 0u);
@@ -619,26 +619,32 @@ namespace mods::wolfenstein2k9
 							return true;
 						}*/
 
+						if (name.contains("Skin"))
+						{
+							next_is_skinned = true;
+							return false;
+						}
+
 						if (name == "$mModelView")
 						{
-							if (Vector4fCount >= 3)
-							{
-								D3DXMATRIX temp;
-								memcpy(&temp, pConstantData, sizeof(D3DXMATRIX));
-								temp.m[3][0] = 0.0f; temp.m[3][1] = 0.0f; temp.m[3][2] = 0.0f; temp.m[3][3] = 1.0f;
-								D3DXMATRIX temp2;
-								shared::utils::transpose_float4x4(temp, temp2);
+							//if (Vector4fCount >= 3)
+							//{
+							//	D3DXMATRIX temp;
+							//	memcpy(&temp, pConstantData, sizeof(D3DXMATRIX));
+							//	temp.m[3][0] = 0.0f; temp.m[3][1] = 0.0f; temp.m[3][2] = 0.0f; temp.m[3][3] = 1.0f;
+							//	D3DXMATRIX temp2;
+							//	shared::utils::transpose_float4x4(temp, temp2);
 
-								int xxx = 0;
-								//dev->SetTransform(D3DTS_VIEW, &temp2);
-							}
+							//	int xxx = 0;
+							//	//dev->SetTransform(D3DTS_VIEW, &temp2);
+							//}
 
 							return false;
 						}
 
 						if (name == "$mModelViewProjection") 
 						{
-							D3DXMATRIX* mvp = reinterpret_cast<D3DXMATRIX*>(0x10966BE0);
+							/*D3DXMATRIX* mvp = reinterpret_cast<D3DXMATRIX*>(0x10966BE0);
 
 							if (Vector4fCount >= 4)
 							{
@@ -649,10 +655,12 @@ namespace mods::wolfenstein2k9
 								shared::utils::transpose_float4x4(temp, temp2);
 
 								int xxx = 0;
-							}
+							}*/
 
 							return false;
 						}
+
+						int x = 0;
 
 						break;
 					}

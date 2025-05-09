@@ -26,46 +26,7 @@ namespace mods::wolfenstein2k9
 		Vector check_for_null; //0x00E0 
 	};
 
-
-	void on_begin_scene()
-	{
-		if (const auto im = imgui::get(); im)
-		{
-			if (im->m_dbg_use_fake_camera)
-			{
-				D3DXMATRIX rotation, translation, view_matrix, proj_matrix;
-
-				D3DXMatrixRotationYawPitchRoll(&rotation,
-					D3DXToRadian(im->m_dbg_camera_yaw),		// Yaw in radians
-					D3DXToRadian(im->m_dbg_camera_pitch),	// Pitch in radians
-					0.0f);									// No roll for simplicity
-
-				D3DXMatrixTranslation(&translation,
-					-im->m_dbg_camera_pos[0],				// Negate for camera (moves world opposite)
-					-im->m_dbg_camera_pos[1],
-					-im->m_dbg_camera_pos[2]);
-
-				D3DXMatrixMultiply(&view_matrix, &rotation, &translation);
-
-				// Construct projection matrix
-				D3DXMatrixPerspectiveFovLH(&proj_matrix,
-					D3DXToRadian(im->m_dbg_camera_fov),		// FOV in radians
-					im->m_dbg_camera_aspect,
-					im->m_dbg_camera_near_plane,
-					im->m_dbg_camera_far_plane);
-
-				shared::globals::d3d_device->SetTransform(D3DTS_WORLD, &shared::globals::IDENTITY);
-				shared::globals::d3d_device->SetTransform(D3DTS_VIEW, &view_matrix);
-				shared::globals::d3d_device->SetTransform(D3DTS_PROJECTION, &proj_matrix);
-			}
-		}
-	}
-
-	IDirect3DVertexShader9* ff_og_vs = nullptr;
-	IDirect3DPixelShader9* ff_og_ps = nullptr;
-	bool ff_was_modified = false;
-
-	int ff_render_mesh = false;
+	D3DXMATRIX viewcopy;
 
 	struct model_trans
 	{
@@ -111,7 +72,60 @@ namespace mods::wolfenstein2k9
 	//D3DXMATRIX g_model;
 	//D3DXMATRIX g_proj;
 
-	void pre_drawindexedprim()
+	bool next_is_skinned = false;
+	bool is_first = false;
+
+	void on_begin_scene()
+	{
+		is_first = true;
+
+		//if (const auto im = imgui::get(); im)
+		//{
+		//	if (im->m_dbg_use_fake_camera)
+		//	{
+		//		D3DXMATRIX rotation, translation, view_matrix, proj_matrix;
+
+		//		D3DXMatrixRotationYawPitchRoll(&rotation,
+		//			D3DXToRadian(im->m_dbg_camera_yaw),		// Yaw in radians
+		//			D3DXToRadian(im->m_dbg_camera_pitch),	// Pitch in radians
+		//			0.0f);									// No roll for simplicity
+
+		//		D3DXMatrixTranslation(&translation,
+		//			-im->m_dbg_camera_pos[0],				// Negate for camera (moves world opposite)
+		//			-im->m_dbg_camera_pos[1],
+		//			-im->m_dbg_camera_pos[2]);
+
+		//		D3DXMatrixMultiply(&view_matrix, &rotation, &translation);
+
+		//		// Construct projection matrix
+		//		D3DXMatrixPerspectiveFovLH(&proj_matrix,
+		//			D3DXToRadian(im->m_dbg_camera_fov),		// FOV in radians
+		//			im->m_dbg_camera_aspect,
+		//			im->m_dbg_camera_near_plane,
+		//			im->m_dbg_camera_far_plane);
+
+		//		shared::globals::d3d_device->SetTransform(D3DTS_WORLD, &shared::globals::IDENTITY);
+		//		shared::globals::d3d_device->SetTransform(D3DTS_VIEW, &view_matrix);
+		//		//shared::globals::d3d_device->SetTransform(D3DTS_VIEW, &viewcopy);
+		//		shared::globals::d3d_device->SetTransform(D3DTS_PROJECTION, &proj_matrix);
+
+
+		//		//shared::globals::d3d_device->SetTransform(D3DTS_PROJECTION, &ctx_copy.projectionMatrix);
+		//	}
+		//}
+	}
+
+	IDirect3DVertexShader9* ff_og_vs = nullptr;
+	IDirect3DPixelShader9* ff_og_ps = nullptr;
+	bool ff_was_modified = false;
+
+	int ff_render_mesh = false;
+
+	
+
+	
+
+	bool pre_drawindexedprim()
 	{
 		const auto dev = shared::globals::d3d_device;
 
@@ -127,8 +141,8 @@ namespace mods::wolfenstein2k9
 			dev->SetVertexShader(nullptr);
 			ff_was_modified = true;
 
-			D3DXMATRIX trans;
-			shared::utils::transpose_float4x4(a8_copy.unkMatrix1_transposed, trans);
+			//D3DXMATRIX trans;
+			//shared::utils::transpose_float4x4(a8_copy.unkMatrix1_transposed, trans);
 
 			//dev->SetTransform(D3DTS_WORLD, &shared::globals::IDENTITY);
 			dev->SetTransform(D3DTS_WORLD, &mm->mvp_ptr->model_transform); 
@@ -144,10 +158,34 @@ namespace mods::wolfenstein2k9
 
 			dev->SetTransform(D3DTS_VIEW, &ctx_copy.modelMatrix);  
 			dev->SetTransform(D3DTS_PROJECTION, &ctx_copy.projectionMatrix);
+
+			//return false;
+		}
+		else
+		{
+			int x = 0;
+			//dev->SetTransform(D3DTS_VIEW, &viewcopy);
 		}
 
+		if (is_first)
+		{
+			int yy = 0;
+		}
+		if (!next_is_skinned)
+		{
+			//return true;
+			dev->SetTransform(D3DTS_PROJECTION, &ctx_copy.projectionMatrix);
+
+			dev->GetVertexShader(&ff_og_vs);
+			dev->SetVertexShader(nullptr);
+			ff_was_modified = true;
+		}
 		
-		dev->SetTransform(D3DTS_PROJECTION, &ctx_copy.projectionMatrix);
+
+		
+
+		return false;
+
 
 		//D3DXMATRIX world2 = shared::globals::IDENTITY;
 
@@ -210,7 +248,9 @@ namespace mods::wolfenstein2k9
 				dev->SetVertexShader(ff_og_vs);
 			}
 		}
-		
+
+		is_first = false;
+		next_is_skinned = false;
 		ff_was_modified = false;
 		ff_og_vs = nullptr;
 	}
@@ -254,6 +294,42 @@ namespace mods::wolfenstein2k9
 		//g_model = ctx->modelMatrix;
 		//g_proj = ctx->projectionMatrix;
 		int x = 1;
+
+		if (const auto im = imgui::get(); im)
+		{
+			if (im->m_dbg_use_fake_camera)
+			{
+				D3DXMATRIX rotation, translation, view_matrix, proj_matrix;
+
+				D3DXMatrixRotationYawPitchRoll(&rotation,
+					D3DXToRadian(im->m_dbg_camera_yaw),		// Yaw in radians
+					D3DXToRadian(im->m_dbg_camera_pitch),	// Pitch in radians
+					0.0f);									// No roll for simplicity
+
+				D3DXMatrixTranslation(&translation,
+					-im->m_dbg_camera_pos[0],				// Negate for camera (moves world opposite)
+					-im->m_dbg_camera_pos[1],
+					-im->m_dbg_camera_pos[2]);
+
+				D3DXMatrixMultiply(&view_matrix, &rotation, &translation);
+
+				// Construct projection matrix
+				D3DXMatrixPerspectiveFovLH(&proj_matrix,
+					D3DXToRadian(im->m_dbg_camera_fov),		// FOV in radians
+					im->m_dbg_camera_aspect,
+					im->m_dbg_camera_near_plane,
+					im->m_dbg_camera_far_plane);
+
+				shared::globals::d3d_device->SetTransform(D3DTS_WORLD, &shared::globals::IDENTITY);
+				shared::globals::d3d_device->SetTransform(D3DTS_VIEW, &view_matrix);
+
+				//shared::globals::d3d_device->SetTransform(D3DTS_VIEW, &viewcopy);
+				//shared::globals::d3d_device->SetTransform(D3DTS_PROJECTION, &proj_matrix);
+
+				//shared::globals::d3d_device->SetTransform(D3DTS_VIEW, &ctx_copy.modelMatrix);
+				shared::globals::d3d_device->SetTransform(D3DTS_PROJECTION, &ctx_copy.projectionMatrix);
+			}
+		}
 	}
 
 	__declspec(naked) void on_matrix_calc_stub()
@@ -269,6 +345,59 @@ namespace mods::wolfenstein2k9
 			popad;
 
 			movss   xmm0, dword ptr[ebp + 0x50];
+			jmp		retn_addr;
+		}
+	}
+
+	struct plane
+	{
+		Vector xyz;
+		float dist;
+	};
+
+
+	struct frustum_s
+	{
+		plane planes[6];
+		char pad_0x0060[0x6C]; //0x0060
+		float fovx; //0x00CC 
+		float fovy; //0x00D0 
+		Vector pos; //0x00D4 
+		char pad_0x00E0[0x90]; //0x00E0
+		D3DXMATRIX viewMatrix;
+	};
+
+	struct frustum_ptr
+	{
+		frustum_s* f;
+	};
+
+	void mod_frustum()
+	{
+		auto frustum = reinterpret_cast<frustum_ptr*>(0x109661F0);
+		auto x = 1;
+
+		viewcopy = frustum->f->viewMatrix;
+		//frustum->f->planes[5].dist -= -10000.0f;
+
+		/*for (auto i = 0; i < 5; i++)
+		{
+			frustum->f->planes[i].dist *= 0.5f;
+		}*/
+	}
+
+	__declspec(naked) void on_viewfrustum_stub()
+	{
+		static uint32_t func_addr = 0x10155870;
+		static uint32_t retn_addr = 0x10156402;
+		__asm
+		{
+			call	func_addr;
+
+			pushad;
+			call	mod_frustum;
+			popad;
+
 			jmp		retn_addr;
 		}
 	}
@@ -318,6 +447,9 @@ namespace mods::wolfenstein2k9
 
 		// 100E0BEB
 		shared::utils::hook(0x100E0BEB, on_matrix_calc_stub, HOOK_JUMP).install()->quick();
+
+		// 101563FD
+		shared::utils::hook(0x101563FD, on_viewfrustum_stub, HOOK_JUMP).install()->quick();
 
 		shared::common::loader::module_loader::register_module(std::make_unique<imgui>());
 
