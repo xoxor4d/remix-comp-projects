@@ -18,6 +18,14 @@ namespace mods::wolfenstein2k9
 		D3DXMATRIX unkMatrix6;
 	};
 
+	struct a8_ctx
+	{
+		D3DXMATRIX unkMatrix1_transposed;
+		D3DXMATRIX unkMatrix2_transposed;
+		char pad_0x0080[0x60]; //0x0080
+		Vector check_for_null; //0x00E0 
+	};
+
 
 	void on_begin_scene()
 	{
@@ -97,7 +105,9 @@ namespace mods::wolfenstein2k9
 		mvp_sub* mvp_ptr;
 	};
 
+	bool ctx_valid = false;
 	RenderContext ctx_copy = {};
+	a8_ctx a8_copy = {};
 	//D3DXMATRIX g_model;
 	//D3DXMATRIX g_proj;
 
@@ -107,19 +117,37 @@ namespace mods::wolfenstein2k9
 
 		auto mm = reinterpret_cast<mvp*>(0x10969B18);
 
+		dev->SetTransform(D3DTS_WORLD, &shared::globals::IDENTITY);
+
 		auto model_data = reinterpret_cast<model_trans*>(0x10969B0C);
 		//if (model_data->worldTransptr /*ff_render_mesh*/)
-		if (mm && mm->mvp_ptr)
+		if (ctx_valid && mm && mm->mvp_ptr)
 		{
 			dev->GetVertexShader(&ff_og_vs);
 			dev->SetVertexShader(nullptr);
 			ff_was_modified = true;
-			 
+
+			D3DXMATRIX trans;
+			shared::utils::transpose_float4x4(a8_copy.unkMatrix1_transposed, trans);
+
 			//dev->SetTransform(D3DTS_WORLD, &shared::globals::IDENTITY);
 			dev->SetTransform(D3DTS_WORLD, &mm->mvp_ptr->model_transform); 
+
+
+
 			//dev->SetTransform(D3DTS_VIEW, &ctx_copy.modelMatrix);
+			//dev->SetTransform(D3DTS_VIEW, &trans);
+
+
+			//dev->SetTransform(D3DTS_VIEW, &trans);
+			//dev->SetTransform(D3DTS_VIEW, &mm->mvp_ptr->model_transform);
+
+			dev->SetTransform(D3DTS_VIEW, &ctx_copy.modelMatrix);  
 			dev->SetTransform(D3DTS_PROJECTION, &ctx_copy.projectionMatrix);
 		}
+
+		
+		dev->SetTransform(D3DTS_PROJECTION, &ctx_copy.projectionMatrix);
 
 		//D3DXMATRIX world2 = shared::globals::IDENTITY;
 
@@ -210,9 +238,19 @@ namespace mods::wolfenstein2k9
 
 	
 
-	void grab_matrices(RenderContext* ctx)
+	void grab_matrices(RenderContext* ctx, a8_ctx* a8)
 	{
+		if (a8->check_for_null.x == 0.0 && a8->check_for_null.y == 0.0 && a8->check_for_null.z == 0.0)
+		{
+			ctx_valid = false;
+		}
+		else
+		{
+			ctx_valid = true;
+		}
+
 		memcpy(&ctx_copy, ctx, sizeof(RenderContext));
+		memcpy(&a8_copy, a8, sizeof(a8_ctx));
 		//g_model = ctx->modelMatrix;
 		//g_proj = ctx->projectionMatrix;
 		int x = 1;
@@ -224,9 +262,10 @@ namespace mods::wolfenstein2k9
 		__asm
 		{
 			pushad;
+			push	ebx;
 			push	ebp;
 			call	grab_matrices;
-			add		esp, 4;
+			add		esp, 8;
 			popad;
 
 			movss   xmm0, dword ptr[ebp + 0x50];
