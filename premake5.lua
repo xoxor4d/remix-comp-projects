@@ -511,6 +511,68 @@ workspace "remix-comp-proj"
 
 	---------------------------
 
+	project "wolfenstein2k9-rtx"
+	kind "SharedLib"
+	language "C++"
+
+	linkoptions {
+		"/PDBCompress"
+	}
+
+	pchheader "std_include.hpp"
+	pchsource "src/mods/wolfenstein2k9/std_include.cpp"
+
+	files {
+		"./src/mods/wolfenstein2k9/**.hpp",
+		"./src/mods/wolfenstein2k9/**.cpp",
+	}
+
+	includedirs {
+		"%{prj.location}/src",
+		"./src",
+	}
+
+	links {
+		"_shared"
+	}
+
+	resincludedirs {
+		"$(ProjectDir)src"
+	}
+
+	buildoptions { 
+		"/Zm100 -Zm100" 
+	}
+
+	filter "configurations:Debug or configurations:Release"
+		if(os.getenv("WOLFENSTEIN_ROOT")) then
+			print ("Setup paths using environment variable 'WOLFENSTEIN_ROOT' :: '" .. os.getenv("WOLFENSTEIN_ROOT") .. "'")
+			targetdir(os.getenv("WOLFENSTEIN_ROOT"))
+			debugdir (os.getenv("WOLFENSTEIN_ROOT"))
+			debugcommand (os.getenv("WOLFENSTEIN_ROOT") .. "/" .. "Wolf2.exe")
+		end
+	filter {}
+
+	-- Specific configurations
+	flags { 
+		"UndefinedIdentifiers" 
+	}
+
+	warnings "Extra"
+
+	-- Post-build
+	postbuildcommands {
+		"MOVE /Y \"$(TargetDir)wolfenstein2k9-rtx.dll\" \"$(TargetDir)wolfenstein2k9-rtx.asi\"",
+	}
+
+	dependencies.imports()
+
+	group "Dependencies"
+		dependencies.projects()
+	group ""
+
+	---------------------------
+
 	project "ue2fixes-rtx"
 	kind "SharedLib"
 	language "C++"
