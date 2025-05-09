@@ -15,8 +15,7 @@ namespace mods::wolfenstein2k9
 		D3DXMATRIX unkMatrix4;
 		D3DXMATRIX projectionMatrix;
 		D3DXMATRIX unkMatrix5;
-		char padding4[61];
-		char padding5[8];
+		D3DXMATRIX unkMatrix6;
 	};
 
 
@@ -84,24 +83,42 @@ namespace mods::wolfenstein2k9
 		model_view_sub* valid1; //0x0008
 	};
 
+	struct mvp_sub
+	{
+		char pad_0x0000[0x20]; //0x0000
+		D3DXMATRIX unk_mtx; //0x0020 
+		D3DXMATRIX model_transform; //0x0060 
+		char pad_0x00A0[0x400]; //0x00A0
 
-	D3DXMATRIX g_model;
-	D3DXMATRIX g_proj;
+	}; //Size
+
+	struct mvp
+	{
+		mvp_sub* mvp_ptr;
+	};
+
+	RenderContext ctx_copy = {};
+	//D3DXMATRIX g_model;
+	//D3DXMATRIX g_proj;
 
 	void pre_drawindexedprim()
 	{
 		const auto dev = shared::globals::d3d_device;
 
+		auto mm = reinterpret_cast<mvp*>(0x10969B18);
+
 		auto model_data = reinterpret_cast<model_trans*>(0x10969B0C);
-		if (model_data->worldTransptr /*ff_render_mesh*/)
+		//if (model_data->worldTransptr /*ff_render_mesh*/)
+		if (mm && mm->mvp_ptr)
 		{
 			dev->GetVertexShader(&ff_og_vs);
 			dev->SetVertexShader(nullptr);
 			ff_was_modified = true;
-
-			dev->SetTransform(D3DTS_WORLD, &shared::globals::IDENTITY);
-			dev->SetTransform(D3DTS_VIEW, &g_model);
-			dev->SetTransform(D3DTS_PROJECTION, &g_proj);
+			 
+			//dev->SetTransform(D3DTS_WORLD, &shared::globals::IDENTITY);
+			dev->SetTransform(D3DTS_WORLD, &mm->mvp_ptr->model_transform); 
+			//dev->SetTransform(D3DTS_VIEW, &ctx_copy.modelMatrix);
+			dev->SetTransform(D3DTS_PROJECTION, &ctx_copy.projectionMatrix);
 		}
 
 		//D3DXMATRIX world2 = shared::globals::IDENTITY;
@@ -195,8 +212,9 @@ namespace mods::wolfenstein2k9
 
 	void grab_matrices(RenderContext* ctx)
 	{
-		g_model = ctx->modelMatrix;
-		g_proj = ctx->projectionMatrix;
+		memcpy(&ctx_copy, ctx, sizeof(RenderContext));
+		//g_model = ctx->modelMatrix;
+		//g_proj = ctx->projectionMatrix;
 		int x = 1;
 	}
 
