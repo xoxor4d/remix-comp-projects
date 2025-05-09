@@ -133,7 +133,7 @@ namespace mods::wolfenstein2k9
 
 		dev->SetTransform(D3DTS_WORLD, &shared::globals::IDENTITY);
 
-		auto model_data = reinterpret_cast<model_trans*>(0x10969B0C);
+		//auto model_data = reinterpret_cast<model_trans*>(0x10969B0C);
 		//if (model_data->worldTransptr /*ff_render_mesh*/)
 		if (ctx_valid && mm && mm->mvp_ptr)
 		{
@@ -163,14 +163,14 @@ namespace mods::wolfenstein2k9
 		}
 		else
 		{
-			int x = 0;
+			//int x = 0;
 			//dev->SetTransform(D3DTS_VIEW, &viewcopy);
 		}
 
-		if (is_first)
+		/*if (is_first)
 		{
 			int yy = 0;
-		}
+		}*/
 		if (!next_is_skinned)
 		{
 			//return true;
@@ -293,7 +293,7 @@ namespace mods::wolfenstein2k9
 		memcpy(&a8_copy, a8, sizeof(a8_ctx));
 		//g_model = ctx->modelMatrix;
 		//g_proj = ctx->projectionMatrix;
-		int x = 1;
+		//int x = 1;
 
 		if (const auto im = imgui::get(); im)
 		{
@@ -375,7 +375,7 @@ namespace mods::wolfenstein2k9
 	void mod_frustum()
 	{
 		auto frustum = reinterpret_cast<frustum_ptr*>(0x109661F0);
-		auto x = 1;
+		//auto x = 1;
 
 		viewcopy = frustum->f->viewMatrix;
 		//frustum->f->planes[5].dist -= -10000.0f;
@@ -407,8 +407,8 @@ namespace mods::wolfenstein2k9
 
 		//shared::common::dinput::init();
 
-		std::uint32_t install_counter = 0u;
-		std::uint32_t total_patch_amount = 0u;
+		//std::uint32_t install_counter = 0u;
+		//std::uint32_t total_patch_amount = 0u;
 
 		//{
 		//	// C7 47 44 00 00 80 3F 5F 5E 8B E5
@@ -427,7 +427,7 @@ namespace mods::wolfenstein2k9
 
 
 		// ------------------
-		std::cout << "[SIG] Installed " << std::to_string(install_counter) << "/" << std::to_string(total_patch_amount) << " signature patches.\n";
+		//std::cout << "[SIG] Installed " << std::to_string(install_counter) << "/" << std::to_string(total_patch_amount) << " signature patches.\n";
 	}
 
 	void main()

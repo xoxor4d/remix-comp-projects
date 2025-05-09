@@ -112,12 +112,12 @@ BOOL APIENTRY DllMain(HMODULE hmodule, const DWORD ul_reason_for_call, LPVOID)
 			return TRUE;
 		}
 
-		std::cout << "[DllMain] Get Engine.dll handle ... \n";
+		//std::cout << "[DllMain] Get Engine.dll handle ... \n";
 
 		//std::uint32_t T = 0;
 		//GET_MODULE_HANDLE(mods::test::game::engine_module, "Engine.dll", T);
 
-		mods::wolfenstein2k9::install_signature_patches();
+		//mods::wolfenstein2k9::install_signature_patches();
 
 		if (const auto t = CreateThread(nullptr, 0, mods::wolfenstein2k9::find_game_window_by_sha1, nullptr, 0, nullptr); t) {
 			CloseHandle(t);

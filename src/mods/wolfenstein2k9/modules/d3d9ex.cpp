@@ -547,10 +547,10 @@ namespace mods::wolfenstein2k9
 	//D3DXMATRIX latest_proj;
 	//D3DXMATRIX latest_proj;
 
-	bool asd(IDirect3DDevice9* dev, UINT start_register, CONST float* pConstantData, UINT Vector4fCount)
+	bool asd(IDirect3DDevice9* dev, UINT start_register, [[maybe_unused]] CONST float* pConstantData, [[maybe_unused]] UINT Vector4fCount)
 	{
 		IDirect3DVertexShader9* used_vs = nullptr;
-		if (auto hr = dev->GetVertexShader(&used_vs); used_vs)
+		if (auto hr = dev->GetVertexShader(&used_vs); !FAILED(hr) && used_vs)
 		{
 			UINT bytecode_size = 0;
 			if (FAILED(used_vs->GetFunction(nullptr, &bytecode_size))) {
@@ -660,7 +660,7 @@ namespace mods::wolfenstein2k9
 							return false;
 						}
 
-						int x = 0;
+						//int x = 0;
 
 						break;
 					}
@@ -674,9 +674,9 @@ namespace mods::wolfenstein2k9
 		return false;
 	}
 
-	void on_mvp_calc_hk(void* eax)
+	void on_mvp_calc_hk([[maybe_unused]] void* eax)
 	{
-		int x = 1;
+		//int x = 1;
 	}
 
 	__declspec(naked) void on_mvp_calc_stub()
@@ -698,7 +698,7 @@ namespace mods::wolfenstein2k9
 
 	HRESULT d3d9ex::D3D9Device::SetVertexShaderConstantF(UINT StartRegister, CONST float* pConstantData, UINT Vector4fCount)
 	{
-		const auto& im = imgui::get();
+		//const auto& im = imgui::get();
 
 		if (/*im->m_dbg_use_fake_camera &&*/ asd(m_pIDirect3DDevice9, StartRegister, pConstantData, Vector4fCount))
 		{
