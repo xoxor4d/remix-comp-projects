@@ -15,13 +15,28 @@ If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![k
 <br>
 
 
-
 <div align="center" markdown="1"> 
 
-# Mods:
+### Table of Contents
+__[Bioshock 1 (GOG)](#bioshock-1-gog)__  
+__[SWAT 4 Gold (GOG)](#swat-4---gold-gog)__  
+__[Fear 1 Platinum (GOG)](#fear-1-platinum-gog)__  
+__[Mirrors Edge (GOG)](#mirrors-edge-gog)__ (Broken)  
+__[Anno 1404 Gold Edition (GOG)](#anno-1404-gold-edition-gog)__ (Broken)  
+__[Manhunt (Steam)](#manhunt)__   
+__[ue2fixes](#ue2fixes)__ (UE2 Patcher)  
+
+__[Installing](#installing)__   
+__[Overall Usage](#overall-usage)__   
+__[Compiling](#compiling)__   
+
 <br>
 
 </div>
+
+_____
+
+<br>
 
 <div align="center" markdown="1"> 
 
@@ -41,6 +56,8 @@ If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![k
 - ~~_"Broken"_ vertex normals (Normals are packed and that is currently not supported by remix)~~
 - Hash of orig. emissive textures changes
 
+
+<br>
 <br>
 <br>
 
@@ -66,6 +83,8 @@ If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![k
 - Remix bug: with the sky enabled, unfocusing the game will render only the skybox for a frame and leak a little vram.  
 This can also happen randomly when walking through doorways which will ultimativly fill up the entire gpu memory.
 
+
+<br>
 <br>
 <br>
 
@@ -90,6 +109,8 @@ This can also happen randomly when walking through doorways which will ultimativ
 - Currently can not get remix "friendly" anti-culling to work so it's either light leaking and unstable hashes or rendering the entire map (which is possible via the ImGui menu)
 - original skybox is broken (currently rendering a unique marker with a skysphere attached to it via remix replacements)
 
+
+<br>
 <br>
 <br>
 
@@ -110,6 +131,8 @@ This can also happen randomly when walking through doorways which will ultimativ
 - No game camera data or mesh transforms yet
 - Currently not worth proceeding 
 
+
+<br>
 <br>
 <br>
 
@@ -128,6 +151,25 @@ This can also happen randomly when walking through doorways which will ultimativ
 ###### The bad:
 - still very broken and very WIP
 
+
+<br>
+<br>
+<br>
+
+<div align="center" markdown="1"> 
+
+### Manhunt (Steam)  
+
+</div>
+
+###### The good:  
+- Disabled world / BSP frustum culling
+- Disabled the BSP PVS system (no entity culling)
+- Launch game with commandline arg `-use_signatures` if the default mode (static offsets) is causing issues
+
+
+
+<br>
 <br>
 <br>
 
@@ -151,6 +193,7 @@ This can also happen randomly when walking through doorways which will ultimativ
 > To install, just grab an asi loader of your choice and drop `a_ue2fixes-rtx.asi` next to your game's exe.  
 
 
+<br>
 <br>
 <br>
 

@@ -44,7 +44,16 @@ namespace shared::globals
 	extern std::string root_path;
 	extern HWND main_window;
 
+#define EXE_BASE shared::globals::exe_module_addr
+
+	extern HMODULE exe_hmodule;
+	extern DWORD exe_module_addr;
+	extern void setup_exe_module();
+
 	extern HMODULE dll_hmodule;
+	extern DWORD dll_module_addr;
+	extern void setup_dll_module(const HMODULE mod);
+
 	extern IDirect3DDevice9* d3d_device;
 
 	extern bool imgui_is_rendering;
