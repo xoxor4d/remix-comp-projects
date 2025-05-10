@@ -508,6 +508,67 @@ workspace "remix-comp-proj"
 		dependencies.projects()
 	group ""
 
+	---------------------------
+
+	project "manhunt-rtx"
+	kind "SharedLib"
+	language "C++"
+
+	linkoptions {
+		"/PDBCompress"
+	}
+
+	pchheader "std_include.hpp"
+	pchsource "src/mods/manhunt/std_include.cpp"
+
+	files {
+		"./src/mods/manhunt/**.hpp",
+		"./src/mods/manhunt/**.cpp",
+	}
+
+	includedirs {
+		"%{prj.location}/src",
+		"./src",
+	}
+
+	links {
+		"_shared"
+	}
+
+	resincludedirs {
+		"$(ProjectDir)src"
+	}
+
+	buildoptions { 
+		"/Zm100 -Zm100" 
+	}
+
+	filter "configurations:Debug or configurations:Release"
+		if(os.getenv("MANHUNT1_ROOT")) then
+			print ("Setup paths using environment variable 'MANHUNT1_ROOT' :: '" .. os.getenv("MANHUNT1_ROOT") .. "'")
+			targetdir(os.getenv("MANHUNT1_ROOT"))
+			debugdir (os.getenv("MANHUNT1_ROOT"))
+			debugcommand (os.getenv("MANHUNT1_ROOT") .. "/" .. "manhunt.exe")
+		end
+	filter {}
+
+	-- Specific configurations
+	flags { 
+		"UndefinedIdentifiers" 
+	}
+
+	warnings "Extra"
+
+	-- Post-build
+	postbuildcommands {
+		"MOVE /Y \"$(TargetDir)manhunt-rtx.dll\" \"$(TargetDir)manhunt-rtx.asi\"",
+	}
+
+	dependencies.imports()
+
+	group "Dependencies"
+		dependencies.projects()
+	group ""
 
 	---------------------------
 
