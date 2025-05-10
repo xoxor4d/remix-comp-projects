@@ -23,7 +23,7 @@ __[SWAT 4 Gold (GOG)](#swat-4---gold-gog)__
 __[Fear 1 Platinum (GOG)](#fear-1-platinum-gog)__  
 __[Mirrors Edge (GOG)](#mirrors-edge-gog)__ (Broken)  
 __[Anno 1404 Gold Edition (GOG)](#anno-1404-gold-edition-gog)__ (Broken)  
-__[Manhunt (Steam)](#manhunt)__   
+__[Manhunt (Steam)](#manhunt-steam)__   
 __[ue2fixes](#ue2fixes)__ (UE2 Patcher)  
 
 __[Installing](#installing)__   
