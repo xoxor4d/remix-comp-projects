@@ -79,6 +79,7 @@ namespace mods::manhunt
 			total_patch_amount++;
 		}
 
+#if 0
 		{
 			// disable PVS (0x63A4D0) .. make GetBspPVS return 0
 			const auto offset = shared::utils::mem::find_pattern_in_module(shared::globals::exe_hmodule, "8B 44 24 ? 8B 0D ? ? ? ? A3 ? ? ? ? ? ? ? C3", 0);
@@ -91,6 +92,48 @@ namespace mods::manhunt
 
 			total_patch_amount++;
 		}
+#endif
+
+#if 1
+		{
+			// more entity anti culling (0x474F6F)
+			const auto offset = shared::utils::mem::find_pattern_in_module(shared::globals::exe_hmodule, "0F 84 ? ? ? ? 53 FF 15", 0);
+			if (offset)
+			{
+				std::cout << "[SIG] installed anti entity culling 1 @ 0x" << std::uppercase << std::hex << offset << "!\n";
+				shared::utils::hook::nop(offset, 6);
+				install_counter++;
+			}
+
+			total_patch_amount++;
+		}
+
+		{
+			// more entity anti culling (0x475041)
+			const auto offset = shared::utils::mem::find_pattern_in_module(shared::globals::exe_hmodule, "75 ? 80 BE ? ? ? ? ? 0F 84 ? ? ? ? A1", 0);
+			if (offset)
+			{
+				std::cout << "[SIG] installed anti entity culling 2 @ 0x" << std::uppercase << std::hex << offset << "!\n";
+				shared::utils::hook::set<BYTE>(offset, 0xEB);
+				install_counter++;
+			}
+
+			total_patch_amount++;
+		}
+
+		{
+			// more entity anti culling (0x474FF7)
+			const auto offset = shared::utils::mem::find_pattern_in_module(shared::globals::exe_hmodule, "75 ? 8D 4E ? 51 68", 0);
+			if (offset)
+			{
+				std::cout << "[SIG] installed anti entity culling 3 @ 0x" << std::uppercase << std::hex << offset << "!\n";
+				shared::utils::hook::set<BYTE>(offset, 0xEB);
+				install_counter++;
+			}
+
+			total_patch_amount++;
+		}
+#endif
 
 		// ------------------
 		std::cout << "[SIG] Installed " << std::to_string(install_counter) << "/" << std::to_string(total_patch_amount) << " signature patches.\n";
@@ -117,7 +160,12 @@ namespace mods::manhunt
 			shared::utils::hook::nop(0x61F294, 2);
 
 			// disable PVS (0x63A4D0) .. make GetBspPVS return 0
-			shared::utils::hook::set(0x63A4D0, 0x31, 0xC0, 0xC3); // xor eax, eax - ret
+			//shared::utils::hook::set(0x63A4D0, 0x31, 0xC0, 0xC3); // xor eax, eax - ret
+
+			// more anti entity culling
+			shared::utils::hook::nop(0x474F6F, 6);
+			shared::utils::hook::set<BYTE>(0x475041, 0xEB);
+			shared::utils::hook::set<BYTE>(0x474FF7, 0xEB);
 
 			std::cout << "[STATIC] installed static anti frustum & anti PVS patches.\n> Use commandline arg '-use_signatures' to use signatures instead of static offsets if you run into issues.\n";
 		}
