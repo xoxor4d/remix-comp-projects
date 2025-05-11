@@ -365,9 +365,95 @@ namespace shared::utils
 		hook::redirect_jump(reinterpret_cast<void*>(place), stub);
 	}
 
+//	bool hook::conditional_jump_to_jmp(const DWORD place)
+//	{
+//		static const std::unordered_map<std::uint16_t, const char*> jump_opcodes = {
+//			{ static_cast<std::uint16_t>(0x840F), "JZ" },  // 0F 84
+//			{ static_cast<std::uint16_t>(0x850F), "JNZ" }, // 0F 85
+//			{ static_cast<std::uint16_t>(0x8D0F), "JGE" }, // 0F 8D
+//			{ static_cast<std::uint16_t>(0x8E0F), "JLE" }, // 0F 8E
+//			{ static_cast<std::uint16_t>(0x820F), "JB" },  // 0F 82
+//			{ static_cast<std::uint16_t>(0x870F), "JA" }   // 0F 87
+//		};
+//
+//		// read the first 2 bytes (opcode)
+//		const std::uint8_t* code = (uint8_t*)place;
+//		const std::uint16_t opcode = (code[1] << 8) | code[0]; // little-endian: 0F 84 -> 840F
+//
+//		// check if it's a supported long conditional jump
+//		const auto it = jump_opcodes.find(opcode);
+//		if (it == jump_opcodes.end())
+//		{
+////#if DEBUG
+//			std::cout << "[HOOK-CondJumpToJMP] Conditional Instruction at 0x" << std::hex << place << " is not a supported long conditional jump (opcode: " << std::hex << opcode << ")" << std::dec << std::endl;
+////#endif
+//			return false;
+//		}
+//
+////#if DEBUG
+//		// log the jump type
+//		const char* jump_name = it->second;
+//
+//
+//		// log old bytes
+//		std::cout << "[HOOK-CondJumpToJMP] Old bytes at 0x" << std::hex << place << ": ";
+//		for (int i = 0; i < 6; i++) {
+//			std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)code[i] << " ";
+//		} std::cout << std::dec << std::endl;
+////#endif
+//
+//		// read the 4-byte relative offset (little-endian)
+//		std::int32_t jmp_offset;
+//		std::memcpy(&jmp_offset, code + 2, sizeof(jmp_offset));
+//
+//		// calculate target address: instruction_address + 6 + jmp_offset
+//		const DWORD target_address = place + 6 + jmp_offset;
+//
+//		// calculate JMP relative offset: target_address - (instruction_address + 5)
+//		const std::int32_t new_jmp_offset = target_address - (place + 5);
+//
+//		// prepare new instruction: E9 + new_jmp_offset + 90
+//		const std::uint8_t new_instruction[6] =
+//		{
+//			0xE9, // JMP
+//			static_cast<std::uint8_t>(new_jmp_offset & 0xFF),
+//			static_cast<std::uint8_t>((new_jmp_offset >> 8) & 0xFF),
+//			static_cast<std::uint8_t>((new_jmp_offset >> 16) & 0xFF),
+//			static_cast<std::uint8_t>((new_jmp_offset >> 24) & 0xFF),
+//			0x90  // NOP
+//		};
+//
+//		// write new instruction
+//		DWORD old_protect;
+//		if (!VirtualProtect((void*)place, sizeof(new_instruction), PAGE_EXECUTE_READWRITE, &old_protect))
+//		{
+////#if DEBUG
+//			std::cout << "[HOOK-CondJumpToJMP] Failed to change memory protection at 0x" << std::hex << place << std::dec << std::endl;
+////#endif
+//			return false;
+//		}
+//
+//		std::memcpy((void*)place, new_instruction, sizeof(new_instruction));
+//
+//		// Restore original protection
+//		VirtualProtect((void*)place, sizeof(new_instruction), old_protect, &old_protect);
+//
+//		// Flush instruction cache
+//		FlushInstructionCache(GetCurrentProcess(), (void*)place, sizeof(new_instruction));
+//
+////#if DEBUG
+//		std::cout << "[HOOK-CondJumpToJMP] Patched " << jump_name << " to JMP at 0x" << std::hex << place << ": ";
+//		for (int i = 0; i < 6; i++) {
+//			std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)new_instruction[i] << " ";
+//		} std::cout << std::dec << std::endl;
+////#endif
+//		return true;
+//	}
+
 	bool hook::conditional_jump_to_jmp(const DWORD place)
 	{
-		static const std::unordered_map<std::uint16_t, const char*> jump_opcodes = {
+		// map for long conditional jumps (6 bytes: 2-byte opcode + 4-byte offset)
+		static const std::unordered_map<std::uint16_t, const char*> long_jump_opcodes = {
 			{ static_cast<std::uint16_t>(0x840F), "JZ" },  // 0F 84
 			{ static_cast<std::uint16_t>(0x850F), "JNZ" }, // 0F 85
 			{ static_cast<std::uint16_t>(0x8D0F), "JGE" }, // 0F 8D
@@ -376,77 +462,120 @@ namespace shared::utils
 			{ static_cast<std::uint16_t>(0x870F), "JA" }   // 0F 87
 		};
 
-		// read the first 2 bytes (opcode)
-		const std::uint8_t* code = (uint8_t*)place;
-		const std::uint16_t opcode = (code[1] << 8) | code[0]; // little-endian: 0F 84 -> 840F
-
-		// check if it's a supported long conditional jump
-		const auto it = jump_opcodes.find(opcode);
-		if (it == jump_opcodes.end())
-		{
-//#if DEBUG
-			std::cout << "[HOOK-CondJumpToJMP] Conditional Instruction at 0x" << std::hex << place << " is not a supported long conditional jump (opcode: " << std::hex << opcode << ")" << std::dec << std::endl;
-//#endif
-			return false;
-		}
-
-//#if DEBUG
-		// log the jump type
-		const char* jump_name = it->second;
-
-
-		// log old bytes
-		std::cout << "[HOOK-CondJumpToJMP] Old bytes at 0x" << std::hex << place << ": ";
-		for (int i = 0; i < 6; i++) {
-			std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)code[i] << " ";
-		} std::cout << std::dec << std::endl;
-//#endif
-
-		// read the 4-byte relative offset (little-endian)
-		std::int32_t jmp_offset;
-		std::memcpy(&jmp_offset, code + 2, sizeof(jmp_offset));
-
-		// calculate target address: instruction_address + 6 + jmp_offset
-		const DWORD target_address = place + 6 + jmp_offset;
-
-		// calculate JMP relative offset: target_address - (instruction_address + 5)
-		const std::int32_t new_jmp_offset = target_address - (place + 5);
-
-		// prepare new instruction: E9 + new_jmp_offset + 90
-		const std::uint8_t new_instruction[6] =
-		{
-			0xE9, // JMP
-			static_cast<std::uint8_t>(new_jmp_offset & 0xFF),
-			static_cast<std::uint8_t>((new_jmp_offset >> 8) & 0xFF),
-			static_cast<std::uint8_t>((new_jmp_offset >> 16) & 0xFF),
-			static_cast<std::uint8_t>((new_jmp_offset >> 24) & 0xFF),
-			0x90  // NOP
+		// map for short conditional jumps (2 bytes: 1-byte opcode + 1-byte offset)
+		static const std::unordered_map<std::uint8_t, const char*> short_jump_opcodes = {
+			{ static_cast<std::uint8_t>(0x74), "JZ" },  // JE/JZ
+			{ static_cast<std::uint8_t>(0x75), "JNZ" }, // JNE/JNZ
+			{ static_cast<std::uint8_t>(0x7D), "JNL" }, // JGE/JNL
+			{ static_cast<std::uint8_t>(0x7E), "JLE" }, // JLE
+			{ static_cast<std::uint8_t>(0x72), "JB" },  // JB/JNAE/JC
+			{ static_cast<std::uint8_t>(0x77), "JA" }   // JA/JNBE
 		};
 
-		// write new instruction
-		DWORD old_protect;
-		if (!VirtualProtect((void*)place, sizeof(new_instruction), PAGE_EXECUTE_READWRITE, &old_protect))
+		// read the first 2 bytes
+		const std::uint8_t* code = (std::uint8_t*)place;
+		const std::uint16_t first_two_bytes = (code[1] << 8) | code[0]; // Little-endian
+
+		const char* jump_name = nullptr;
+		std::int32_t target_address = 0;
+		std::uint8_t new_instruction[6] = { 0 };
+		size_t instruction_size = 0;
+
+		// Check if it's a long conditional jump (6 bytes)
+		if (long_jump_opcodes.contains(first_two_bytes)) 
 		{
-//#if DEBUG
-			std::cout << "[HOOK-CondJumpToJMP] Failed to change memory protection at 0x" << std::hex << place << std::dec << std::endl;
-//#endif
+			jump_name = long_jump_opcodes.at(first_two_bytes);
+			instruction_size = 6;
+
+			// read the 4-byte relative offset (little-endian)
+			std::int32_t jmp_offset;
+			std::memcpy(&jmp_offset, code + 2, sizeof(jmp_offset));
+
+			// calculate target address: instruction_address + 6 + jmp_offset
+			target_address = place + 6 + jmp_offset;
+
+			// calculate JMP relative offset: target_address - (instruction_address + 5)
+			std::int32_t new_jmp_offset = target_address - (place + 5);
+
+			// prepare new instruction: E9 + new_jmp_offset + 90
+			new_instruction[0] = 0xE9; // JMP
+			new_instruction[1] = static_cast<std::uint8_t>(new_jmp_offset & 0xFF);
+			new_instruction[2] = static_cast<std::uint8_t>((new_jmp_offset >> 8) & 0xFF);
+			new_instruction[3] = static_cast<std::uint8_t>((new_jmp_offset >> 16) & 0xFF);
+			new_instruction[4] = static_cast<std::uint8_t>((new_jmp_offset >> 24) & 0xFF);
+			new_instruction[5] = 0x90; // NOP
+		}
+		// check if it's a short conditional jump (2 bytes)
+		else if (short_jump_opcodes.contains(code[0])) 
+		{
+			jump_name = short_jump_opcodes.at(code[0]);
+			instruction_size = 2;
+
+			// read the 1-byte relative offset (signed)
+			std::int8_t jmp_offset = static_cast<std::int8_t>(code[1]);
+
+			// calculate target address: instruction_address + 2 + jmp_offset
+			target_address = place + 2 + jmp_offset;
+
+			// calculate short JMP relative offset: target_address - (instruction_address + 2)
+			std::int32_t new_jmp_offset = target_address - (place + 2);
+
+			// check if the offset fits in a short jump (±127 bytes)
+			if (new_jmp_offset < -128 || new_jmp_offset > 127) 
+			{
+				//#if DEBUG
+				std::cout << "[HOOK-CondJumpToJMP] Target address 0x" << std::hex << target_address << " is out of range for a short JMP at 0x" << place << std::dec << std::endl;
+				//#endif
+				return false;
+			}
+
+			// Prepare new instruction: EB + 1-byte offset
+			new_instruction[0] = 0xEB; // Short JMP
+			new_instruction[1] = static_cast<std::uint8_t>(new_jmp_offset & 0xFF);
+		}
+		else 
+		{
+			//#if DEBUG
+			std::cout << "[HOOK-CondJumpToJMP] Instruction at 0x" << std::hex << place << " is not a supported conditional jump (opcode: " << std::hex << first_two_bytes << ")" << std::dec << std::endl;
+			//#endif
 			return false;
 		}
 
-		std::memcpy((void*)place, new_instruction, sizeof(new_instruction));
+		#if DEBUG
+		// log old bytes
+		std::cout << "[HOOK-CondJumpToJMP] Old bytes at 0x" << std::hex << place << ": ";
+		for (size_t i = 0; i < instruction_size; i++) {
+			std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)code[i] << " ";
+		}
+		std::cout << std::dec << std::endl;
+		#endif
 
-		// Restore original protection
-		VirtualProtect((void*)place, sizeof(new_instruction), old_protect, &old_protect);
+		// change memory protection
+		DWORD old_protect;
+		if (!VirtualProtect((void*)place, instruction_size, PAGE_EXECUTE_READWRITE, &old_protect)) 
+		{
+			//#if DEBUG
+			std::cout << "[HOOK-CondJumpToJMP] Failed to change memory protection at 0x" << std::hex << place << std::dec << std::endl;
+			//#endif
+			return false;
+		}
 
-		// Flush instruction cache
-		FlushInstructionCache(GetCurrentProcess(), (void*)place, sizeof(new_instruction));
+		// write new instruction
+		std::memcpy((void*)place, new_instruction, instruction_size);
 
-//#if DEBUG
+		// restore original protection
+		VirtualProtect((void*)place, instruction_size, old_protect, &old_protect);
+
+		// flush instruction cache
+		FlushInstructionCache(GetCurrentProcess(), (void*)place, instruction_size);
+
+		#if DEBUG
 		std::cout << "[HOOK-CondJumpToJMP] Patched " << jump_name << " to JMP at 0x" << std::hex << place << ": ";
-		for (int i = 0; i < 6; i++) {
+		for (size_t i = 0; i < instruction_size; i++) {
 			std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)new_instruction[i] << " ";
-		} std::cout << std::dec << std::endl;
-//#endif
+		}
+		std::cout << std::dec << std::endl;
+		#endif
 		return true;
 	}
 

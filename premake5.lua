@@ -570,6 +570,69 @@ workspace "remix-comp-proj"
 		dependencies.projects()
 	group ""
 
+
+	---------------------------
+
+	project "blackhawkdown-rtx"
+	kind "SharedLib"
+	language "C++"
+
+	linkoptions {
+		"/PDBCompress"
+	}
+
+	pchheader "std_include.hpp"
+	pchsource "src/mods/blackhawkdown/std_include.cpp"
+
+	files {
+		"./src/mods/blackhawkdown/**.hpp",
+		"./src/mods/blackhawkdown/**.cpp",
+	}
+
+	includedirs {
+		"%{prj.location}/src",
+		"./src",
+	}
+
+	links {
+		"_shared"
+	}
+
+	resincludedirs {
+		"$(ProjectDir)src" 
+	}
+
+	buildoptions { 
+		"/Zm100 -Zm100" 
+	}
+
+	-- Specific configurations
+	flags { 
+		"UndefinedIdentifiers" 
+	}
+
+	filter "configurations:Debug or configurations:Release"
+		if(os.getenv("BLACKHAWKDOWN_ROOT")) then
+			print ("Setup paths using environment variable 'BLACKHAWKDOWN_ROOT' :: '" .. os.getenv("BLACKHAWKDOWN_ROOT") .. "'")
+			targetdir(os.getenv("BLACKHAWKDOWN_ROOT"))
+			debugdir (os.getenv("BLACKHAWKDOWN_ROOT"))
+			debugcommand (os.getenv("BLACKHAWKDOWN_ROOT") .. "/" .. "dfbhd.exe")
+		end
+	filter {}
+
+	warnings "Extra"
+
+	-- Post-build
+	postbuildcommands {
+		"MOVE /Y \"$(TargetDir)blackhawkdown-rtx.dll\" \"$(TargetDir)a_blackhawkdown-rtx.asi\"",
+	}
+
+	dependencies.imports()
+
+	group "Dependencies"
+		dependencies.projects()
+	group ""
+
 	---------------------------
 
 	project "ue2fixes-rtx"
