@@ -99,11 +99,12 @@ namespace shared::utils
 	void extract_integer_words(const std::string_view& str, std::vector<int>& integers, bool check_for_duplicates);
 
 	void transpose_float3x4_to_d3dxmatrix(const shared::float3x4& src, D3DXMATRIX& dest);
+	void transpose_d3dxmatrix(const D3DXMATRIX* input, D3DXMATRIX* output, std::uint32_t count);
 	void transpose_float4x4(const float* row_major, float* column_major);
 	bool float_equal(float a, float b, float eps = 1.e-6f);
 	float finterp_to(const float current, const float target, const float delta_time, const float interpolation_speed);
 
-	bool open_file_homepath(const std::string& root_path, const std::string& sub_dir, const std::string& file_name, std::ifstream& file);
+	bool open_file_homepath(const std::string& sub_dir, const std::string& file_name, std::ifstream& file);
 
 	uint32_t data_hash32(const void* data, size_t size);
 	std::uint64_t string_hash64(const std::string_view& str);

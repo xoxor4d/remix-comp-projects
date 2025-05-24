@@ -1,5 +1,7 @@
 #include "std_include.hpp"
 
+#include "shared/globals.hpp"
+
 #define VA_BUFFER_COUNT		64
 #define VA_BUFFER_SIZE		65536
 
@@ -257,6 +259,20 @@ namespace shared::utils
 		dest.m[3][3] = 1.0f;
 	}
 
+	void transpose_d3dxmatrix(const D3DXMATRIX* input, D3DXMATRIX* output, const std::uint32_t count)
+	{
+		for (auto i = 0u; i < count; ++i)
+		{
+			D3DXMATRIX& out = output[i];
+
+			// column-major D3DXMATRIX from row-major 3x4
+			out._11 = input[i].m[0][0]; out._12 = input[i].m[1][0]; out._13 = input[i].m[2][0]; out._14 = input[i].m[3][0];
+			out._21 = input[i].m[0][1]; out._22 = input[i].m[1][1]; out._23 = input[i].m[2][1]; out._24 = input[i].m[3][1];
+			out._31 = input[i].m[0][2]; out._32 = input[i].m[1][2]; out._33 = input[i].m[2][2]; out._34 = input[i].m[3][2];
+			out._41 = input[i].m[0][3]; out._42 = input[i].m[1][3]; out._43 = input[i].m[2][3]; out._44 = input[i].m[3][3];
+		}
+	}
+
 	void transpose_float4x4(const float* row_major, float* column_major)
 	{
 		// transpose the matrix by swapping the rows and columns
@@ -302,9 +318,9 @@ namespace shared::utils
 	* @param file		in-out file handle
 	* @return			file handle state (valid or not)
 	*/
-	bool open_file_homepath(const std::string& root_path, const std::string& sub_dir, const std::string& file_name, std::ifstream& file)
+	bool open_file_homepath(const std::string& sub_dir, const std::string& file_name, std::ifstream& file)
 	{
-		file.open(root_path + sub_dir + "\\" + file_name);
+		file.open(shared::globals::root_path + "\\" + sub_dir + "\\" + file_name);
 		if (!file.is_open()) {
 			return false;
 		}

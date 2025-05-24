@@ -54,9 +54,14 @@ namespace shared::globals
 	extern DWORD dll_module_addr;
 	extern void setup_dll_module(const HMODULE mod);
 
+	extern void setup_homepath();
+
 	extern IDirect3DDevice9* d3d_device;
 
 	extern bool imgui_is_rendering;
 	extern bool imgui_menu_open;
 	extern bool imgui_allow_input_bypass;
+
+	extern std::chrono::high_resolution_clock::time_point last_frame_time;
+	extern float frame_time_ms;
 }

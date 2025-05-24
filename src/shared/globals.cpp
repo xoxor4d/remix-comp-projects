@@ -48,9 +48,19 @@ namespace shared::globals
 		dll_module_addr = (DWORD)dll_hmodule;
 	}
 
+	void setup_homepath()
+	{	// init filepath var
+		char path[MAX_PATH]; GetModuleFileNameA(nullptr, path, MAX_PATH);
+		root_path = std::filesystem::path(path).parent_path().string();
+	}
+
 	IDirect3DDevice9* d3d_device = nullptr;
 
 	bool imgui_is_rendering = false;
 	bool imgui_menu_open = false;
 	bool imgui_allow_input_bypass = false;
+
+
+	std::chrono::high_resolution_clock::time_point last_frame_time;
+	float frame_time_ms = 0.0f;
 }
