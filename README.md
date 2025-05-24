@@ -21,6 +21,7 @@ If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![k
 __[Bioshock 1 (GOG)](#bioshock-1-gog)__  
 __[SWAT 4 Gold (GOG)](#swat-4---gold-gog)__  
 __[Fear 1 Platinum (GOG)](#fear-1-platinum-gog)__  
+__[Delta Force Black Hawk Down 2003 (GOG)](#delta-force-black-hawk-down-2003)__   
 __[Mirrors Edge (GOG)](#mirrors-edge-gog)__ (Broken)  
 __[Anno 1404 Gold Edition (GOG)](#anno-1404-gold-edition-gog)__ (Broken)  
 __[Manhunt (Steam)](#manhunt-steam)__   
@@ -109,6 +110,31 @@ This can also happen randomly when walking through doorways which will ultimativ
 - Currently can not get remix "friendly" anti-culling to work so it's either light leaking and unstable hashes or rendering the entire map (which is possible via the ImGui menu)
 - original skybox is broken (currently rendering a unique marker with a skysphere attached to it via remix replacements)
 
+
+<br>
+<br>
+<br>
+
+<div align="center" markdown="1"> 
+
+### Delta Force Black Hawk Down 2003  
+![img](.github/img/dfbhd.jpg)
+
+</div>
+
+- Ships with [DFBHD-Wrapper](https://github.com/SuiMachine/DFBHD-Wrapper/tree/master)
+
+###### The good:  
+- Pretty stable out of the box
+- Skinned meshes now rendered via fixed function
+- Reduced frustum culling
+- Fixed game lights breaking the terrain
+- Per map configs for remix variables
+- Nightvision remix configs
+- Commandline Argument: `-disable_terrain` to disable original terrain rendering
+
+###### Usage:
+- Change your fov/resolution via `scripts\BHD_Asi.ini` and make sure to use __1280x1024__ in-game
 
 <br>
 <br>

@@ -404,7 +404,7 @@ namespace mods::blackhawkdown
 		//shared::utils::hook::set<BYTE>(0x53F1D4 + 7, 0x02);
 		// 53D34C mov eax, 512
 
-		// 46A000
+		// 46A000 - vidtest devices
 		shared::utils::hook::set<BYTE>(0x46A000 + 1, 0x01);
 
 		// 46A65A
