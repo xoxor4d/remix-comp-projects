@@ -5,6 +5,7 @@ namespace mods::blackhawkdown
 	namespace tex_addons
 	{
 		extern LPDIRECT3DTEXTURE9 white;
+		extern LPDIRECT3DTEXTURE9 scope;
 	}
 
 	void on_begin_scene_cb();

@@ -19,18 +19,20 @@ namespace mods::blackhawkdown
 	namespace tex_addons
 	{
 		LPDIRECT3DTEXTURE9 white;
+		LPDIRECT3DTEXTURE9 scope;
 	}
 
 	void init_texture_addons(bool release)
 	{
-		if (release)
+		/*if (release)
 		{
 			if (tex_addons::white) tex_addons::white->Release();
 			return;
-		}
+		}*/
 
 		const auto dev = shared::globals::d3d_device;
 		D3DXCreateTextureFromFileA(dev, "rtx_comp\\textures\\white.dds", &tex_addons::white);
+		D3DXCreateTextureFromFileA(dev, "rtx_comp\\textures\\scope.dds", &tex_addons::scope);
 	}
 
 	void draw_nocull_markers()
@@ -217,7 +219,7 @@ namespace mods::blackhawkdown
 				return;
 			}
 
-			if (const auto im = imgui::get(); im && im->m_dbg_use_fake_camera
+			if (const auto im = imgui::get(); im && im->m_dbg_use_fake_camera 
 				|| render_skinned)
 			{
 				if (render_skinned)
@@ -293,7 +295,7 @@ namespace mods::blackhawkdown
 			
 			//shared::utils::transpose_d3dxmatrix(bones, trans_bones, numbones);
 
-			dev->SetRenderState(D3DRS_VERTEXBLEND, D3DVBF_3WEIGHTS);
+			dev->SetRenderState(D3DRS_VERTEXBLEND, D3DVBF_2WEIGHTS);
 			dev->SetRenderState(D3DRS_INDEXEDVERTEXBLENDENABLE, 1);
 
 			//dev->GetVertexShader(&ff_og_shader);
@@ -364,6 +366,27 @@ namespace mods::blackhawkdown
 		}
 	}
 
+	void on_scope_render_hk()
+	{
+		shared::globals::d3d_device->SetTexture(0, tex_addons::scope);
+	}
+
+	__declspec(naked) void on_scope_render_stub()
+	{
+		static uint32_t retn_addr = 0x52C52A;
+		__asm
+		{
+			xor		edi, edi;
+			add     esp, 8;
+
+			pushad;
+			call	on_scope_render_hk;
+			popad;
+
+			jmp		retn_addr;
+		}
+	}
+
 	void main()
 	{
 		game::init_game_addresses();
@@ -407,7 +430,7 @@ namespace mods::blackhawkdown
 		// 46A000 - vidtest devices
 		shared::utils::hook::set<BYTE>(0x46A000 + 1, 0x01);
 
-		// 46A65A
+		// 46A65A // disable vidtest
 		shared::utils::hook::nop(0x46A65A, 5);
 		shared::utils::hook::conditional_jump_to_jmp(0x46A661);
 
@@ -424,6 +447,22 @@ namespace mods::blackhawkdown
 			shared::utils::hook::nop(0x542CFF, 5);
 			shared::utils::hook::nop(0x542EB1, 5);
 		}
+
+
+		// occluder fixes?
+		//00524F2F to BA 01 00 00 00 90 .. nop until (not) mov [edi*4+00DC3E54],edx
+		// 52217D to jmp?
+		// 522201 to jmp?
+		// 52221B nop 2?
+		// 52225E to jmp?
+		// 005222E3 to jmp !!!
+		shared::utils::hook::conditional_jump_to_jmp(0x5222E3);
+
+		// more anti cull (render_ProcessVisibilityData - skip RenderListOccluderCount > 0 check)
+		shared::utils::hook::conditional_jump_to_jmp(0x524C90);
+
+		// 52C525
+		shared::utils::hook(0x52C525, on_scope_render_stub, HOOK_JUMP).install()->quick();
 
 #ifdef DEBUG
 		shared::common::loader::module_loader::register_module(std::make_unique<imgui>());
