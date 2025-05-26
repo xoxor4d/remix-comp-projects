@@ -22,7 +22,7 @@ namespace mods::blackhawkdown
 		LPDIRECT3DTEXTURE9 scope;
 	}
 
-	void init_texture_addons(bool release)
+	void init_texture_addons([[maybe_unused]] bool release)
 	{
 		/*if (release)
 		{
