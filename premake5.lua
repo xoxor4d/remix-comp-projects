@@ -676,7 +676,7 @@ workspace "remix-comp-proj"
 	filter "configurations:Debug or configurations:Release"
 		if(os.getenv("BLACKMESA_ROOT")) then
 			print ("Setup paths using environment variable 'BLACKMESA_ROOT' :: '" .. os.getenv("BLACKMESA_ROOT") .. "'")
-			targetdir(os.getenv("BLACKMESA_ROOT"))
+			targetdir(os.getenv("BLACKMESA_ROOT") .. "/bin/")
 			debugdir (os.getenv("BLACKMESA_ROOT"))
 			debugcommand (os.getenv("BLACKMESA_ROOT") .. "/" .. "bms.exe")
 		end
@@ -686,7 +686,7 @@ workspace "remix-comp-proj"
 
 	-- Post-build
 	postbuildcommands {
-		"MOVE /Y \"$(TargetDir)blackhawkdown-rtx.dll\" \"$(TargetDir)a_blackhawkdown-rtx.asi\"",
+		"MOVE /Y \"$(TargetDir)blackmesa-rtx.dll\" \"$(TargetDir)a_blackmesa-rtx.asi\"",
 	}
 
 	dependencies.imports()

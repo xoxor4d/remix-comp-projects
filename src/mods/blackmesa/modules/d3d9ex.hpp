@@ -1,6 +1,6 @@
 #pragma once
 
-namespace mods::blackhawkdown
+namespace mods::blackmesa
 {
 	class d3d9ex final : public shared::common::loader::component_module
 	{

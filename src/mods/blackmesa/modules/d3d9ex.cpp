@@ -4,16 +4,18 @@
 #include "imgui.hpp"
 #include "shared/common/remix_vars.hpp"
 
-namespace mods::blackhawkdown
+namespace mods::blackmesa
 {
 #pragma region D3D9Device
 
 	HRESULT d3d9ex::D3D9Device::QueryInterface(REFIID riid, void** ppvObj)
 	{
 		*ppvObj = nullptr;
+		const HRESULT hRes = m_pIDirect3DDevice9->QueryInterface(riid, ppvObj);
+		if (hRes == NOERROR) {
+			*ppvObj = this;
+		}
 
-		HRESULT hRes = m_pIDirect3DDevice9->QueryInterface(riid, ppvObj);
-		if (hRes == NOERROR) *ppvObj = this;
 		return hRes;
 	}
 
@@ -24,7 +26,7 @@ namespace mods::blackhawkdown
 
 	ULONG d3d9ex::D3D9Device::Release()
 	{
-		ULONG count = m_pIDirect3DDevice9->Release();
+		const ULONG count = m_pIDirect3DDevice9->Release();
 		if (!count) delete this;
 		return count;
 	}
@@ -96,23 +98,30 @@ namespace mods::blackhawkdown
 
 	HRESULT d3d9ex::D3D9Device::Reset(D3DPRESENT_PARAMETERS* pPresentationParameters)
 	{
-		ImGui_ImplDX9_InvalidateDeviceObjects();
+		if (imgui::is_initialized()) {
+			ImGui_ImplDX9_InvalidateDeviceObjects();
+		}
+		
 		const auto hr = m_pIDirect3DDevice9->Reset(pPresentationParameters);
-		ImGui_ImplDX9_CreateDeviceObjects();
+
+		if (imgui::is_initialized()) {
+			ImGui_ImplDX9_CreateDeviceObjects();
+		}
+
 		return hr;
 	}
 
 	HRESULT d3d9ex::D3D9Device::Present(CONST RECT* pSourceRect, CONST RECT* pDestRect, HWND hDestWindowOverride, CONST RGNDATA* pDirtyRegion)
 	{
-		const auto current_time = std::chrono::high_resolution_clock::now();
-		if (shared::globals::last_frame_time.time_since_epoch().count() != 0) 
-		{
-			const auto delta = std::chrono::duration_cast<std::chrono::microseconds>(current_time - shared::globals::last_frame_time).count();
-			shared::globals::frame_time_ms = delta / 1000.0f; // microseconds to ms
-		}
+		//const auto current_time = std::chrono::high_resolution_clock::now();
+		//if (shared::globals::last_frame_time.time_since_epoch().count() != 0) 
+		//{
+		//	const auto delta = std::chrono::duration_cast<std::chrono::microseconds>(current_time - shared::globals::last_frame_time).count();
+		//	shared::globals::frame_time_ms = delta / 1000.0f; // microseconds to ms
+		//}
 
-		shared::globals::last_frame_time = current_time;
-		shared::common::remix_vars::on_client_frame();
+		//shared::globals::last_frame_time = current_time;
+		//shared::common::remix_vars::on_client_frame();
 
 		return m_pIDirect3DDevice9->Present(pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion);
 	}
@@ -145,35 +154,30 @@ namespace mods::blackhawkdown
 	HRESULT d3d9ex::D3D9Device::CreateTexture(UINT Width, UINT Height, UINT Levels, DWORD Usage, D3DFORMAT Format, D3DPOOL Pool, IDirect3DTexture9** ppTexture, HANDLE* pSharedHandle)
 	{
 		//if (Pool == D3DPOOL_MANAGED) { Pool = D3DPOOL_DEFAULT; Usage |= D3DUSAGE_DYNAMIC; }
-
 		return m_pIDirect3DDevice9->CreateTexture(Width, Height, Levels, Usage, Format, Pool, ppTexture, pSharedHandle);
 	}
 
 	HRESULT d3d9ex::D3D9Device::CreateVolumeTexture(UINT Width, UINT Height, UINT Depth, UINT Levels, DWORD Usage, D3DFORMAT Format, D3DPOOL Pool, IDirect3DVolumeTexture9** ppVolumeTexture, HANDLE* pSharedHandle)
 	{
 		//if (Pool == D3DPOOL_MANAGED) { Pool = D3DPOOL_DEFAULT; Usage |= D3DUSAGE_DYNAMIC; }
-
 		return m_pIDirect3DDevice9->CreateVolumeTexture(Width, Height, Depth, Levels, Usage, Format, Pool, ppVolumeTexture, pSharedHandle);
 	}
 
 	HRESULT d3d9ex::D3D9Device::CreateCubeTexture(UINT EdgeLength, UINT Levels, DWORD Usage, D3DFORMAT Format, D3DPOOL Pool, IDirect3DCubeTexture9** ppCubeTexture, HANDLE* pSharedHandle)
 	{
-		if (Pool == D3DPOOL_MANAGED) { Pool = D3DPOOL_DEFAULT; Usage |= D3DUSAGE_DYNAMIC; }
-
+		//if (Pool == D3DPOOL_MANAGED) { Pool = D3DPOOL_DEFAULT; Usage |= D3DUSAGE_DYNAMIC; }
 		return m_pIDirect3DDevice9->CreateCubeTexture(EdgeLength, Levels, Usage, Format, Pool, ppCubeTexture, pSharedHandle);
 	}
 
 	HRESULT d3d9ex::D3D9Device::CreateVertexBuffer(UINT Length, DWORD Usage, DWORD FVF, D3DPOOL Pool, IDirect3DVertexBuffer9** ppVertexBuffer, HANDLE* pSharedHandle)
 	{
 		//if (Pool == D3DPOOL_MANAGED) { Pool = D3DPOOL_DEFAULT; Usage |= D3DUSAGE_DYNAMIC; }
-
 		return m_pIDirect3DDevice9->CreateVertexBuffer(Length, Usage, FVF, Pool, ppVertexBuffer, pSharedHandle);
 	}
 
 	HRESULT d3d9ex::D3D9Device::CreateIndexBuffer(UINT Length, DWORD Usage, D3DFORMAT Format, D3DPOOL Pool, IDirect3DIndexBuffer9** ppIndexBuffer, HANDLE* pSharedHandle)
 	{
 		//if (Pool == D3DPOOL_MANAGED) { Pool = D3DPOOL_DEFAULT; Usage |= D3DUSAGE_DYNAMIC; }
-
 		return m_pIDirect3DDevice9->CreateIndexBuffer(Length, Usage, Format, Pool, ppIndexBuffer, pSharedHandle);
 	}
 
@@ -220,7 +224,6 @@ namespace mods::blackhawkdown
 	HRESULT d3d9ex::D3D9Device::CreateOffscreenPlainSurface(UINT Width, UINT Height, D3DFORMAT Format, D3DPOOL Pool, IDirect3DSurface9** ppSurface, HANDLE* pSharedHandle)
 	{
 		//if (Pool == D3DPOOL_MANAGED) { Pool = D3DPOOL_DEFAULT; }
-
 		return m_pIDirect3DDevice9->CreateOffscreenPlainSurface(Width, Height, Format, Pool, ppSurface, pSharedHandle);
 	}
 
@@ -252,7 +255,10 @@ namespace mods::blackhawkdown
 
 	HRESULT d3d9ex::D3D9Device::EndScene()
 	{
-		imgui::get()->on_present();
+		if (imgui::is_initialized()) {
+			imgui::get()->on_present();
+		}
+		
 		return m_pIDirect3DDevice9->EndScene();
 	}
 
@@ -452,7 +458,7 @@ namespace mods::blackhawkdown
 
 	HRESULT d3d9ex::D3D9Device::DrawPrimitive([[maybe_unused]] D3DPRIMITIVETYPE PrimitiveType, [[maybe_unused]] UINT StartVertex, [[maybe_unused]] UINT PrimitiveCount)
 	{
-		auto hr = m_pIDirect3DDevice9->DrawPrimitive(PrimitiveType, StartVertex, PrimitiveCount);
+		const auto hr = m_pIDirect3DDevice9->DrawPrimitive(PrimitiveType, StartVertex, PrimitiveCount);
 		return hr;
 	}
 
@@ -742,11 +748,7 @@ namespace mods::blackhawkdown
 
 	HRESULT d3d9ex::D3D9Device::SetPixelShaderConstantF(UINT StartRegister, CONST float* pConstantData, UINT Vector4fCount)
 	{
-		// Use real bad readptr check here, cause the query takes too long
-		// TODO: Fix the actual error!
-		if (IsBadReadPtr(pConstantData, Vector4fCount * 16))
-		{
-			//Logger::Print("Invalid shader constant array!\n");
+		if (IsBadReadPtr(pConstantData, Vector4fCount * 16)) {
 			return D3DERR_INVALIDCALL;
 		}
 
@@ -805,11 +807,8 @@ namespace mods::blackhawkdown
 	HRESULT __stdcall d3d9ex::_d3d9::QueryInterface(REFIID riid, void** ppvObj)
 	{
 		*ppvObj = nullptr;
-
-		HRESULT hRes = m_pIDirect3D9->QueryInterface(riid, ppvObj);
-
-		if (hRes == NOERROR)
-		{
+		const HRESULT hRes = m_pIDirect3D9->QueryInterface(riid, ppvObj);
+		if (hRes == NOERROR) {
 			*ppvObj = this;
 		}
 
@@ -823,7 +822,7 @@ namespace mods::blackhawkdown
 
 	ULONG __stdcall d3d9ex::_d3d9::Release()
 	{
-		ULONG count = m_pIDirect3D9->Release();
+		const ULONG count = m_pIDirect3D9->Release();
 		if (!count) delete this;
 		return count;
 	}
@@ -895,8 +894,7 @@ namespace mods::blackhawkdown
 
 	HRESULT __stdcall d3d9ex::_d3d9::CreateDevice(UINT Adapter, D3DDEVTYPE DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, D3DPRESENT_PARAMETERS* pPresentationParameters, IDirect3DDevice9** ppReturnedDeviceInterface)
 	{
-		HRESULT hres = m_pIDirect3D9->CreateDevice(Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, ppReturnedDeviceInterface);
-		
+		const HRESULT hres = m_pIDirect3D9->CreateDevice(Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, ppReturnedDeviceInterface);
 		*ppReturnedDeviceInterface = new d3d9ex::D3D9Device(*ppReturnedDeviceInterface);
 		shared::globals::d3d_device = *ppReturnedDeviceInterface;
 
@@ -911,11 +909,8 @@ namespace mods::blackhawkdown
 	HRESULT __stdcall d3d9ex::_d3d9ex::QueryInterface(REFIID riid, void** ppvObj)
 	{
 		*ppvObj = nullptr;
-
-		HRESULT hRes = m_pIDirect3D9Ex->QueryInterface(riid, ppvObj);
-
-		if (hRes == NOERROR)
-		{
+		const HRESULT hRes = m_pIDirect3D9Ex->QueryInterface(riid, ppvObj);
+		if (hRes == NOERROR) {
 			*ppvObj = this;
 		}
 
@@ -929,7 +924,7 @@ namespace mods::blackhawkdown
 
 	ULONG __stdcall d3d9ex::_d3d9ex::Release()
 	{
-		ULONG count = m_pIDirect3D9Ex->Release();
+		const ULONG count = m_pIDirect3D9Ex->Release();
 		if (!count) delete this;
 		return count;
 	}
@@ -1001,11 +996,9 @@ namespace mods::blackhawkdown
 
 	HRESULT __stdcall d3d9ex::_d3d9ex::CreateDevice(UINT Adapter, D3DDEVTYPE DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, D3DPRESENT_PARAMETERS* pPresentationParameters, IDirect3DDevice9** ppReturnedDeviceInterface)
 	{
-		HRESULT hres = m_pIDirect3D9Ex->CreateDevice(Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, ppReturnedDeviceInterface);
-		
+		const HRESULT hres = m_pIDirect3D9Ex->CreateDevice(Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, ppReturnedDeviceInterface);
 		*ppReturnedDeviceInterface = new d3d9ex::D3D9Device(*ppReturnedDeviceInterface);
 		shared::globals::d3d_device = *ppReturnedDeviceInterface;
-
 		return hres;
 	}
 
@@ -1060,25 +1053,35 @@ namespace mods::blackhawkdown
 
 	d3d9ex::d3d9ex()
 	{
-		auto xx = GetModuleHandle(L"d3d9.dll");
-		auto xy = (DWORD)GetProcAddress(xx, "Direct3DCreate9");
-		//xy += 0x2;
-
-		MH_CreateHook((LPVOID)xy, &d3d9ex::HookedDirect3DCreate9, (LPVOID*)&Direct3DCreate9_original);
-		MH_EnableHook(MH_ALL_HOOKS);
-
+#if 0
 		// hook interface creation
-		//const auto d3d9_import_addr = shared::utils::mem::find_import_addr(shared::globals::exe_hmodule, "d3d8.dll", "Direct3DCreate9");
-		//if (d3d9_import_addr)
-		//if (xy)
-		//{
-		//	//shared::utils::hook::set(d3d9_import_addr, direct3d_create9_stub);
-		//	shared::utils::hook::set(xy, direct3d_create9_stub);
-		//	std::cout << "[D3D9] Successfully hooked 'Direct3DCreate9'\n";
-		//}
-		//else
-		//{
-		//	std::cout << "[D3D9] Could not find 'Direct3DCreate9' import -> ImGui will not work.\n";
-		//}
+		if (const auto m = GetModuleHandle(L"d3d9.dll"); m)
+		{
+			if (const auto addr = (DWORD)GetProcAddress(m, "Direct3DCreate9"); addr)
+			{
+				MH_CreateHook((LPVOID)addr, &d3d9ex::HookedDirect3DCreate9, (LPVOID*)&Direct3DCreate9_original);
+				MH_EnableHook(MH_ALL_HOOKS);
+				return;
+			}
+
+			std::cout << "[D3D9] Could not find 'Direct3DCreate9' import in d3d9.dll -> ImGui will not work.\n";
+		}
+
+		std::cout << "[D3D9] Could not find 'd3d9.dll' -> ImGui will not work.\n";
+
+		
+#else
+		// hook interface creation
+		const auto d3d9_import_addr = shared::utils::mem::find_import_addr(shared::globals::dll_hmodule, "d3d9.dll", "Direct3DCreate9");
+		if (d3d9_import_addr)
+		{
+			shared::utils::hook::set(d3d9_import_addr, direct3d_create9_stub);
+			std::cout << "[D3D9] Successfully hooked 'Direct3DCreate9'\n";
+		}
+		else
+		{
+			std::cout << "[D3D9] Could not find 'Direct3DCreate9' import -> ImGui will not work.\n";
+		}
+#endif
 	}
 }

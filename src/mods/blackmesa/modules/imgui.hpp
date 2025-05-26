@@ -1,6 +1,6 @@
 #pragma once
 
-namespace mods::blackhawkdown
+namespace mods::blackmesa
 {
 	class imgui final : public shared::common::loader::component_module
 	{
@@ -40,12 +40,21 @@ namespace mods::blackhawkdown
 		float m_dbg_camera_near_plane = 1.0f;   // Near clipping plane
 		float m_dbg_camera_far_plane = 1000.0f; // Far clipping plane
 
+		static bool is_initialized()
+		{
+			if (const auto im = get(); im && im->m_initialized) {
+				return true;
+			}
+			return false;
+		}
 
 	private:
 		void tab_general();
 		bool m_im_window_focused = false;
 		bool m_im_window_hovered = false;
 		std::string m_devgui_custom_footer_content;
+
+		bool m_initialized = false;
 
 		static void questionmark(const char* desc)
 		{

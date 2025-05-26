@@ -17,7 +17,7 @@ extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
 #define SET_CHILD_WIDGET_WIDTH			ImGui::SetNextItemWidth(ImGui::CalcWidgetWidthForChild(80.0f));
 #define SET_CHILD_WIDGET_WIDTH_MAN(V)	ImGui::SetNextItemWidth(ImGui::CalcWidgetWidthForChild((V)));
 
-namespace mods::blackhawkdown
+namespace mods::blackmesa
 {
 	WNDPROC g_game_wndproc = nullptr;
 	
@@ -280,13 +280,11 @@ namespace mods::blackhawkdown
 
 					if (shared::globals::imgui_menu_open) 
 					{
-						*game::g_free_mouse = 1;
 						io.MouseDrawCursor = true;
 						im->devgui();
 					}
 					else 
 					{
-						*game::g_free_mouse = 0;
 						io.MouseDrawCursor = false;
 					}
 
@@ -454,6 +452,7 @@ namespace mods::blackhawkdown
 		ImGui_ImplWin32_Init(shared::globals::main_window);
 		g_game_wndproc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(shared::globals::main_window, GWLP_WNDPROC, LONG_PTR(wnd_proc_hk)));
 
+		m_initialized = true;
 		std::cout << "[IMGUI] loaded\n";
 	}
 }

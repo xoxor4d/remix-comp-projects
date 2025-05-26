@@ -70,6 +70,6 @@
 #include "../../shared/common/loader.hpp"
 #include "game/structs.hpp"
 #include "game/game.hpp"
-#include "blackhawkdown.hpp"
+#include "blackmesa.hpp"
 
 using namespace std::literals;

@@ -1,24 +1,23 @@
 #pragma once
 
-namespace mods::blackhawkdown::game
+#define RENDERER_BASE			game::shaderapidx9_module
+//#define STUDIORENDER_BASE		game::studiorender_module
+//#define MATERIALSTYSTEM_BASE	game::materialsystem_module
+#define ENGINE_BASE				game::engine_module
+#define CLIENT_BASE				game::client_module
+//#define SERVER_BASE				game::server_module
+
+namespace mods::blackmesa::game
 {
-	extern int* g_free_mouse;
-	extern bool* g_is_paused;
-
-	inline bool is_nightvision_on()
-	{
-		return *reinterpret_cast<bool*>(0x96C4BC);
-	}
-
-	inline int get_camera_view_mode()
-	{
-		return *reinterpret_cast<int*>(0x7F2DD0);
-	}
-
-	inline const char* get_map_name()
-	{
-		return reinterpret_cast<const char*>(0x9F1F62);
-	}
+	extern DWORD shaderapidx9_module;
+	//extern DWORD studiorender_module;
+	//extern DWORD materialsystem_module;
+	extern DWORD engine_module;
+	extern DWORD client_module;
+	//extern DWORD server_module;
 
 	extern void init_game_addresses();
+
+	inline IDirect3DDevice9* get_d3d_device() { return reinterpret_cast<IDirect3DDevice9*>(*(DWORD*)(RENDERER_BASE + 0xED788)); }
+	inline IShaderAPIDX8* get_shaderapi() { return reinterpret_cast<IShaderAPIDX8*>(*(DWORD*)(RENDERER_BASE + 0xE097C)); }
 }

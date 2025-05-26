@@ -1,6 +1,6 @@
 #pragma once
 
-namespace mods::blackhawkdown
+namespace mods::blackmesa
 {
 	namespace tex_addons
 	{
@@ -16,7 +16,4 @@ namespace mods::blackhawkdown
 
 	extern bool g_installed_signature_patches;
 	extern bool g_install_signature_patches_async;
-
-	extern bool is_rendering_mesh;
-	extern bool render_skinned;
 }

@@ -1,9 +1,13 @@
 #include "std_include.hpp"
 
-namespace mods::blackhawkdown::game
+namespace mods::blackmesa::game
 {
-	int* g_free_mouse = reinterpret_cast<int*>(0xA35594);
-	bool* g_is_paused = reinterpret_cast<bool*>(0x7C72BC);
+	DWORD shaderapidx9_module = 0u;
+	//DWORD studiorender_module = 0u;
+	//DWORD materialsystem_module = 0u;
+	DWORD engine_module = 0u;
+	DWORD client_module = 0u;
+	//DWORD server_module = 0u;
 
 	// init any adresses here
 	void init_game_addresses()

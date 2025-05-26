@@ -4,7 +4,7 @@
 #include "modules/d3d9ex.hpp"
 #include "shared/common/flags.hpp"
 
-namespace mods::blackhawkdown
+namespace mods::blackmesa
 {
 	std::unordered_set<HWND> wnd_class_list; // so we don't print the same window strings over and over again
 
@@ -26,7 +26,7 @@ namespace mods::blackhawkdown
 				wnd_class_list.insert(hwnd);
 			}
 
-			if (std::string_view(class_name).contains("NLGAMECLASS"s))
+			if (std::string_view(class_name).contains("Valve001"s))
 			{
 				shared::globals::main_window = hwnd;
 				return FALSE;
@@ -36,16 +36,16 @@ namespace mods::blackhawkdown
 		return TRUE;
 	}
 
-//#define GET_MODULE_HANDLE(HANDLE_OUT, NAME, T) \
-//	while (!(HANDLE_OUT)) { \
-//		if ((HANDLE_OUT) = (DWORD)GetModuleHandleA(NAME); !(HANDLE_OUT)) { \
-//			Sleep(1u); (T) += 1u; \
-//			if ((T) >= 30000) { \
-//				shared::common::console(); std::cout << "---------------> Failed to find module: " << (NAME) << "\n" << "Not loading RTX Compatibility Mod.\n"; \
-//				return TRUE; \
-//			} \
-//		} \
-//	}
+#define GET_MODULE_HANDLE(HANDLE_OUT, NAME, T) \
+	while (!(HANDLE_OUT)) { \
+		if ((HANDLE_OUT) = (DWORD)GetModuleHandleA(NAME); !(HANDLE_OUT)) { \
+			Sleep(1u); (T) += 1u; \
+			if ((T) >= 30000) { \
+				shared::common::console(); std::cout << "---------------> Failed to find module: " << (NAME) << "\n" << "Not loading RTX Compatibility Mod.\n"; \
+				return TRUE; \
+			} \
+		} \
+	}
 
 //#define GET_MODULE_HANDLE_WITH_FALLBACK(HANDLE_OUT, NAME, NAME_FALLBACK, T) \
 //	while (!(HANDLE_OUT)) { \
@@ -68,10 +68,7 @@ namespace mods::blackhawkdown
 		char exe_path[MAX_PATH]; GetModuleFileNameA(nullptr, exe_path, MAX_PATH);
 		const std::string sha1 = shared::utils::hash_file_sha1(exe_path);
 
-		//shared::common::loader::module_loader::register_module(std::make_unique<mods::test::trawindowed>());
-		//shared::common::loader::module_loader::register_module(std::make_unique<mods::test::d3d9ex>());
-		
-		std::cout << "[MAIN] Waiting for window with classname containing 'NLGAMECLASS' ... \n";
+		std::cout << "[MAIN] Waiting for window with classname containing 'Valve001' ... \n";
 
 		{
 			while (!shared::globals::main_window)
@@ -84,17 +81,21 @@ namespace mods::blackhawkdown
 				if (T >= 30000)
 				{
 					Beep(300, 100); Sleep(100); Beep(200, 100);
-					shared::common::console(); std::cout << "[MAIN] Could not find NLGAMECLASS Window. Not loading RTX Compatibility Mod.\n";
+					shared::common::console(); std::cout << "[MAIN] Could not find Valve001 Window. Not loading RTX Compatibility Mod.\n";
 					return TRUE;
 				}
 			}
 		}
 
+		GET_MODULE_HANDLE(game::shaderapidx9_module, "shaderapidx9.dll", T);
+		GET_MODULE_HANDLE(game::engine_module, "engine.dll", T);
+		GET_MODULE_HANDLE(game::client_module, "client.dll", T);
+
 		if (!shared::common::flags::has_flag("nobeep")) {
 			Beep(523, 100);
 		}
 
-		mods::blackhawkdown::main();
+		mods::blackmesa::main();
 		return 0;
 	}
 }
@@ -114,9 +115,9 @@ BOOL APIENTRY DllMain(HMODULE hmodule, const DWORD ul_reason_for_call, LPVOID)
 			return TRUE;
 		}
 
-		shared::common::loader::module_loader::register_module(std::make_unique<mods::blackhawkdown::d3d9ex>());
+		shared::common::loader::module_loader::register_module(std::make_unique<mods::blackmesa::d3d9ex>());
 
-		if (const auto t = CreateThread(nullptr, 0, mods::blackhawkdown::find_game_window_by_sha1, nullptr, 0, nullptr); t) {
+		if (const auto t = CreateThread(nullptr, 0, mods::blackmesa::find_game_window_by_sha1, nullptr, 0, nullptr); t) {
 			CloseHandle(t);
 		}
 	}
