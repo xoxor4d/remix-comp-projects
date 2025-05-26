@@ -8,6 +8,9 @@ namespace mods::blackmesa
 		extern LPDIRECT3DTEXTURE9 black;
 	}
 
+	extern int g_current_leaf;
+	extern int g_current_area;
+
 	void on_begin_scene_cb();
 
 	void force_cvars();

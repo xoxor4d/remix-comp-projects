@@ -500,4 +500,47 @@ namespace mods::blackmesa::game
 		//const ConCommand* (__thiscall* FindCommand_const)(CCvar*, const char*);
 		//ConCommand* (__thiscall* FindCommand)(CCvar*, const char*);
 	};
+
+	struct cplane_t
+	{
+		Vector normal;
+		float dist;
+		unsigned __int8 type;
+		unsigned __int8 signbits;
+		unsigned __int8 pad[2];
+	};
+
+	struct mnode_t
+	{
+		int contents;
+		int visframe;
+		mnode_t* parent;
+		__int16 area;
+		__int16 flags;
+		VectorAligned m_vecCenter;
+		VectorAligned m_vecHalfDiagonal;
+		cplane_t* plane;
+		mnode_t* children[2];
+		unsigned __int16 firstsurface;
+		unsigned __int16 numsurfaces;
+	};
+
+	struct fourplanes_t
+	{
+		__m128 nX;
+		__m128 nY;
+		__m128 nZ;
+		__m128 dist;
+		__m128 xSign;
+		__m128 ySign;
+		__m128 zSign;
+		__m128 nXAbs;
+		__m128 nYAbs;
+		__m128 nZAbs;
+	};
+
+	struct Frustum_t
+	{
+		fourplanes_t planes[2];
+	};
 }

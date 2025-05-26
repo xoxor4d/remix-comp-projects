@@ -18,6 +18,9 @@ namespace mods::blackmesa
 		LPDIRECT3DTEXTURE9 black;
 	}
 
+	int g_current_leaf = -1;
+	int g_current_area = -1;
+
 	void init_texture_addons([[maybe_unused]] bool release)
 	{
 		const auto dev = shared::globals::d3d_device;
@@ -86,12 +89,12 @@ namespace mods::blackmesa
 		//model_render::draw_nocull_markers();
 
 		// CM_PointLeafnum :: get current leaf
-		//const auto current_leaf = game::get_leaf_from_position(*game::get_current_view_origin());
+		const auto current_leaf = game::get_leaf_from_position(*game::get_current_view_origin());
 		//g_player_leaf_update = g_current_leaf != current_leaf;
-		//g_current_leaf = current_leaf;
+		g_current_leaf = current_leaf;
 
 		// CM_LeafArea :: get current area the camera is in
-		//g_current_area = utils::hook::call<int(__cdecl)(int leafnum)>(ENGINE_BASE + USE_OFFSET(0x15ACE0, 0x159470))(current_leaf); // 0125
+		g_current_area = shared::utils::hook::call<int(__cdecl)(int leafnum)>(ENGINE_BASE + 0x185A10)(current_leaf);
 
 		//remix_api::get()->on_renderview();
 	}
@@ -150,6 +153,89 @@ namespace mods::blackmesa
 		game::cvar_uncheat_and_set_int("mat_fastnobump", 1);
 	}
 
+	// check if a boundingbox is within a specified radius around the player
+	bool is_aabb_within_distance(const VectorAligned& center, const VectorAligned& half_diagonal, const Vector& player_origin, const float radius)
+	{
+		const Vector min_bounds = center - half_diagonal;
+		const Vector max_bounds = center + half_diagonal;
+
+		auto sq_dist = 0.0f;
+		for (auto i = 0; i < 3; ++i)
+		{
+			if (player_origin[i] < min_bounds[i])
+			{
+				const auto d = min_bounds[i] - player_origin[i];
+				sq_dist += d * d;
+			}
+			else if (player_origin[i] > max_bounds[i])
+			{
+				const auto d = player_origin[i] - max_bounds[i];
+				sq_dist += d * d;
+			}
+
+			// return false if distance exceeds radius sqr
+			if (sq_dist > radius * radius) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	// Stub before calling 'R_CullNode' in 'R_RecursiveWorldNode'
+	// Return 0 to NOT cull the node
+	int r_cullnode_wrapper(game::Frustum_t* frustum, game::mnode_t* node, int unkown_flag)
+	{
+		// "global" nocull distance if area has no overrides
+		float nocull_dist = 6000.0f; 
+
+		// if no area override or if cull mode is distance based
+		{
+			if (is_aabb_within_distance(node->m_vecCenter, node->m_vecHalfDiagonal, *game::get_current_view_origin(), nocull_dist)) {
+				return 0;
+			}
+
+			// if forcing current area + distance
+			{
+				if ((int)node->area == g_current_area) {
+					return 0;
+				}
+			}
+		}
+
+		// R_CullNode - uses area frustums if avail. and not in a solid - uses player frustum otherwise
+		if (!shared::utils::hook::call<bool(__cdecl)(game::Frustum_t*, game::mnode_t*, int)>(ENGINE_BASE + 0x1379C0)(frustum, node, unkown_flag)) { // #OFFS
+			return 0;
+		}
+
+		// cull node
+		return 1;
+	}
+
+	//HOOK_RETN_PLACE_DEF(r_cullnode_cull_retn);
+	//HOOK_RETN_PLACE_DEF(r_cullnode_skip_retn);
+	//__declspec(naked) void r_cullnode_stub()
+	//{
+	//	__asm
+	//	{
+	//		pushad;
+	//		push	ebx;
+	//		call	r_cullnode_wrapper; // return 0 to not jump
+	//		add		esp, 4;
+	//		test	eax, eax;
+	//		jz		SKIP; // jump if eax = 0
+	//		popad;
+
+	//		add     esp, 4; // og
+	//		jmp		r_cullnode_cull_retn;
+
+	//	SKIP:
+	//		popad;
+	//		add     esp, 4; // og
+	//		jmp		r_cullnode_skip_retn;
+	//	}
+	//}
+
 	void install_signature_patches()
 	{
 		std::uint32_t install_counter = 0u;
@@ -175,6 +261,13 @@ namespace mods::blackmesa
 		// CViewRender::RenderView :: "start" of current frame (after CViewRender::DrawMonitors)
 		shared::utils::hook(CLIENT_BASE + 0x1FE0F3, cviewrenderer_renderview_stub).install()->quick();
 		HOOK_RETN_PLACE(cviewrenderer_renderview_retn, CLIENT_BASE + 0x1FE0F8);
+
+
+		// ^ :: while( ... !R_CullNode) - wrapper function to impl. additional culling control (force areas/leafs + use frustum culling when needed)
+		//shared::utils::hook(ENGINE_BASE + 0xE68FB, r_cullnode_stub, HOOK_JUMP).install()->quick();
+		//HOOK_RETN_PLACE(r_cullnode_cull_retn, ENGINE_BASE + 0xE6A42);
+		//HOOK_RETN_PLACE(r_cullnode_skip_retn, ENGINE_BASE + 0xE690B);
+		shared::utils::hook(ENGINE_BASE + 0x108133, r_cullnode_wrapper, HOOK_CALL).install()->quick();
 
 		MH_EnableHook(MH_ALL_HOOKS);
 	}
