@@ -635,6 +635,68 @@ workspace "remix-comp-proj"
 
 	---------------------------
 
+	project "blackmesa-rtx"
+	kind "SharedLib"
+	language "C++"
+
+	linkoptions {
+		"/PDBCompress"
+	}
+
+	pchheader "std_include.hpp"
+	pchsource "src/mods/blackmesa/std_include.cpp"
+
+	files {
+		"./src/mods/blackmesa/**.hpp",
+		"./src/mods/blackmesa/**.cpp",
+	}
+
+	includedirs {
+		"%{prj.location}/src",
+		"./src",
+	}
+
+	links {
+		"_shared"
+	}
+
+	resincludedirs {
+		"$(ProjectDir)src" 
+	}
+
+	buildoptions { 
+		"/Zm100 -Zm100" 
+	}
+
+	-- Specific configurations
+	flags { 
+		"UndefinedIdentifiers" 
+	}
+
+	filter "configurations:Debug or configurations:Release"
+		if(os.getenv("BLACKMESA_ROOT")) then
+			print ("Setup paths using environment variable 'BLACKMESA_ROOT' :: '" .. os.getenv("BLACKMESA_ROOT") .. "'")
+			targetdir(os.getenv("BLACKMESA_ROOT"))
+			debugdir (os.getenv("BLACKMESA_ROOT"))
+			debugcommand (os.getenv("BLACKMESA_ROOT") .. "/" .. "bms.exe")
+		end
+	filter {}
+
+	warnings "Extra"
+
+	-- Post-build
+	postbuildcommands {
+		"MOVE /Y \"$(TargetDir)blackhawkdown-rtx.dll\" \"$(TargetDir)a_blackhawkdown-rtx.asi\"",
+	}
+
+	dependencies.imports()
+
+	group "Dependencies"
+		dependencies.projects()
+	group ""
+
+	---------------------------
+
 	project "ue2fixes-rtx"
 	kind "SharedLib"
 	language "C++"
