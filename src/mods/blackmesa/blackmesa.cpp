@@ -131,8 +131,8 @@ namespace mods::blackmesa
 		game::cvar_uncheat_and_set_int("mat_vsync", 0);
 		game::cvar_uncheat_and_set_int("r_waterforcereflectentities", 0);
 		game::cvar_uncheat_and_set_int("mat_motion_blur_enabled", 0);
-		game::cvar_uncheat_and_set_int("r_flashlightdepthtexture", 0);
-		game::cvar_uncheat_and_set_int("r_waterforceexpensive", 0);
+		//game::cvar_uncheat_and_set_int("r_flashlightdepthtexture", 0); // breaks font rendering?
+		//game::cvar_uncheat_and_set_int("r_waterforceexpensive", 0); // breaks font rendering?
 		game::cvar_uncheat_and_set_int("mat_supports_d3d9ex", 0);
 		game::cvar_uncheat_and_set_int("cl_csm_enabled", 0);
 
@@ -146,7 +146,7 @@ namespace mods::blackmesa
 		game::cvar_uncheat_and_set_int("mat_disable_ps_patch", 1);
 		game::cvar_uncheat_and_set_int("r_gbuffer_disable", 1);
 		game::cvar_uncheat_and_set_int("mat_disable_bloom", 1);
-		game::cvar_uncheat_and_set_int("mat_drawflat", 1);
+		game::cvar_uncheat_and_set_int("mat_drawflat", 1); // was 0?
 		game::cvar_uncheat_and_set_int("mat_fastnobump", 1);
 	}
 
