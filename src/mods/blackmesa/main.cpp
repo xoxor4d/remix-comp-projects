@@ -115,9 +115,6 @@ BOOL APIENTRY DllMain(HMODULE hmodule, const DWORD ul_reason_for_call, LPVOID)
 			return TRUE;
 		}
 
-		// asi gets loaded afterwards
-		//shared::common::loader::module_loader::register_module(std::make_unique<mods::blackmesa::d3d9ex>());
-
 		if (const auto t = CreateThread(nullptr, 0, mods::blackmesa::find_game_window_by_sha1, nullptr, 0, nullptr); t) {
 			CloseHandle(t);
 		}

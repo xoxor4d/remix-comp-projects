@@ -467,7 +467,7 @@ namespace mods::blackmesa
 		//IDirect3DBaseTexture9* bound_tex = nullptr;
 		//m_pIDirect3DDevice9->GetTexture(0, &bound_tex);
 
-		pre_drawindexedprim();
+		//pre_drawindexedprim();
 
 		auto hr = D3D_OK;
 		//if (bound_tex) {
@@ -475,7 +475,7 @@ namespace mods::blackmesa
 			//m_pIDirect3DDevice9->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, 0u);
 		//}
 
-		post_drawindexedprim();
+		//post_drawindexedprim();
 
 		return hr;
 	}

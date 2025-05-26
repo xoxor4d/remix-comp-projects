@@ -111,6 +111,13 @@ namespace mods::blackmesa::game
 		VERTEX_COMPRESSION_ON = 1
 	};
 
+	struct QAngle
+	{
+		float x;
+		float y;
+		float z;
+	};
+
 	struct CUtlSymbol
 	{
 		unsigned __int16 m_Id;
@@ -309,4 +316,104 @@ namespace mods::blackmesa::game
 	{
 		IShaderAPIDX8_vtbl* vtbl;
 	};
+
+	struct CViewSetup
+	{
+		int x;
+		// top side of view window
+		int y;
+		// width of view window
+		int width;
+		// height of view window
+		int height;
+
+		// the rest are only used by 3D views
+
+		// Orthographic projection?
+		bool m_bOrtho;
+		// View-space rectangle for ortho projection.
+		float m_OrthoLeft;
+		float m_OrthoTop;
+		float m_OrthoRight;
+		float m_OrthoBottom;
+
+		// horizontal FOV in degrees
+		float fov;
+		// horizontal FOV in degrees for in-view model
+		float fovViewmodel;
+
+		// 3D origin of camera
+		Vector origin;
+
+		// heading of camera (pitch, yaw, roll)
+		QAngle angles;
+		// local Z coordinate of near plane of camera
+		float zNear;
+		// local Z coordinate of far plane of camera
+		float zFar;
+
+		// local Z coordinate of near plane of camera ( when rendering view model )
+		float zNearViewmodel;
+		// local Z coordinate of far plane of camera ( when rendering view model )
+		float zFarViewmodel;
+
+		// set to true if this is to draw into a subrect of the larger screen
+		// this really is a hack, but no more than the rest of the way this class is
+		// used
+		bool m_bRenderToSubrectOfLargerScreen;
+
+		// The aspect ratio to use for computing the perspective projection matrix
+		// (0.0f means use the viewport)
+		float m_flAspectRatio;
+
+		// Controls for off-center projection (needed for poster rendering)
+		bool m_bOffCenter;
+		float m_flOffCenterTop;
+		float m_flOffCenterBottom;
+		float m_flOffCenterLeft;
+		float m_flOffCenterRight;
+
+		// Control that the SFM needs to tell the engine not to do certain
+		// post-processing steps
+		bool m_bDoBloomAndToneMapping;
+
+		// Cached mode for certain full-scene per-frame varying state such as sun
+		// entity coverage
+		bool m_bCacheFullSceneState;
+	};
+
+	struct __declspec(align(4)) ViewStack_t
+	{
+		CViewSetup m_View;
+		D3DXMATRIX m_matrixView;
+		D3DXMATRIX m_matrixProjection;
+		D3DXMATRIX m_matrixWorldToScreen;
+		bool m_bIs2DView;
+		bool m_bNoDraw;
+	};
+
+	struct IRender_vtbl;
+	struct IRender
+	{
+		IRender_vtbl* vftable;
+	};
+
+	struct CRender_vtbl;
+	struct __declspec(align(8)) CRender : IRender
+	{
+		//CRender_vtbl* vftable;
+		float m_yFOV;
+		long double m_frameStartTime;
+		float m_framerate;
+		float m_zNear;
+		float m_zFar;
+		D3DXMATRIX m_matrixView;
+		D3DXMATRIX m_matrixProjection;
+		D3DXMATRIX m_matrixWorldToScreen;
+		//CUtlStack<CRender::ViewStack_t, CUtlMemory<CRender::ViewStack_t, int> > m_ViewStack;
+		char pad_m_ViewStack_memory[0xC];
+		int m_ViewStack_size;
+		ViewStack_t* m_ViewStack_m_pElements;
+		//int m_iLightmapUpdateDepth;
+	}; //STATIC_ASSERT_OFFSET(CRender, m_ViewStack_size, 0xDC + 0xC);
 }

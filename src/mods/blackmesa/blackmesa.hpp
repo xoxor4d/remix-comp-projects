@@ -5,12 +5,13 @@ namespace mods::blackmesa
 	namespace tex_addons
 	{
 		extern LPDIRECT3DTEXTURE9 white;
-		extern LPDIRECT3DTEXTURE9 scope;
+		extern LPDIRECT3DTEXTURE9 black;
 	}
 
 	void on_begin_scene_cb();
-	void pre_drawindexedprim();
-	void post_drawindexedprim();
+
+	void force_cvars();
+
 	void install_signature_patches();
 	void main();
 

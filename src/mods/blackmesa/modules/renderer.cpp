@@ -108,6 +108,11 @@ namespace mods::blackmesa
 		// > __gbufferfast_brush00
 		// > __gbfastpropwrite000
 
+		/*if (ctx.info.material_name.contains("eye"))
+		{
+			int x = 1; 
+		}*/
+
 		if (ctx.info.shader_name == "GBFast") {
 			ctx.modifiers.do_not_render = true;
 		}
@@ -115,8 +120,24 @@ namespace mods::blackmesa
 			ctx.modifiers.do_not_render = true;
 		}
 
-		else if (   mesh->m_VertexFormat == 0x80103
-			|| mesh->m_VertexFormat == 0x82087) 
+		// EyeRefract_dx9
+		else if (mesh->m_VertexFormat == 0x80103)
+		{
+			if (ctx.info.shader_name.starts_with("Eye"))
+			{
+				if (const auto basemap2 = shaderapi->vtbl->GetD3DTexture(shaderapi, nullptr, ctx.info.buffer_state.m_BoundTexture[1]); basemap2)
+				{
+					ctx.save_texture(dev, 0);
+					dev->SetTexture(0, basemap2);
+				}
+			}
+
+			ctx.modifiers.do_not_render = false;
+		}
+
+		// VertexLitGeneric
+		// > models/props_lab/panel_safe_top_scroll
+		else if (mesh->m_VertexFormat == 0x82087) 
 		{
 			ctx.modifiers.do_not_render = false;
 		}
@@ -130,7 +151,7 @@ namespace mods::blackmesa
 		else if (mesh->m_VertexFormat == 0x80101)
 		{
 
-			ctx.modifiers.do_not_render = false;
+			ctx.modifiers.do_not_render = false; 
 
 			// FIRST "UI/HUD" elem (remix injection triggers here)
 				// -> fullscreen color transitions (damage etc.) and also "enables" the crosshair
@@ -304,30 +325,91 @@ namespace mods::blackmesa
 		// > console/background01_widescreen
 		else if (mesh->m_VertexFormat == 0x80107)
 		{
+			ctx.modifiers.do_not_render = false; 
 			//ctx.save_vs(dev);
 			//dev->SetVertexShader(nullptr);
 		}
 
-		else if (mesh->m_VertexFormat == 0xa0003)
+		// VertexLitGeneric
+		// > models/props_inbound/inbound_door
+		else if (mesh->m_VertexFormat == 0xa2083)
+		{
+			ctx.save_vs(dev);
+			dev->SetVertexShader(nullptr);
+		}
+
+		// Sprite_DX9
+		// > materials/sprites/glow_rendermode_9
+		else if (mesh->m_VertexFormat == 0x80105)
+		{
+			ctx.modifiers.do_not_render = false; 
+			ctx.save_vs(dev);
+			dev->SetVertexShader(nullptr);
+		}
+
+		// VertexLitGeneric
+		// > models/props_am/am_lobby_blastdoors_frame
+		else if (  mesh->m_VertexFormat == 0xa0003
+				|| mesh->m_VertexFormat == 0xa2087)
 		{
 			// viewmodel
-			if (ctx.info.buffer_state.m_Transform[2].m[3][2] == -1.00003338f)
+			//if (ctx.info.buffer_state.m_Transform[2].m[3][2] == -1.00003338f)
+			//{
+			//	//ctx.save_view_transform(dev);
+			//	//ctx.save_projection_transform(dev);
+			//	//dev->SetTransform(D3DTS_VIEW, &ctx.info.buffer_state.m_Transform[1]);
+			//	//dev->SetTransform(D3DTS_PROJECTION, &ctx.info.buffer_state.m_Transform[2]);
+			//}
+
+			/*if (ctx.info.material_name.contains("eye")) 
 			{
-				//ctx.save_view_transform(dev);
-				//ctx.save_projection_transform(dev);
-				//dev->SetTransform(D3DTS_VIEW, &ctx.info.buffer_state.m_Transform[1]);
-				//dev->SetTransform(D3DTS_PROJECTION, &ctx.info.buffer_state.m_Transform[2]);
-			}
+				if (const auto basemap2 = shaderapi->vtbl->GetD3DTexture(shaderapi, nullptr, ctx.info.buffer_state.m_BoundTexture[1]); basemap2)
+				{
+					ctx.save_texture(dev, 0);
+					dev->SetTexture(0, basemap2);
+				}
+			}*/
 
 			ctx.save_vs(dev);
 			dev->SetVertexShader(nullptr);
 		}
 
-		else 
+		// Spritecard
+		// > particle/water/watersplash_001a
+		else if (mesh->m_VertexFormat == 0x114900105)
 		{
-			auto yy = 0; 
+			ctx.modifiers.do_not_render = false; 
 		}
 
+		// Refract_DX90
+		// > particle/warp1_warp
+		else if (mesh->m_VertexFormat == 0x80137)
+		{
+			ctx.modifiers.do_not_render = false;
+		}
+
+		// Water_DX9_HDR
+		// > liquids/slime
+		else if (mesh->m_VertexFormat == 0x80133)
+		{
+			ctx.modifiers.do_not_render = false;
+		}
+
+		// Cable_DX9
+		// > cable/steel
+		else if (mesh->m_VertexFormat == 0x480135)
+		{
+			ctx.modifiers.do_not_render = false;
+			//ctx.save_texture(dev, 0);
+			//dev->SetTexture(0, tex_addons::black);
+		}
+
+		else 
+		{
+			auto yy = 0;   
+		}
+
+		//ctx.modifiers.do_not_render = true; 
 
 		/*auto x = mesh->m_VertexFormat; 
 		auto y = 0;*/

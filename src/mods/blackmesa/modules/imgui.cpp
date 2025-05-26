@@ -95,22 +95,10 @@ namespace mods::blackmesa
 			static float cont_cull_height = 0.0f;
 			cont_cull_height = ImGui::Widget_ContainerWithCollapsingTitle("Camera", cont_cull_height, [&]
 			{
-				auto lod_multi = reinterpret_cast<int*>(0x9F20B8);
-				SET_CHILD_WIDGET_WIDTH_MAN(140.0f); if (ImGui::SliderInt("LOD Multiplier", lod_multi, 0, 20)) {
-					*lod_multi = std::clamp(*lod_multi, 0, 20);
-				} TT("Higher values will keep higher LOD on for longer.");
-
-				//ImGui::Checkbox("Use Fake Camera", &im->m_dbg_use_fake_camera);
-				//SET_CHILD_WIDGET_WIDTH_MAN(140.0f); ImGui::SliderFloat3("Camera Position (X, Y, Z)", im->m_dbg_camera_pos, -200.0f, 200.0f);
-				//SET_CHILD_WIDGET_WIDTH_MAN(140.0f); ImGui::SliderFloat("Yaw (Y-axis)", &im->m_dbg_camera_yaw, -180.0f, 180.0f);
-				//SET_CHILD_WIDGET_WIDTH_MAN(140.0f); ImGui::SliderFloat("Pitch (X-axis)", &im->m_dbg_camera_pitch, -90.0f, 90.0f);
-
-				//// Projection matrix adjustments
-				//SET_CHILD_WIDGET_WIDTH_MAN(140.0f); ImGui::SliderFloat("FOV", &im->m_dbg_camera_fov, 10.0f, 120.0f);
-				//SET_CHILD_WIDGET_WIDTH_MAN(140.0f); ImGui::SliderFloat("Aspect Ratio", &im->m_dbg_camera_aspect, 0.5f, 2.5f);
-				//SET_CHILD_WIDGET_WIDTH_MAN(140.0f); ImGui::SliderFloat("Near Plane", &im->m_dbg_camera_near_plane, 0.1f, 10.0f);
-				//SET_CHILD_WIDGET_WIDTH_MAN(140.0f); ImGui::SliderFloat("Far Plane", &im->m_dbg_camera_far_plane, 100.0f, 2000.0f);
-
+				static int test_int = 0;
+				SET_CHILD_WIDGET_WIDTH_MAN(140.0f); if (ImGui::SliderInt("LOD Multiplier", &test_int, 0, 20)) {
+					test_int = std::clamp(test_int, 0, 20);
+				}
 			}, true, ICON_FA_ELLIPSIS_H, &im->ImGuiCol_ContainerBackground, & im->ImGuiCol_ContainerBorder);
 		}
 
@@ -255,7 +243,7 @@ namespace mods::blackmesa
 	{
 		if (auto* im = imgui::get(); im)
 		{
-			if (const auto dev = shared::globals::d3d_device; dev)
+			if (const auto dev = game::get_d3d_device(); dev)
 			{
 				if (!im->m_initialized_device)
 				{
@@ -433,6 +421,22 @@ namespace mods::blackmesa
 		merge_icons_with_latest_font(17.0f, false);
 	}
 
+	using present_fn = long(__stdcall*)(IDirect3DDevice9*, RECT*, RECT*, HWND, RGNDATA*); present_fn present_original = {};
+	long __stdcall present_hk(IDirect3DDevice9* device, RECT* source_rect, RECT* dest_rect, HWND dest_window_override, RGNDATA* dirty_region)
+	{
+		imgui::on_present();
+		return present_original(device, source_rect, dest_rect, dest_window_override, dirty_region);
+	}
+
+	using reset_fn = long(__stdcall*)(IDirect3DDevice9*, D3DPRESENT_PARAMETERS*); reset_fn reset_original = {};
+	long __stdcall reset_hk(IDirect3DDevice9* device, D3DPRESENT_PARAMETERS* present_parameters)
+	{
+		ImGui_ImplDX9_InvalidateDeviceObjects();
+		const auto result = reset_original(device, present_parameters);
+		ImGui_ImplDX9_CreateDeviceObjects();
+		return result;
+	}
+
 	imgui::imgui()
 	{
 		p_this = this;
@@ -451,6 +455,15 @@ namespace mods::blackmesa
 
 		ImGui_ImplWin32_Init(shared::globals::main_window);
 		g_game_wndproc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(shared::globals::main_window, GWLP_WNDPROC, LONG_PTR(wnd_proc_hk)));
+
+		auto get_virtual = [](void* _class, unsigned int index) {
+			return static_cast<unsigned int>((*static_cast<int**>(_class))[index]);
+			};
+
+		const auto dev = game::get_d3d_device();
+		MH_CreateHook(reinterpret_cast<void*>(get_virtual(dev, 17)), present_hk, reinterpret_cast<void**>(&present_original));
+		MH_CreateHook(reinterpret_cast<void*>(get_virtual(dev, 16)), reset_hk, reinterpret_cast<void**>(&reset_original));
+		MH_EnableHook(MH_ALL_HOOKS);
 
 		m_initialized = true;
 		std::cout << "[IMGUI] loaded\n";
