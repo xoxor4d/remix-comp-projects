@@ -112,7 +112,42 @@ namespace mods::blackmesa
 
 	void force_cvars()
 	{
-		//game::cvar_uncheat_and_set_int("r_dopixelvisibility", 0);
+		game::cvar_uncheat_and_set_int("r_dopixelvisibility", 0);
+
+		game::cvar_uncheat_and_set_int("r_WaterDrawRefraction", 0);
+		game::cvar_uncheat_and_set_int("r_WaterDrawReflection", 0);
+		game::cvar_uncheat_and_set_int("r_threaded_particles", 0);
+		game::cvar_uncheat_and_set_int("r_entityclips", 0);
+		game::cvar_uncheat_and_set_int("mat_queue_mode", 0);
+		game::cvar_uncheat_and_set_int("mat_fastspecular", 0);
+		game::cvar_uncheat_and_set_int("mat_softwarelighting", 0);
+		game::cvar_uncheat_and_set_int("mat_parallaxmap", 0);
+		game::cvar_uncheat_and_set_int("mat_normalmaps", 0);
+		game::cvar_uncheat_and_set_int("r_3dsky", 0);
+		game::cvar_uncheat_and_set_int("r_flashlightrender", 0);
+		game::cvar_uncheat_and_set_int("r_occlusion", 0);
+
+		game::cvar_uncheat_and_set_int("r_shadows", 0);
+		game::cvar_uncheat_and_set_int("mat_vsync", 0);
+		game::cvar_uncheat_and_set_int("r_waterforcereflectentities", 0);
+		game::cvar_uncheat_and_set_int("mat_motion_blur_enabled", 0);
+		game::cvar_uncheat_and_set_int("r_flashlightdepthtexture", 0);
+		game::cvar_uncheat_and_set_int("r_waterforceexpensive", 0);
+		game::cvar_uncheat_and_set_int("mat_supports_d3d9ex", 0);
+		game::cvar_uncheat_and_set_int("cl_csm_enabled", 0);
+
+		game::cvar_uncheat_and_set_int("r_staticprop_lod", 0);
+		game::cvar_uncheat_and_set_int("r_lod", 0);
+		game::cvar_uncheat_and_set_int("r_staticprop_lod", 0);
+
+		game::cvar_uncheat_and_set_int("mat_fullbright", 1);
+		game::cvar_uncheat_and_set_int("mat_softwareskin", 1);
+		game::cvar_uncheat_and_set_int("mat_phong", 1);
+		game::cvar_uncheat_and_set_int("mat_disable_ps_patch", 1);
+		game::cvar_uncheat_and_set_int("r_gbuffer_disable", 1);
+		game::cvar_uncheat_and_set_int("mat_disable_bloom", 1);
+		game::cvar_uncheat_and_set_int("mat_drawflat", 1);
+		game::cvar_uncheat_and_set_int("mat_fastnobump", 1);
 	}
 
 	void install_signature_patches()

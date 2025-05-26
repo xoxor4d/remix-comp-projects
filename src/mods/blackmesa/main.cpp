@@ -90,6 +90,7 @@ namespace mods::blackmesa
 		GET_MODULE_HANDLE(game::shaderapidx9_module, "shaderapidx9.dll", T);
 		GET_MODULE_HANDLE(game::engine_module, "engine.dll", T);
 		GET_MODULE_HANDLE(game::client_module, "client.dll", T);
+		GET_MODULE_HANDLE(game::vstdlib_module, "vstdlib.dll", T);
 
 		if (!shared::common::flags::has_flag("nobeep")) {
 			Beep(523, 100);

@@ -118,6 +118,11 @@ namespace mods::blackmesa::game
 		float z;
 	};
 
+	struct Color
+	{
+		unsigned __int8 _color[4];
+	};
+
 	struct CUtlSymbol
 	{
 		unsigned __int16 m_Id;
@@ -416,4 +421,83 @@ namespace mods::blackmesa::game
 		ViewStack_t* m_ViewStack_m_pElements;
 		//int m_iLightmapUpdateDepth;
 	}; //STATIC_ASSERT_OFFSET(CRender, m_ViewStack_size, 0xDC + 0xC);
+
+
+	struct ConCommandBase_vtbl;
+	struct ConCommandBase
+	{
+		ConCommandBase_vtbl* vftable;
+		ConCommandBase* m_pNext;
+		bool m_bRegistered;
+		const char* m_pszName;
+		const char* m_pszHelpString;
+		int m_nFlags;
+	};
+
+	struct IConVar_vtbl;
+	struct IConVar
+	{
+		IConVar_vtbl* vtbl;
+	};
+
+	struct IConVar_vtbl
+	{
+		void(__thiscall* SetValue_Color)(IConVar*, Color);
+		void(__thiscall* SetValue_Int)(IConVar*, int);
+		void(__thiscall* SetValue_Float)(IConVar*, float);
+		void(__thiscall* SetValue_String)(IConVar*, const char*);
+		const char* (__thiscall* GetName)(IConVar*);
+		const char* (__thiscall* GetBaseName)(IConVar*);
+		bool(__thiscall* IsFlagSet)(IConVar*, int);
+		int(__thiscall* GetSplitScreenPlayerSlot)(IConVar*);
+	};
+
+	struct ConVar_CVValue_t
+	{
+		char* m_pszString;
+		int m_StringLength;
+		float m_fValue;
+		int m_nValue;
+	};
+
+	const struct ConVar : ConCommandBase, IConVar
+	{
+		ConVar* m_pParent;
+		const char* m_pszDefaultValue;
+		ConVar_CVValue_t m_Value;
+		bool m_bHasMin;
+		float m_fMinVal;
+		bool m_bHasMax;
+		float m_fMaxVal;
+		//m_fnChangeCallbacks;
+	};
+
+	struct CCvar_vtbl;
+	struct CCvar
+	{
+		CCvar_vtbl* vftable;
+	};
+
+	struct CCvar_vtbl
+	{
+		bool(__thiscall* Connect)(void*, void* (__cdecl*)(const char*, int*)); // IAppSystem* this
+		void(__thiscall* Disconnect)(void*);
+		void* (__thiscall* QueryInterface)(void*, const char*);
+		int(__thiscall* Init)(void*); // InitReturnVal_t
+		void(__thiscall* Shutdown)(void*);
+		const void* (__thiscall* GetDependencies)(void*); // AppSystemInfo_t
+		int(__thiscall* GetTier)(void*); // AppSystemTier_t
+		void(__thiscall* Reconnect)(void*, void* (__cdecl*)(const char*, int*), const char*); // ^
+		int(__thiscall* AllocateDLLIdentifier)(CCvar*);
+		void(__thiscall* RegisterConCommand)(CCvar*, ConCommandBase*);
+		void(__thiscall* UnregisterConCommand)(CCvar*, ConCommandBase*);
+		void(__thiscall* UnregisterConCommands)(CCvar*, int);
+		const char* (__thiscall* GetCommandLineValue)(CCvar*, const char*);
+		const ConCommandBase* (__thiscall* FindCommandBase_const)(CCvar*, const char*);
+		ConCommandBase* (__thiscall* FindCommandBase)(CCvar*, const char*);
+		const ConVar* (__thiscall* FindVar_const)(CCvar*, const char*);
+		ConVar* (__thiscall* FindVar)(CCvar*, const char*);
+		//const ConCommand* (__thiscall* FindCommand_const)(CCvar*, const char*);
+		//ConCommand* (__thiscall* FindCommand)(CCvar*, const char*);
+	};
 }
