@@ -38,6 +38,41 @@ namespace mods::blackmesa
 		}
 	}
 
+	/**
+	 * Called from 'CViewRender::DrawOneMonitor' before calling 'CViewRender::RenderView'
+	 * - in use when game is rendering a scene to a monitor (different rendertarget)
+	 */
+	void cviewrenderer_drawonemonitor_hk()
+	{
+		auto enginerender = game::get_engine_renderer();
+		const auto dev = game::get_d3d_device();
+
+		float colView[4][4] = {};
+		shared::utils::transpose_float4x4(enginerender->m_matrixView.m[0], colView[0]);
+
+		float colProj[4][4] = {};
+		shared::utils::transpose_float4x4(enginerender->m_matrixProjection.m[0], colProj[0]);
+
+		dev->SetTransform(D3DTS_WORLD, &shared::globals::IDENTITY);
+		dev->SetTransform(D3DTS_VIEW, reinterpret_cast<const D3DMATRIX*>(colView));
+		dev->SetTransform(D3DTS_PROJECTION, reinterpret_cast<const D3DMATRIX*>(colProj));
+	}
+
+	HOOK_RETN_PLACE_DEF(cviewrenderer_drawonemonitor_retn);
+	__declspec(naked) void cviewrenderer_drawonemonitor_stub()
+	{
+		__asm
+		{
+			pushad;
+			call	cviewrenderer_drawonemonitor_hk;
+			popad;
+
+			// og
+			lea     eax, [ebp - 0x1AC];
+			jmp		cviewrenderer_drawonemonitor_retn;
+		}
+	}
+
 	void on_renderview()
 	{
 		auto enginerender = game::get_engine_renderer();
@@ -126,7 +161,7 @@ namespace mods::blackmesa
 		game::cvar_uncheat_and_set_int("mat_softwarelighting", 0);
 		game::cvar_uncheat_and_set_int("mat_parallaxmap", 0);
 		game::cvar_uncheat_and_set_int("mat_normalmaps", 0);
-		game::cvar_uncheat_and_set_int("r_3dsky", 0);
+		//game::cvar_uncheat_and_set_int("r_3dsky", 0);
 		game::cvar_uncheat_and_set_int("r_flashlightrender", 0);
 		game::cvar_uncheat_and_set_int("r_occlusion", 0);
 
@@ -357,24 +392,19 @@ namespace mods::blackmesa
 		shared::common::loader::module_loader::register_module(std::make_unique<imgui>());
 		shared::common::loader::module_loader::register_module(std::make_unique<mods::blackmesa::renderer>());
 
+		// CViewRender::DrawOneMonitor
+		shared::utils::hook::nop(CLIENT_BASE + 0x1F7E26, 6);
+		shared::utils::hook(CLIENT_BASE + 0x1F7E26, cviewrenderer_drawonemonitor_stub).install()->quick();
+		HOOK_RETN_PLACE(cviewrenderer_drawonemonitor_retn, CLIENT_BASE + 0x1F7E2C);
+
 		// CViewRender::RenderView :: "start" of current frame (after CViewRender::DrawMonitors)
 		shared::utils::hook(CLIENT_BASE + 0x1FE0F3, cviewrenderer_renderview_stub).install()->quick();
 		HOOK_RETN_PLACE(cviewrenderer_renderview_retn, CLIENT_BASE + 0x1FE0F8);
 
 
-
-
-
 		// stub before calling 'R_RecursiveWorldNode' to override node/leaf vis
 		shared::utils::hook(ENGINE_BASE + 0x107225, pre_recursive_world_node_stub, HOOK_JUMP).install()->quick();
 		HOOK_RETN_PLACE(pre_recursive_world_node_retn, ENGINE_BASE + 0x10722A);
-
-		// ^ :: xnode->visframe == r_visframecount check - check for rectangular cuboids that could match emissive lights
-		//shared::utils::hook::nop(ENGINE_BASE + 0xE68E6, 9); // NO
-		//shared::utils::hook(ENGINE_BASE + 0xE68E6, while_recursive_world_node_stub, HOOK_JUMP).install()->quick(); // NO
-		//HOOK_RETN_PLACE(while_recursive_world_node_og_retn, ENGINE_BASE + 0xE6A42); // NO
-		//HOOK_RETN_PLACE(while_recursive_world_node_cullnode_retn, ENGINE_BASE + 0xE68F5); // NO
-		//HOOK_RETN_PLACE(while_recursive_world_node_force_retn, ENGINE_BASE + 0xE690B); // NO
 
 		// ^ :: while( ... node->contents < -1 .. ) -> jl to jle
 		shared::utils::hook::set<BYTE>(ENGINE_BASE + 0x10811D, 0x7E);
@@ -389,10 +419,24 @@ namespace mods::blackmesa
 		shared::utils::hook::nop(ENGINE_BASE + 0x1078F8, 2);
 
 		// ^ :: while( ... !R_CullNode) - wrapper function to impl. additional culling control (force areas/leafs + use frustum culling when needed)
-		//shared::utils::hook(ENGINE_BASE + 0xE68FB, r_cullnode_stub, HOOK_JUMP).install()->quick();
-		//HOOK_RETN_PLACE(r_cullnode_cull_retn, ENGINE_BASE + 0xE6A42);
-		//HOOK_RETN_PLACE(r_cullnode_skip_retn, ENGINE_BASE + 0xE690B);
 		shared::utils::hook(ENGINE_BASE + 0x108133, r_cullnode_wrapper, HOOK_CALL).install()->quick();
+
+
+
+		// CBrushBatchRender::DrawOpaqueBrushModel :: :: backface check - nop 'if ( bShadowDepth )' to disable culling
+		//shared::utils::hook::nop(ENGINE_BASE + 0x7156E, 2); // 0125
+		shared::utils::hook::conditional_jump_to_jmp(ENGINE_BASE + 0x104796);
+
+		// CClientLeafSystem::CollateRenderablesInLeaf :: skip culling checks
+		shared::utils::hook::nop(CLIENT_BASE + 0xFDCBF, 6);
+
+		// DrawDisplacementsInLeaf .. no culling check
+
+		// CSimpleWorldView::Setup :: nop 'DoesViewPlaneIntersectWater' check
+		shared::utils::hook::nop(CLIENT_BASE + 0x1FF55D, 2);
+
+		// ^ next instruction :: OR m_DrawFlags with 0x60 instead of 0x30
+		shared::utils::hook::set<BYTE>(CLIENT_BASE + 0x1FF55F + 6, 0x60);
 
 		MH_EnableHook(MH_ALL_HOOKS);
 	}

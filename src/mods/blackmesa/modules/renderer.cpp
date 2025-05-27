@@ -97,13 +97,6 @@ namespace mods::blackmesa
 		dev->SetTransform(D3DTS_VIEW, &ctx.info.buffer_state.m_Transform[1]);
 		dev->SetTransform(D3DTS_PROJECTION, &ctx.info.buffer_state.m_Transform[2]);
 
-		// hack for runtime hack: https://github.com/xoxor4d/dxvk-remix/commit/3867843a68db7ec8a5ab603a250689cca1505970
-		/*if (static bool runtime_hack_once = false; !runtime_hack_once)
-		{
-			runtime_hack_once = true;
-			set_remix_emissive_intensity(dev, ctx, 0.0f);
-		}*/
-
 		// shader: GBFast
 		// > __gbufferfast_brush00
 		// > __gbfastpropwrite000
@@ -140,6 +133,8 @@ namespace mods::blackmesa
 		else if (mesh->m_VertexFormat == 0x82087) 
 		{
 			ctx.modifiers.do_not_render = false;
+			ctx.save_vs(dev);
+			dev->SetVertexShader(nullptr);
 		}
 
 		// WriteZ_DX9
@@ -148,13 +143,14 @@ namespace mods::blackmesa
 		// > dev/lumcompare
 		// Engine_Post_dx9
 		// > dev/engine_post_nxtgen
+		// Sky_HDR_DX9
+		// > skybox/sky_st_day_01rt
 		else if (mesh->m_VertexFormat == 0x80101)
 		{
-
 			ctx.modifiers.do_not_render = false; 
 
 			// FIRST "UI/HUD" elem (remix injection triggers here)
-				// -> fullscreen color transitions (damage etc.) and also "enables" the crosshair
+			// -> fullscreen color transitions (damage etc.) and also "enables" the crosshair
 			if (ctx.info.shader_name.starts_with("Engine_")) // Engine_Post
 			{
 				// do not fog HUD elements :D
@@ -167,14 +163,10 @@ namespace mods::blackmesa
 				char blend;
 				((void(__thiscall*)(void***, char*, char*, char*, char*, char*))(*g_ViewEffects)[2])(g_ViewEffects, &r, &g, &b, &a, &blend);
 
-				float rr = (float)r * 0.0039215689f;
-				float gg = (float)g * 0.0039215689f;
-				float bb = (float)b * 0.0039215689f;
-				float aa = (float)a * 0.0039215689f;
-				//Vector4D
-				/*const auto s_viewFadeModulate = reinterpret_cast<bool*>(CLIENT_BASE + USE_OFFSET(0x0, 0x9ECEE0));
-				if (s_viewFadeModulate && *s_viewFadeModulate)
-				{ }*/
+				const float rr = (float)r * 0.0039215689f;
+				const float gg = (float)g * 0.0039215689f;
+				const float bb = (float)b * 0.0039215689f;
+				const float aa = (float)a * 0.0039215689f;
 
 				ctx.save_vs(dev);
 				dev->SetVertexShader(nullptr);
@@ -228,6 +220,21 @@ namespace mods::blackmesa
 
 				// do not render the original mesh
 				ctx.modifiers.do_not_render = true;
+			}
+			else if (ctx.info.shader_name.contains("Sky")) 
+			{
+				ctx.modifiers.do_not_render = false;
+				// assign basemap2 to textureslot 0
+				/*if (const auto basemap2 = shaderapi->vtbl->GetD3DTexture(shaderapi, nullptr, ctx.info.buffer_state.m_BoundTexture[13]);
+					basemap2)
+				{
+					ctx.save_texture(dev, 0);
+					dev->SetTexture(0, basemap2);
+					int x = 1;
+
+					ctx.save_vs(dev);
+					dev->SetVertexShader(nullptr);
+				}*/
 			}
 		}
 
@@ -352,24 +359,6 @@ namespace mods::blackmesa
 		else if (  mesh->m_VertexFormat == 0xa0003
 				|| mesh->m_VertexFormat == 0xa2087)
 		{
-			// viewmodel
-			//if (ctx.info.buffer_state.m_Transform[2].m[3][2] == -1.00003338f)
-			//{
-			//	//ctx.save_view_transform(dev);
-			//	//ctx.save_projection_transform(dev);
-			//	//dev->SetTransform(D3DTS_VIEW, &ctx.info.buffer_state.m_Transform[1]);
-			//	//dev->SetTransform(D3DTS_PROJECTION, &ctx.info.buffer_state.m_Transform[2]);
-			//}
-
-			/*if (ctx.info.material_name.contains("eye")) 
-			{
-				if (const auto basemap2 = shaderapi->vtbl->GetD3DTexture(shaderapi, nullptr, ctx.info.buffer_state.m_BoundTexture[1]); basemap2)
-				{
-					ctx.save_texture(dev, 0);
-					dev->SetTexture(0, basemap2);
-				}
-			}*/
-
 			ctx.save_vs(dev);
 			dev->SetVertexShader(nullptr);
 		}
@@ -379,6 +368,13 @@ namespace mods::blackmesa
 		else if (mesh->m_VertexFormat == 0x114900105)
 		{
 			ctx.modifiers.do_not_render = false; 
+		}
+
+		// Spritecard
+		// > particle/vistasmokev1/vistasmokev1
+		else if (mesh->m_VertexFormat == 0x24914900105)
+		{
+			ctx.modifiers.do_not_render = false;
 		}
 
 		// Refract_DX90
@@ -393,6 +389,8 @@ namespace mods::blackmesa
 		else if (mesh->m_VertexFormat == 0x80133)
 		{
 			ctx.modifiers.do_not_render = false;
+			ctx.save_vs(dev);
+			dev->SetVertexShader(nullptr);
 		}
 
 		// Cable_DX9
@@ -404,15 +402,43 @@ namespace mods::blackmesa
 			//dev->SetTexture(0, tex_addons::black);
 		}
 
-		else 
+		// ShatteredGlass
+		// > glass/glasswindowbreak070b
+		else if (mesh->m_VertexFormat == 0x2480103)
 		{
-			auto yy = 0;   
+			ctx.save_vs(dev);
+			dev->SetVertexShader(nullptr);
 		}
 
-		//ctx.modifiers.do_not_render = true; 
+		// Lightmapped_4WayBlend
+		// > maps/bm_c2a4a/nature/blend_4way_bnc_rock_-2208_32_100
+		else if (mesh->m_VertexFormat == 0x48013b)  
+		{
+			ctx.save_vs(dev); 
+			dev->SetVertexShader(nullptr);
+		}
 
-		/*auto x = mesh->m_VertexFormat; 
-		auto y = 0;*/
+		// LightmappedGeneric
+		// > nature/blend_caverock
+		else if (mesh->m_VertexFormat == 0x2480137)
+		{
+			ctx.save_vs(dev);
+			dev->SetVertexShader(nullptr);
+		}
+
+		// VertexLitGeneric
+		// > decals/smscorch1model
+		else if (mesh->m_VertexFormat == 0x82181)
+		{
+			ctx.save_vs(dev);
+			dev->SetVertexShader(nullptr);
+		}
+
+		else 
+		{
+			auto break_me = 0;   
+		}
+		//ctx.modifiers.do_not_render = true;  
 	}
 
 
@@ -627,6 +653,10 @@ namespace mods::blackmesa
 
 		shared::utils::hook(RENDERER_BASE + 0x3C718, cmeshdx8_renderpass_post_draw_stub, HOOK_JUMP).install()->quick();
 		HOOK_RETN_PLACE(cmeshdx8_renderpass_post_draw_retn_addr, RENDERER_BASE + 0x3C727);
+
+		// C_FuncAreaPortalWindow::DrawModel :: disable drawing Area Portal Brushmodels
+		shared::utils::hook::conditional_jump_to_jmp(CLIENT_BASE + 0xC0210);
+
 
 		m_initialized = true;
 		std::cout << "[RENDERER] loaded\n";
