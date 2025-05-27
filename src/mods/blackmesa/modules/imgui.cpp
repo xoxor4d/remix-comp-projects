@@ -35,14 +35,6 @@ namespace mods::blackmesa
 
 	bool imgui::input_message(const UINT message_type, const WPARAM wparam, const LPARAM lparam, [[maybe_unused]] bool& inout_pass_msg_to_game)
 	{
-		/*if (message_type == WM_KEYUP && wparam == VK_F5) {
-			imgui::get()->m_dbg_use_fake_camera = !imgui::get()->m_dbg_use_fake_camera;
-		}
-
-		if (message_type == WM_KEYUP && wparam == VK_F6) {
-			imgui::get()->m_dbg_set_world_transforms = !imgui::get()->m_dbg_set_world_transforms;
-		}*/
-
 		if (message_type == WM_KEYUP && wparam == VK_F4) 
 		{
 			const auto& io = ImGui::GetIO();
@@ -95,10 +87,9 @@ namespace mods::blackmesa
 			static float cont_cull_height = 0.0f;
 			cont_cull_height = ImGui::Widget_ContainerWithCollapsingTitle("Camera", cont_cull_height, [&]
 			{
-				static int test_int = 0;
-				SET_CHILD_WIDGET_WIDTH_MAN(140.0f); if (ImGui::SliderInt("LOD Multiplier", &test_int, 0, 20)) {
-					test_int = std::clamp(test_int, 0, 20);
-				}
+				// m_anticull_distance
+				SET_CHILD_WIDGET_WIDTH_MAN(140.0f); ImGui::SliderFloat("AntiCull Distance", &im->m_anticull_distance, 0.0f, 20000.0f, "%.0f");
+
 			}, true, ICON_FA_ELLIPSIS_H, &im->ImGuiCol_ContainerBackground, & im->ImGuiCol_ContainerBorder);
 		}
 

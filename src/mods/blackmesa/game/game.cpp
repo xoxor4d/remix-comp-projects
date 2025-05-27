@@ -44,6 +44,10 @@ namespace mods::blackmesa::game
 		}
 	}
 
+	int get_visframecount() {
+		return *reinterpret_cast<int*>(ENGINE_BASE + 0x9B95F8); // 0125
+	}
+
 	// init any adresses here
 	void init_game_addresses()
 	{

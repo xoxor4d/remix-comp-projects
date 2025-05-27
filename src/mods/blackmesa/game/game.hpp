@@ -27,6 +27,7 @@ namespace mods::blackmesa::game
 	inline CRender* get_engine_renderer() { return reinterpret_cast<CRender*>(ENGINE_BASE + 0x8E27C8); }
 	inline IDirect3DDevice9* get_d3d_device() { return reinterpret_cast<IDirect3DDevice9*>(*(DWORD*)(RENDERER_BASE + 0xED788)); }
 	inline IShaderAPIDX8* get_shaderapi() { return reinterpret_cast<IShaderAPIDX8*>(*(DWORD*)(RENDERER_BASE + 0xE097C)); }
+	inline worldbrushdata_t* get_hoststate_worldbrush_data() { return reinterpret_cast<CCommonHostState*>(ENGINE_BASE + 0x974BBC)->worldbrush; }
 	inline CCvar* get_icvar() { return reinterpret_cast<CCvar*>((VSTDLIB_BASE + 0x321F0)); }
 
 	inline Vector* get_current_view_origin() { return reinterpret_cast<Vector*>(ENGINE_BASE + 0x4E0CEC); }
@@ -36,4 +37,6 @@ namespace mods::blackmesa::game
 
 	// CM_PointLeafnum
 	inline int get_leaf_from_position(const Vector& pos) { return shared::utils::hook::call<int(__cdecl)(const float*)>(ENGINE_BASE + 0x185D00)(&pos.x); }
+
+	extern int get_visframecount();
 }

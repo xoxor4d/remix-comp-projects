@@ -182,12 +182,135 @@ namespace mods::blackmesa
 		return true;
 	}
 
+	/**
+	 * Force visibility of a specific node
+	 * @param node_index	The node to force vis for
+	 * @param player_node	The node the player is currently in
+	 */
+	void force_node_vis(int node_index, bool hide = false)
+	{
+		const auto world = game::get_hoststate_worldbrush_data();
+		const auto root_node = &world->nodes[0];
+
+		int next_node_index = node_index;
+		while (next_node_index >= 0)
+		{
+			const auto node = &world->nodes[next_node_index];
+
+			if (!hide)
+			{
+				// node was already set to current visframe, do not continue
+				if (node->visframe == game::get_visframecount()) {
+					break;
+				}
+
+				// force node vis
+				node->visframe = game::get_visframecount();
+			}
+			else
+			{
+				// nodes already hidden
+				if (node->visframe == 0) {
+					break;
+				}
+
+				node->visframe = 0;
+			}
+
+			// we only need to traverse to the root node
+			if (node == root_node) {
+				break;
+			}
+
+			next_node_index = &node->parent[0] - root_node;
+		}
+	}
+
+	/**
+	 * Force visibility of a specific leaf
+	 * @param leaf_index   The leaf to force vis for
+	 * @param player_node  The node the player is currently in
+	 */
+	void force_leaf_vis(int leaf_index, bool hide = false)
+	{
+		const auto world = game::get_hoststate_worldbrush_data();
+		auto leaf_node = &world->leafs[leaf_index];
+		auto parent_node_index = &leaf_node->parent[0] - &world->nodes[0];
+
+		if (!hide)
+		{
+			// force leaf vis
+			leaf_node->visframe = game::get_visframecount();
+		}
+		else
+		{
+			leaf_node->visframe = 0;
+		}
+
+		// force nodes
+		force_node_vis(parent_node_index, hide);
+	}
+
+	// Called once before 'R_RecursiveWorldNode' is getting called for the first time
+	void pre_recursive_world_node()
+	{
+		/*if (*game::get_current_view_id() == VIEW_3DSKY || *game::get_current_view_id() == VIEW_MONITOR) {
+			return;
+		}*/
+
+		const auto world = game::get_hoststate_worldbrush_data();
+		//auto& map_settings = map_settings::get_map_settings();
+
+		float nocull_dist = 6000.0f;
+		if (imgui::is_initialized()) {
+			nocull_dist = imgui::get()->m_anticull_distance;
+		}
+
+		const bool check_area = false;
+
+		// MODE: force all leafs/nodes within a certain dist to the player (+ only in current area modifier)
+		if (nocull_dist > 0.0f)
+		{
+			for (auto i = 0; i < world->numleafs; i++)
+			{
+				if (auto& l = world->leafs[i];
+					!check_area || (int)l.area == g_current_area) // ignore area check if distance mode
+				{
+					if (is_aabb_within_distance(l.m_vecCenter, l.m_vecHalfDiagonal, *game::get_current_view_origin(), nocull_dist)) {
+						force_leaf_vis(i);
+					}
+				}
+			}
+		}
+	}
+
+	HOOK_RETN_PLACE_DEF(pre_recursive_world_node_retn);
+	__declspec(naked) void pre_recursive_world_node_stub()
+	{
+		__asm
+		{
+			pushad;
+			call	pre_recursive_world_node;
+			popad;
+
+			// og
+			push    ecx;
+			push    dword ptr[eax + 0x50];
+			push    edi;
+			jmp		pre_recursive_world_node_retn;
+
+		}
+	}
+
 	// Stub before calling 'R_CullNode' in 'R_RecursiveWorldNode'
 	// Return 0 to NOT cull the node
 	int r_cullnode_wrapper(game::Frustum_t* frustum, game::mnode_t* node, int unkown_flag)
 	{
 		// "global" nocull distance if area has no overrides
-		float nocull_dist = 6000.0f; 
+		float nocull_dist = 6000.0f;
+		if (imgui::is_initialized()) {
+			nocull_dist = imgui::get()->m_anticull_distance;
+		}
 
 		// if no area override or if cull mode is distance based
 		{
@@ -211,30 +334,6 @@ namespace mods::blackmesa
 		// cull node
 		return 1;
 	}
-
-	//HOOK_RETN_PLACE_DEF(r_cullnode_cull_retn);
-	//HOOK_RETN_PLACE_DEF(r_cullnode_skip_retn);
-	//__declspec(naked) void r_cullnode_stub()
-	//{
-	//	__asm
-	//	{
-	//		pushad;
-	//		push	ebx;
-	//		call	r_cullnode_wrapper; // return 0 to not jump
-	//		add		esp, 4;
-	//		test	eax, eax;
-	//		jz		SKIP; // jump if eax = 0
-	//		popad;
-
-	//		add     esp, 4; // og
-	//		jmp		r_cullnode_cull_retn;
-
-	//	SKIP:
-	//		popad;
-	//		add     esp, 4; // og
-	//		jmp		r_cullnode_skip_retn;
-	//	}
-	//}
 
 	void install_signature_patches()
 	{
@@ -262,6 +361,32 @@ namespace mods::blackmesa
 		shared::utils::hook(CLIENT_BASE + 0x1FE0F3, cviewrenderer_renderview_stub).install()->quick();
 		HOOK_RETN_PLACE(cviewrenderer_renderview_retn, CLIENT_BASE + 0x1FE0F8);
 
+
+
+
+
+		// stub before calling 'R_RecursiveWorldNode' to override node/leaf vis
+		shared::utils::hook(ENGINE_BASE + 0x107225, pre_recursive_world_node_stub, HOOK_JUMP).install()->quick();
+		HOOK_RETN_PLACE(pre_recursive_world_node_retn, ENGINE_BASE + 0x10722A);
+
+		// ^ :: xnode->visframe == r_visframecount check - check for rectangular cuboids that could match emissive lights
+		//shared::utils::hook::nop(ENGINE_BASE + 0xE68E6, 9); // NO
+		//shared::utils::hook(ENGINE_BASE + 0xE68E6, while_recursive_world_node_stub, HOOK_JUMP).install()->quick(); // NO
+		//HOOK_RETN_PLACE(while_recursive_world_node_og_retn, ENGINE_BASE + 0xE6A42); // NO
+		//HOOK_RETN_PLACE(while_recursive_world_node_cullnode_retn, ENGINE_BASE + 0xE68F5); // NO
+		//HOOK_RETN_PLACE(while_recursive_world_node_force_retn, ENGINE_BASE + 0xE690B); // NO
+
+		// ^ :: while( ... node->contents < -1 .. ) -> jl to jle
+		shared::utils::hook::set<BYTE>(ENGINE_BASE + 0x10811D, 0x7E);
+
+		// ^ :: backface check -> je to jl
+		shared::utils::hook::nop(ENGINE_BASE + 0x108211, 2); // okay - draws a little more but not so heavy on perf.
+
+		// ^ :: backface check -> jnz to je
+		shared::utils::hook::set<BYTE>(ENGINE_BASE + 0x10821A, 0x74);
+
+		// R_DrawLeaf :: backface check (emissive lamps) plane normal >= -0.00999f
+		shared::utils::hook::nop(ENGINE_BASE + 0x1078F8, 2);
 
 		// ^ :: while( ... !R_CullNode) - wrapper function to impl. additional culling control (force areas/leafs + use frustum culling when needed)
 		//shared::utils::hook(ENGINE_BASE + 0xE68FB, r_cullnode_stub, HOOK_JUMP).install()->quick();

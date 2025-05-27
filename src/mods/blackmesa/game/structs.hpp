@@ -60,6 +60,14 @@ namespace mods::blackmesa::game
 		NUM_IMAGE_FORMATS
 	};
 
+	enum modtype_t : std::int32_t
+	{
+		mod_bad = 0x0,
+		mod_brush = 0x1,
+		mod_sprite = 0x2,
+		mod_studio = 0x3,
+	};
+
 	enum MaterialVarFlags_t
 	{
 		MATERIAL_VAR_DEBUG = (1 << 0),
@@ -543,4 +551,137 @@ namespace mods::blackmesa::game
 	{
 		fourplanes_t planes[2];
 	};
+
+	struct mleaf_t
+	{
+		int contents;
+		int visframe;
+		mnode_t* parent; // mnode_t
+		__int16 area;
+		__int16 flags;
+		VectorAligned m_vecCenter;
+		VectorAligned m_vecHalfDiagonal;
+		__int16 cluster;
+		__int16 leafWaterDataID;
+		unsigned __int16 firstmarksurface;
+		unsigned __int16 nummarksurfaces;
+		__int16 nummarknodesurfaces;
+		__int16 unused;
+		unsigned __int16 dispListStart;
+		unsigned __int16 dispCount;
+	};
+
+	struct mleafwaterdata_t;
+	struct mvertex_t;
+	struct doccluderdata_t;
+	struct doccluderpolydata_t;
+	struct mtexinfo_t;
+	struct csurface_t;
+
+	struct worldbrushdata_t
+	{
+		int numsubmodels;
+
+		int numplanes;
+		cplane_t* planes;
+
+		int numleafs;  // number of visible leafs, not counting 0
+		mleaf_t* leafs;
+
+		int numleafwaterdata;
+		mleafwaterdata_t* leafwaterdata;
+
+		int numvertexes;
+		mvertex_t* vertexes;
+
+		int numoccluders;
+		doccluderdata_t* occluders;
+
+		int numoccluderpolys;
+		doccluderpolydata_t* occluderpolys;
+
+		int numoccludervertindices;
+		int* occludervertindices;
+
+		int numvertnormalindices;  // These index vertnormals.
+		std::uint16_t* vertnormalindices;
+
+		int numvertnormals;
+		Vector* vertnormals;
+
+		int numnodes;
+		mnode_t* nodes;
+		std::uint16_t* m_LeafMinDistToWater;
+
+		int numtexinfo;
+		mtexinfo_t* texinfo;
+
+		int numtexdata;
+		csurface_t* texdata;
+
+		int numDispInfos;
+		void* hDispInfos;
+		//void* surfaces1; // msurface1_t
+		//msurface2_t* surfaces2;
+		//void* surfacelighting; // msurfacelighting_t
+		//msurfacenormal_t* surfacenormals;
+		//unsigned __int16* m_pSurfaceBrushes;
+		//dfacebrushlist_t* m_pSurfaceBrushList;
+		//int numvertindices;
+		//unsigned __int16* vertindices;
+		//int nummarksurfaces;
+		//msurface2_t** marksurfaces;
+		//void* lightdata; // ColorRGBExp32
+		//int m_nLightingDataSize;
+		//int numworldlights;
+		//void* worldlights; // dworldlight_t
+		//void* shadowzbuffers;
+		//int numprimitives;
+		//mprimitive_t* primitives;
+		//int numprimverts;
+		//mprimvert_t* primverts;
+		//int numprimindices;
+		//unsigned __int16* primindices;
+		//int m_nAreas;
+		//void* m_pAreas; // darea_t
+		//int m_nAreaPortals;
+		//void* m_pAreaPortals; // dareaportal_t
+		//int m_nClipPortalVerts;
+		//Vector* m_pClipPortalVerts;
+		//void* m_pCubemapSamples; // mcubemapsample_t
+		//int m_nCubemapSamples;
+		//int m_nDispInfoReferences;
+		//unsigned __int16* m_pDispInfoReferences;
+		//void* m_pLeafAmbient; // dleafambientindex_t
+		//void* m_pAmbientSamples; // dleafambientlighting_t
+		//bool m_bUnloadedAllLightmaps;
+		//void* m_pLightingDataStack; // CMemoryStack
+		//int m_nBSPFileSize;
+	};
+
+
+	struct model_t
+	{
+		void* fnHandle;
+		char szPathName[260];
+		int nLoadFlags;
+		int nServerCount;
+		modtype_t type;
+		int flags;
+		Vector mins;
+		Vector maxs;
+		float radius;
+		KeyValues* m_pKeyValues;
+		//$827FC955A655E715E2ACE31D316F483B ___u10;
+	};
+
+	struct CCommonHostState
+	{
+		model_t* worldmodel;
+		worldbrushdata_t* worldbrush;
+		float interval_per_tick;
+		int max_splitscreen_players;
+		int max_splitscreen_players_clientdll;
+	};
+
 }
