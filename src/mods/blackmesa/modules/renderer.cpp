@@ -412,8 +412,86 @@ namespace mods::blackmesa
 
 		// Lightmapped_4WayBlend
 		// > maps/bm_c2a4a/nature/blend_4way_bnc_rock_-2208_32_100
-		else if (mesh->m_VertexFormat == 0x48013b)  
+		else if (mesh->m_VertexFormat == 0x48013b
+			|| mesh->m_VertexFormat == 0x248013b)
 		{
+			// rendering a second surface works but its not blended with vertex alpha
+#if 0
+			{
+
+#if 0
+				IDirect3DVertexDeclaration9* vertex_decl = nullptr;
+				dev->GetVertexDeclaration(&vertex_decl);
+
+				enum d3ddecltype : BYTE
+				{
+					D3DDECLTYPE_FLOAT1 = 0,		// 1D float expanded to (value, 0., 0., 1.)
+					D3DDECLTYPE_FLOAT2 = 1,		// 2D float expanded to (value, value, 0., 1.)
+					D3DDECLTYPE_FLOAT3 = 2,		// 3D float expanded to (value, value, value, 1.)
+					D3DDECLTYPE_FLOAT4 = 3,		// 4D float
+					D3DDECLTYPE_D3DCOLOR = 4,	// 4D packed unsigned bytes mapped to 0. to 1. range
+
+					// Input is in D3DCOLOR format (ARGB) expanded to (R, G, B, A)
+					D3DDECLTYPE_UBYTE4 = 5,		// 4D unsigned byte
+					D3DDECLTYPE_SHORT2 = 6,		// 2D signed short expanded to (value, value, 0., 1.)
+					D3DDECLTYPE_SHORT4 = 7,		// 4D signed short
+
+					// The following types are valid only with vertex shaders >= 2.0
+					D3DDECLTYPE_UBYTE4N = 8,	// Each of 4 bytes is normalized by dividing to 255.0
+					D3DDECLTYPE_SHORT2N = 9,	// 2D signed short normalized (v[0]/32767.0,v[1]/32767.0,0,1)
+					D3DDECLTYPE_SHORT4N = 10,	// 4D signed short normalized (v[0]/32767.0,v[1]/32767.0,v[2]/32767.0,v[3]/32767.0)
+					D3DDECLTYPE_USHORT2N = 11,  // 2D unsigned short normalized (v[0]/65535.0,v[1]/65535.0,0,1)
+					D3DDECLTYPE_USHORT4N = 12,  // 4D unsigned short normalized (v[0]/65535.0,v[1]/65535.0,v[2]/65535.0,v[3]/65535.0)
+					D3DDECLTYPE_UDEC3 = 13,		// 3D unsigned 10 10 10 format expanded to (value, value, value, 1)
+					D3DDECLTYPE_DEC3N = 14,		// 3D signed 10 10 10 format normalized and expanded to (v[0]/511.0, v[1]/511.0, v[2]/511.0, 1)
+					D3DDECLTYPE_FLOAT16_2 = 15,	// Two 16-bit floating point values, expanded to (value, value, 0, 1)
+					D3DDECLTYPE_FLOAT16_4 = 16,	// Four 16-bit floating point values
+					D3DDECLTYPE_UNUSED = 17,	// When the type field in a decl is unused.
+				};
+				enum d3ddecluse : BYTE
+				{
+					D3DDECLUSAGE_POSITION = 0,
+					D3DDECLUSAGE_BLENDWEIGHT,   // 1
+					D3DDECLUSAGE_BLENDINDICES,  // 2
+					D3DDECLUSAGE_NORMAL,        // 3
+					D3DDECLUSAGE_PSIZE,         // 4
+					D3DDECLUSAGE_TEXCOORD,      // 5
+					D3DDECLUSAGE_TANGENT,       // 6
+					D3DDECLUSAGE_BINORMAL,      // 7
+					D3DDECLUSAGE_TESSFACTOR,    // 8
+					D3DDECLUSAGE_POSITIONT,     // 9
+					D3DDECLUSAGE_COLOR,         // 10
+					D3DDECLUSAGE_FOG,           // 11
+					D3DDECLUSAGE_DEPTH,         // 12
+					D3DDECLUSAGE_SAMPLE,        // 13
+				};
+				struct d3dvertelem
+				{
+					WORD Stream;		// Stream index
+					WORD Offset;		// Offset in the stream in bytes
+					d3ddecltype Type;	// Data type
+					BYTE Method;		// Processing method
+					d3ddecluse Usage;	// Semantics
+					BYTE UsageIndex;	// Semantic index
+				};
+
+				d3dvertelem decl[MAX_FVF_DECL_SIZE]; UINT numElements = 0;
+				vertex_decl->GetDeclaration((D3DVERTEXELEMENT9*)decl, &numElements);
+				int x = 1; 
+#endif
+
+				ctx.save_texture(dev, 0);
+
+				if (const auto basemap2 = shaderapi->vtbl->GetD3DTexture(shaderapi, nullptr, ctx.info.buffer_state.m_BoundTexture[2]);
+					basemap2)
+				{
+					ctx.modifiers.dual_render_texture = basemap2; 
+				}
+
+				ctx.modifiers.dual_render_with_specified_texture = true;
+				ctx.modifiers.dual_render_with_specified_texture_blend_diffuse = true;
+			}
+#endif
 			ctx.save_vs(dev); 
 			dev->SetVertexShader(nullptr);
 		}
@@ -577,7 +655,7 @@ namespace mods::blackmesa
 			dev->SetTexture(0, ctx.modifiers.dual_render_texture);
 
 			// BLEND ADD mode
-			if (ctx.modifiers.dual_render_with_specified_texture_blend_add)
+			if (ctx.modifiers.dual_render_with_specified_texture_blend_add) 
 			{
 				ctx.save_rs(dev, D3DRS_ALPHABLENDENABLE);
 				dev->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
@@ -598,6 +676,39 @@ namespace mods::blackmesa
 				dev->SetRenderState(D3DRS_ZENABLE, FALSE);
 
 				shared::common::remix::set_texture_category(dev, REMIXAPI_INSTANCE_CATEGORY_BIT_WORLD_MATTE | REMIXAPI_INSTANCE_CATEGORY_BIT_IGNORE_OPACITY_MICROMAP);
+			}
+
+			if (ctx.modifiers.dual_render_with_specified_texture_blend_diffuse)
+			{
+				ctx.save_rs(dev, D3DRS_ALPHABLENDENABLE);
+				dev->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+
+				ctx.save_rs(dev, D3DRS_BLENDOP);
+				dev->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
+
+				ctx.save_rs(dev, D3DRS_SRCBLEND);
+				dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+
+				ctx.save_rs(dev, D3DRS_DESTBLEND);
+				dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+
+				ctx.save_tss(dev, D3DTSS_COLOROP);
+				dev->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+
+				ctx.save_tss(dev, D3DTSS_COLORARG1);
+				dev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+
+				ctx.save_tss(dev, D3DTSS_COLORARG2);
+				dev->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+
+				ctx.save_tss(dev, D3DTSS_ALPHAOP);
+				dev->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+
+				ctx.save_tss(dev, D3DTSS_ALPHAARG1);
+				dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+
+				ctx.save_tss(dev, D3DTSS_ALPHAARG2);
+				dev->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
 			}
 
 			if (ctx.modifiers.dual_render_texture_z_offset != 0.0f)

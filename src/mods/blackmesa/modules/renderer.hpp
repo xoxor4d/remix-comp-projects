@@ -261,6 +261,7 @@ namespace mods::blackmesa
 			bool dual_render_with_basetexture2 = false; // render prim a second time with tex2 set as tex1
 			bool dual_render_with_specified_texture = false; // render prim a second time with tex defined in 'dual_render_texture'
 			bool dual_render_with_specified_texture_blend_add = false; // renders second prim using blend mode ADD
+			bool dual_render_with_specified_texture_blend_diffuse = false;
 			IDirect3DBaseTexture9* dual_render_texture = nullptr;
 			float dual_render_texture_z_offset = 0.0f;
 
@@ -274,6 +275,8 @@ namespace mods::blackmesa
 
 				dual_render_with_basetexture2 = false;
 				dual_render_with_specified_texture = false;
+				dual_render_with_specified_texture_blend_add = false;
+				dual_render_with_specified_texture_blend_diffuse = false;
 				dual_render_texture = nullptr;
 				dual_render_texture_z_offset = 0.0f;
 			}

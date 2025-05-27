@@ -10,6 +10,8 @@
 
 // -setup
 
+// -dx9 -dxlevel 95 -oldgameui -window -w 1920 -h 1080
+
 namespace mods::blackmesa
 {
 	namespace tex_addons
@@ -161,7 +163,7 @@ namespace mods::blackmesa
 		game::cvar_uncheat_and_set_int("mat_softwarelighting", 0);
 		game::cvar_uncheat_and_set_int("mat_parallaxmap", 0);
 		game::cvar_uncheat_and_set_int("mat_normalmaps", 0);
-		//game::cvar_uncheat_and_set_int("r_3dsky", 0);
+		game::cvar_uncheat_and_set_int("r_3dsky", 0);// make gamesetting just like l4d2
 		game::cvar_uncheat_and_set_int("r_flashlightrender", 0);
 		game::cvar_uncheat_and_set_int("r_occlusion", 0);
 
@@ -421,7 +423,8 @@ namespace mods::blackmesa
 		// ^ :: while( ... !R_CullNode) - wrapper function to impl. additional culling control (force areas/leafs + use frustum culling when needed)
 		shared::utils::hook(ENGINE_BASE + 0x108133, r_cullnode_wrapper, HOOK_CALL).install()->quick();
 
-
+		// disable displacement culling
+		shared::utils::hook::nop(CLIENT_BASE + 0xED2FB, 2);
 
 		// CBrushBatchRender::DrawOpaqueBrushModel :: :: backface check - nop 'if ( bShadowDepth )' to disable culling
 		//shared::utils::hook::nop(ENGINE_BASE + 0x7156E, 2); // 0125
