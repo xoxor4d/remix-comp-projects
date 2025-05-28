@@ -1,6 +1,7 @@
 #pragma once
 #include "mods/blackmesa/sdk/engine/c_engine_client.hpp"
 #include "mods/blackmesa/sdk/entity/c_entity_list.hpp"
+#include "mods/blackmesa/sdk/vgui/surface/c_surface_mgr.h"
 
 namespace mods::blackmesa
 {
@@ -14,6 +15,7 @@ namespace mods::blackmesa
 		sdk::base_client* m_client = nullptr;
 		sdk::engine_client* m_engine = nullptr;
 		sdk::entity_list* m_entity_list = nullptr;
+		sdk::surface* m_surface = nullptr;
 
 		static bool is_initialized()
 		{

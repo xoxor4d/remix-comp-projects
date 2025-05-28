@@ -1,5 +1,7 @@
 #include "std_include.hpp"
 
+#include "mods/blackmesa/modules/interfaces.hpp"
+
 namespace mods::blackmesa::game
 {
 	DWORD shaderapidx9_module = 0u;

@@ -2,6 +2,7 @@
 #include "imgui.hpp"
 
 #include "game_settings.hpp"
+#include "interfaces.hpp"
 #include "shared/common/flags.hpp"
 #include "shared/common/remix_vars.hpp"
 #include "shared/imgui/imgui_helper.hpp"
@@ -35,13 +36,38 @@ namespace mods::blackmesa
 		return CallWindowProc(g_game_wndproc, window, message_type, wparam, lparam);
 	}
 
+	void center_cursor()
+	{
+		RECT rect;
+		if (GetClientRect(shared::globals::main_window, &rect))
+		{
+			POINT center;
+			center.x = (rect.right - rect.left) / 2;
+			center.y = (rect.bottom - rect.top) / 2;
+
+			ClientToScreen(shared::globals::main_window, &center);
+			SetCursorPos(center.x, center.y);
+		}
+	}
+
 	bool imgui::input_message(const UINT message_type, const WPARAM wparam, const LPARAM lparam, [[maybe_unused]] bool& inout_pass_msg_to_game)
 	{
 		if (message_type == WM_KEYUP && wparam == VK_F4) 
 		{
 			const auto& io = ImGui::GetIO();
-			if (!io.MouseDown[1]) {
+			if (!io.MouseDown[1]) 
+			{
 				shared::globals::imgui_menu_open = !shared::globals::imgui_menu_open;
+
+				// reset cursor to center when closing the menu to not affect player angles
+				if (interfaces::get()->m_surface->is_cursor_visible() && !shared::globals::imgui_menu_open)
+				{
+					center_cursor();
+					SendMessage(shared::globals::main_window, WM_ACTIVATEAPP, TRUE, 0);
+					SendMessage(shared::globals::main_window, WM_MOUSEACTIVATE, TRUE, 0);
+				}
+
+				interfaces::get()->m_surface->set_cursor_always_visible(shared::globals::imgui_menu_open);
 			}
 
 			else {
@@ -60,6 +86,13 @@ namespace mods::blackmesa
 			// enable game input if no imgui window is hovered and right mouse is held
 			if (!m_im_window_hovered && io.MouseDown[1])
 			{
+				// center cursor and only call set_cursor_always_visible once 
+				if (!shared::globals::imgui_allow_input_bypass)
+				{
+					center_cursor();
+					interfaces::get()->m_surface->set_cursor_always_visible(false);
+				}
+
 				ImGui::SetWindowFocus(); // unfocus input text
 				shared::globals::imgui_allow_input_bypass = true;
 				return false;
@@ -69,6 +102,7 @@ namespace mods::blackmesa
 			if (shared::globals::imgui_allow_input_bypass && !io.MouseDown[1])
 			{
 				shared::globals::imgui_allow_input_bypass = false;
+				interfaces::get()->m_surface->set_cursor_always_visible(true);
 				return false;
 			}
 		}
@@ -400,12 +434,12 @@ namespace mods::blackmesa
 
 					if (shared::globals::imgui_menu_open) 
 					{
-						io.MouseDrawCursor = true;
+						//io.MouseDrawCursor = true;
 						im->devgui();
 					}
 					else 
 					{
-						io.MouseDrawCursor = false;
+						//io.MouseDrawCursor = false;
 					}
 
 					shared::globals::imgui_is_rendering = true;

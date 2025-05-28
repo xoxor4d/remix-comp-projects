@@ -3,6 +3,7 @@
 
 #include "mods/blackmesa/sdk/engine/c_engine_client.hpp"
 #include "mods/blackmesa/sdk/entity/c_entity_list.hpp"
+#include "mods/blackmesa/sdk/vgui/surface/c_surface_mgr.h"
 
 namespace mods::blackmesa
 {
@@ -31,6 +32,7 @@ namespace mods::blackmesa
 		GET_INTERFACE(m_client, sdk::base_client, "client.dll", CLIENT_INTERFACE_VERSION);
 		GET_INTERFACE(m_engine, sdk::engine_client, "engine.dll", ENGINE_INTERFACE_VERSION);
 		GET_INTERFACE(m_entity_list, sdk::entity_list, "client.dll", CLIENT_ENTITY_INTERFACE_VERSION);
+		GET_INTERFACE(m_surface, sdk::surface, "vguimatsurface.dll", VGUI_MAT_SURFACE_INTERFACE_VERSION);
 		m_initialized = true;
 	}
 }
