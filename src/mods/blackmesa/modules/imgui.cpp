@@ -1,7 +1,9 @@
 #include "std_include.hpp"
 #include "imgui.hpp"
 
+#include "game_settings.hpp"
 #include "shared/common/flags.hpp"
+#include "shared/common/remix_vars.hpp"
 #include "shared/imgui/imgui_helper.hpp"
 #include "shared/imgui/font_awesome_solid_900.hpp"
 #include "shared/imgui/font_defines.hpp"
@@ -79,18 +81,153 @@ namespace mods::blackmesa
 
 	// ------
 
+	void cont_gamesettings_renderer_settings()
+	{
+		const auto gs = game_settings::get();
+		ImGui::Checkbox("Enable LOD Forcing", gs->lod_forcing.get_as<bool*>()); TT(gs->lod_forcing.get_tooltip_string().c_str());
+
+		if (ImGui::Checkbox("Enable 3D Skybox (very unstable)", gs->enable_3d_sky.get_as<bool*>())) {
+			shared::common::remix_vars::set_option(shared::common::remix_vars::get_option("rtx.skyAutoDetect"), shared::common::remix_vars::string_to_option_value(shared::common::remix_vars::OPTION_TYPE_FLOAT, gs->enable_3d_sky.get_as<bool>() ? "1" : "0"));
+		}
+		TT(gs->enable_3d_sky.get_tooltip_string().c_str());
+
+		SET_CHILD_WIDGET_WIDTH_MAN(120.0f);
+		auto gs_nocull_dist_ptr = game_settings::get()->default_nocull_distance.get_as<float*>();
+		if (ImGui::DragFloat("Def. NoCull Dist", gs_nocull_dist_ptr, 0.5f, 0.0f, FLT_MAX, "%.2f"))
+		{
+			*gs_nocull_dist_ptr = *gs_nocull_dist_ptr < 0.0f ? 0.0f : *gs_nocull_dist_ptr;
+			//map_settings::get_map_settings().default_nocull_dist = *gs_nocull_dist_ptr;
+		}
+		TT(gs->default_nocull_distance.get_tooltip_string().c_str());
+	}
+
+	void cont_gamesettings_flashlight()
+	{
+		const auto gs = game_settings::get();
+
+		ImGui::Widget_PrettyDragVec3("Offsets Player", gs->flashlight_offset_player.get_as<float*>(), true, 120.0f, 0.1f, -1000.0f, 1000.0f, "F", "H", "V");
+		TT(gs->flashlight_offset_player.get_tooltip_string().c_str());
+
+		SET_CHILD_WIDGET_WIDTH_MAN(120);
+		ImGui::DragFloat("Intensity", gs->flashlight_intensity.get_as<float*>(), 0.1f);
+
+		SET_CHILD_WIDGET_WIDTH_MAN(120);
+		ImGui::DragFloat("Radius", gs->flashlight_radius.get_as<float*>(), 0.05f);
+
+		SET_CHILD_WIDGET_WIDTH_MAN(120);
+		ImGui::DragFloat("Spot Angle", gs->flashlight_angle.get_as<float*>(), 0.05f);
+
+		SET_CHILD_WIDGET_WIDTH_MAN(120);
+		ImGui::DragFloat("Spot Softness", gs->flashlight_softness.get_as<float*>(), 0.001f);
+
+		SET_CHILD_WIDGET_WIDTH_MAN(120);
+		ImGui::DragFloat("Spot Expo", gs->flashlight_expo.get_as<float*>(), 0.001f);
+
+		ImGui::SeparatorText("  Inner Flashlight  ");
+
+		SET_CHILD_WIDGET_WIDTH_MAN(120);
+		ImGui::DragFloat("Inner Spot Angle", gs->flashlight_angle_inner.get_as<float*>(), 0.05f);
+
+		SET_CHILD_WIDGET_WIDTH_MAN(120);
+		ImGui::DragFloat("Inner Intensity", gs->flashlight_intensity_inner.get_as<float*>(), 0.1f);
+
+		SET_CHILD_WIDGET_WIDTH_MAN(120);
+		ImGui::DragFloat("Inner Spot Softness", gs->flashlight_softness_inner.get_as<float*>(), 0.001f);
+	}
+
+	void cont_gamesettings_quick_cmd()
+	{
+		if (ImGui::Button("Save Current Settings", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0))) {
+			game_settings::write_toml();
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("Reload GameSettings", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
+		{
+			if (!ImGui::IsPopupOpen("Reload GameSettings?")) {
+				ImGui::OpenPopup("Reload GameSettings?");
+			}
+		}
+
+		// popup
+		if (ImGui::BeginPopupModal("Reload GameSettings?", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+		{
+			shared::imgui::draw_background_blur();
+			ImGui::Spacing(0.0f, 0.0f);
+
+			const auto half_width = ImGui::GetContentRegionMax().x * 0.5f;
+			auto line1_str = "You'll loose all unsaved changes if you continue!   ";
+			auto line2_str = "To save your changes, use:";
+			auto line3_str = "Save Current Settings";
+
+			ImGui::Spacing();
+			ImGui::SetCursorPosX(5.0f + half_width - (ImGui::CalcTextSize(line1_str).x * 0.5f));
+			ImGui::TextUnformatted(line1_str);
+
+			ImGui::Spacing();
+			ImGui::SetCursorPosX(5.0f + half_width - (ImGui::CalcTextSize(line2_str).x * 0.5f));
+			ImGui::TextUnformatted(line2_str);
+
+			ImGui::PushFont(shared::imgui::font::BOLD);
+			ImGui::SetCursorPosX(5.0f + half_width - (ImGui::CalcTextSize(line3_str).x * 0.5f));
+			ImGui::TextUnformatted(line3_str);
+			ImGui::PopFont();
+
+			ImGui::Spacing(0, 8);
+			ImGui::Spacing(0, 0); ImGui::SameLine();
+
+			ImVec2 button_size(half_width - 6.0f - ImGui::GetStyle().WindowPadding.x, 0.0f);
+			if (ImGui::Button("Reload", button_size))
+			{
+				game_settings::xo_gamesettings_update_fn();
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::SameLine(0, 6.0f);
+			if (ImGui::Button("Cancel", button_size)) {
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::EndPopup();
+		}
+	}
+
+	void imgui::tab_game_settings()
+	{
+		// quick commands
+		{
+			static float cont_quickcmd_height = 0.0f;
+			cont_quickcmd_height = ImGui::Widget_ContainerWithCollapsingTitle("Quick Commands", cont_quickcmd_height, cont_gamesettings_quick_cmd,
+				true, ICON_FA_TERMINAL, &ImGuiCol_ContainerBackground, &ImGuiCol_ContainerBorder);
+		}
+
+		// renderer related settings
+		{
+			static float cont_rendersettings_height = 0.0f;
+			cont_rendersettings_height = ImGui::Widget_ContainerWithCollapsingTitle("Renderer Related Settings", cont_rendersettings_height, cont_gamesettings_renderer_settings,
+				true, ICON_FA_CAMERA, &ImGuiCol_ContainerBackground, &ImGuiCol_ContainerBorder);
+		}
+
+		// flashlight
+		{
+			static float cont_flashlight_height = 0.0f;
+			cont_flashlight_height = ImGui::Widget_ContainerWithCollapsingTitle("Flashlight", cont_flashlight_height, cont_gamesettings_flashlight,
+				true, ICON_FA_LIGHTBULB, &ImGuiCol_ContainerBackground, &ImGuiCol_ContainerBorder);
+		}
+	}
+
 	void cont_general_quickcommands()
 	{
 		const auto& im = imgui::get();
 
 		{
-			static float cont_cull_height = 0.0f;
-			cont_cull_height = ImGui::Widget_ContainerWithCollapsingTitle("Camera", cont_cull_height, [&]
-			{
-				// m_anticull_distance
-				SET_CHILD_WIDGET_WIDTH_MAN(140.0f); ImGui::SliderFloat("AntiCull Distance", &im->m_anticull_distance, 0.0f, 20000.0f, "%.0f");
+			//static float cont_cull_height = 0.0f;
+			//cont_cull_height = ImGui::Widget_ContainerWithCollapsingTitle("Camera", cont_cull_height, [&]
+			//{
+			//	// m_anticull_distance
+			//	SET_CHILD_WIDGET_WIDTH_MAN(140.0f); ImGui::SliderFloat("AntiCull Distance", &im->m_anticull_distance, 0.0f, 20000.0f, "%.0f");
 
-			}, true, ICON_FA_ELLIPSIS_H, &im->ImGuiCol_ContainerBackground, & im->ImGuiCol_ContainerBorder);
+			//}, true, ICON_FA_ELLIPSIS_H, &im->ImGuiCol_ContainerBackground, & im->ImGuiCol_ContainerBorder);
 		}
 
 #if DEBUG
@@ -134,7 +271,7 @@ namespace mods::blackmesa
 		ImGui::SetNextWindowSize(ImVec2(900, 800), ImGuiCond_FirstUseEver);
 
 		bool old_active_state = shared::globals::imgui_menu_open;
-		if (!ImGui::Begin("Devgui", &shared::globals::imgui_menu_open, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollWithMouse/*, &shared::imgui::draw_window_blur_callback*/))
+		if (!ImGui::Begin("Devgui", &shared::globals::imgui_menu_open, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollWithMouse, &shared::imgui::draw_window_blur_callback))
 		{
 			ImGui::End();
 			return;
@@ -189,7 +326,8 @@ namespace mods::blackmesa
 		{
 			ImGui::PopStyleColor();
 			ImGui::PopStyleVar(1);
-			ADD_TAB("General", tab_general);
+			//ADD_TAB("General", tab_general);
+			ADD_TAB("Game Settings", tab_game_settings);
 			ImGui::EndTabBar();
 		}
 		else {
@@ -244,6 +382,9 @@ namespace mods::blackmesa
 
 				if (im->m_initialized_device)
 				{
+					// needed for blur
+					shared::globals::d3d_device = game::get_d3d_device();
+
 					// fix imgui colors / background if no hud elem is visible
 					DWORD og_srgb_samp, og_srgb_write;
 					dev->GetSamplerState(0, D3DSAMP_SRGBTEXTURE, &og_srgb_samp);

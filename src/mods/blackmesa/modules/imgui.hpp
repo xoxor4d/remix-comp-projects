@@ -40,6 +40,7 @@ namespace mods::blackmesa
 
 	private:
 		void tab_general();
+		void tab_game_settings();
 		bool m_im_window_focused = false;
 		bool m_im_window_hovered = false;
 		std::string m_devgui_custom_footer_content;

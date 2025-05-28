@@ -569,7 +569,7 @@ namespace shared::common
 		debug_draw_box(center - half_diagonal, center + half_diagonal, line_width, color);
 	}
 
-	void remix_api::flashlight_create_or_update(const char* player_name, const Vector& pos, const Vector& fwd, const Vector& rt, const Vector& up, bool is_enabled, bool is_player)
+	void remix_api::flashlight_create_or_update(const char* player_name, flashlight_def_s& def, bool is_enabled, bool is_player)
 	{
 		if (const auto it = m_flashlights.find(player_name);
 			it == m_flashlights.end())
@@ -577,7 +577,7 @@ namespace shared::common
 			// insert new flashlight data
 			m_flashlights[player_name] =
 			{
-				.def = {.pos = pos, .fwd = fwd, .rt = rt, .up = up },
+				.def = std::move(def),
 				.is_player = is_player,
 				.is_enabled = is_enabled
 			};
@@ -585,10 +585,11 @@ namespace shared::common
 		else
 		{
 			// update existing flashlight data
-			it->second.def.pos = pos;
-			it->second.def.fwd = fwd;
-			it->second.def.rt = rt;
-			it->second.def.up = up;
+			it->second.def = std::move(def);
+			/*it->second.def.pos = def.pos;
+			it->second.def.fwd = def.fwd;
+			it->second.def.rt = def.rt;
+			it->second.def.up = def.up;*/
 			it->second.is_player = is_player;
 			it->second.is_enabled = is_enabled;
 		}

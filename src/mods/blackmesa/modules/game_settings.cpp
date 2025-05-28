@@ -182,6 +182,15 @@ namespace mods::blackmesa
 				ASSIGN(force_graphic_settings);
 				ASSIGN(default_nocull_distance);
 				ASSIGN(enable_3d_sky);
+				ASSIGN(flashlight_offset_player);
+				ASSIGN(flashlight_intensity);
+				ASSIGN(flashlight_intensity_inner);
+				ASSIGN(flashlight_radius);
+				ASSIGN(flashlight_angle);
+				ASSIGN(flashlight_angle_inner);
+				ASSIGN(flashlight_softness);
+				ASSIGN(flashlight_softness_inner);
+				ASSIGN(flashlight_expo);
 
 			#undef ASSIGN
 			}

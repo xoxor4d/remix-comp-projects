@@ -77,17 +77,18 @@ namespace mods::blackmesa
 		}
 	}
 
+#if DEBUG
 	//std::unordered_set<int> dumped_classes;
 	std::unordered_map<int, std::string> dumped_classes;
+#endif
 
-	// called on EndScene - remix_api::end_scene_callback()
+	// iterate all ents 
 	void iterate_entities()
 	{
 		if (interfaces::is_initialized())
 		{
 			const auto intf = interfaces::get();
 			const auto max_ent = intf->m_entity_list->get_max_entity();
-
 
 			for (auto i = 0; i < max_ent; i++)
 			{
@@ -97,21 +98,19 @@ namespace mods::blackmesa
 					if (const auto* m_classes = entity->client_class();
 						m_classes)
 					{
-
+#if DEBUG
 						if (!dumped_classes.contains(m_classes->class_id))
 						{
 							dumped_classes[m_classes->class_id] = m_classes->network_name;
 							std::cout << "[CLASSID] " << m_classes->network_name << " = " << m_classes->class_id << ",\n";
 						}
-						
-
+#endif
 						switch (m_classes->class_id)
 						{
 						default:
 							continue;
 
 						case sdk::CBlackMesaPlayer:
-						//case sdk::ET_SURVIVORBOT:
 						{
 							sdk::player_info_t info;
 							if (!intf->m_engine->get_player_info(i, &info)) {
@@ -121,27 +120,34 @@ namespace mods::blackmesa
 							if (const auto is_player = i == intf->m_engine->get_local_player();
 								is_player)
 							{
-								//auto xx = entity->get_eye_pos();
-								//auto yy = entity->get_flashlight();
-								//int x = 1;
-
 								const auto& flashlight_enabled = entity->read<bool>(0x13C5);
 								const auto& eyepos = entity->get_eye_pos(); //entity->read<Vector>(0x1110);
-
 								const auto& QAngle = entity->read<Vector>(0x1710);
 
-								Vector fwd, rt, up;
-								utils::vector::AngleVectors(QAngle, &fwd, &rt, &up);
-								int x = 1;
-								//const auto& fwd = entity->read<Vector>(0x111C);
-								//const auto& rt = entity->read<Vector>(0x1134);
-								//const auto& up = entity->read<Vector>(0x1128);
-								shared::common::remix_api::get().flashlight_create_or_update(info.name, eyepos, fwd, rt, up, flashlight_enabled, true);
+								const auto gs = game_settings::get();
+								const auto offs = gs->flashlight_offset_player.get_as<Vector*>();
+
+								shared::common::remix_api::flashlight_def_s def = {};
+								utils::vector::AngleVectors(QAngle, &def.fwd, &def.rt, &def.up);
+
+								def.pos = eyepos + (def.fwd * offs->x) + (def.rt * offs->z) + (def.up * offs->y);
+								def.radius = gs->flashlight_radius.get_as<float>();
+								def.angle = gs->flashlight_angle.get_as<float>();
+								def.softness = gs->flashlight_softness.get_as<float>();
+								def.expo = gs->flashlight_expo.get_as<float>();
+								def.intensity = gs->flashlight_intensity.get_as<float>();
+
+								shared::common::remix_api::get().flashlight_create_or_update(info.name, def, flashlight_enabled, true);
+
+								// inner flashlight
+								def.angle = gs->flashlight_angle_inner.get_as<float>();
+								def.softness = gs->flashlight_softness_inner.get_as<float>();
+								def.intensity = gs->flashlight_intensity_inner.get_as<float>();
+								shared::common::remix_api::get().flashlight_create_or_update(shared::utils::va("%s_inner", info.name), def, flashlight_enabled, true);
 							}
 
-							else // SurvivorBot
+							else // bots .. TODO? - is this needed?
 							{
-								int x = 1;
 								//const auto& m_fEffects = entity->read<int>(0xE0);
 								//const bool flashlight_enabled = m_fEffects & 4;
 
@@ -514,6 +520,7 @@ namespace mods::blackmesa
 		std::cout << "[SIG] Installed " << std::to_string(install_counter) << "/" << std::to_string(total_patch_amount) << " signature patches.\n";
 	}
 
+#if DEBUG
 	game::ConCommand xo_dump_classes{};
 	void xo_dump_classes_fn()
 	{
@@ -521,6 +528,7 @@ namespace mods::blackmesa
 			std::cout << "[CLASSID] " << c.second << " = " << std::to_string(c.first) << ",\n";
 		}
 	}
+#endif
 
 	void main()
 	{
@@ -587,6 +595,8 @@ namespace mods::blackmesa
 
 		MH_EnableHook(MH_ALL_HOOKS);
 
+#if DEBUG
 		game::con_add_command(&xo_dump_classes, "xo_dump_classes", xo_dump_classes_fn, "Dump collected classes to console");
+#endif
 	}
 }
