@@ -199,13 +199,13 @@ namespace mods::blackmesa
 		if (game_settings::get()->force_graphic_settings.get_as<bool>())
 		{
 			game::cvar_uncheat_and_set_int("cl_csm_enabled", 0);
-			/*game::cvar_uncheat_and_set_int("np_gr_quality", 0);
+			game::cvar_uncheat_and_set_int("np_gr_quality", 0);
 			game::cvar_uncheat_and_set_int("nr_lights_quality", 0);
 			game::cvar_uncheat_and_set_int("nr_shadow_quality", 0);
 			game::cvar_uncheat_and_set_int("mat_geiger_noise_enable", 0);
 			game::cvar_uncheat_and_set_int("mat_chromatic_damage_enable", 0);
-			game::cvar_uncheat_and_set_int("mat_colorcorrection", 0);
-			game::cvar_uncheat_and_set_int("r_shadowrendertotexture", 0);*/
+			game::cvar_uncheat_and_set_int("mat_colorcorrection", 1); // 0 breaks font rendering
+			game::cvar_uncheat_and_set_int("r_shadowrendertotexture", 0);
 		}
 		
 		game::cvar_uncheat_and_set_int("con_enable", 1);
@@ -215,7 +215,7 @@ namespace mods::blackmesa
 		game::cvar_uncheat_and_set_int("mat_disable_ps_patch", 1);
 		game::cvar_uncheat_and_set_int("r_gbuffer_disable", 1);
 		game::cvar_uncheat_and_set_int("mat_disable_bloom", 1);
-		game::cvar_uncheat_and_set_int("mat_drawflat", 1); // was 0?
+		game::cvar_uncheat_and_set_int("mat_drawflat", 1);
 		game::cvar_uncheat_and_set_int("mat_fastnobump", 1);
 	}
 
