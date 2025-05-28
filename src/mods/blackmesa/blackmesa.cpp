@@ -116,7 +116,7 @@ namespace mods::blackmesa
 		// ----
 
 		//choreo_events::on_client_frame();
-		//remix_vars::on_client_frame();
+		shared::common::remix_vars::on_client_frame();
 		//remix_lights::on_client_frame();
 
 		force_cvars();
