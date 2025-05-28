@@ -480,6 +480,59 @@ namespace mods::blackmesa::game
 		//m_fnChangeCallbacks;
 	};
 
+	const struct CCommand
+	{
+		int m_nArgc;
+		int m_nArgv0Size;
+		char m_pArgSBuffer[512];
+		char m_pArgvBuffer[512];
+		const char* m_ppArgv[64];
+	};
+
+	struct ICommandCallback_vtbl;
+	struct ICommandCallback
+	{
+		ICommandCallback_vtbl* vftable;
+	};
+
+	struct ICommandCallback_vtbl
+	{
+		void(__thiscall* CommandCallback)(ICommandCallback*, const CCommand*);
+	};
+
+	union $DBE510182F331AFA63E289BCE7D04441
+	{
+		void(__cdecl* m_fnCommandCallbackV1)();
+		void(__cdecl* m_fnCommandCallback)(const CCommand*);
+		ICommandCallback* m_pCommandCallback;
+	};
+
+	struct ICommandCompletionCallback_vtbl;
+	struct ICommandCompletionCallback
+	{
+		ICommandCompletionCallback_vtbl* vftable;
+	};
+
+	struct ICommandCompletionCallback_vtbl
+	{
+		int(__thiscall* CommandCompletionCallback)(ICommandCompletionCallback*, const char*, void* CUtlString);
+	};
+
+	union $E9983340D3446DFCFEC741F54422A481
+	{
+		int(__cdecl* m_fnCompletionCallback)(const char*, char(*)[64]);
+		ICommandCompletionCallback* m_pCommandCompletionCallback;
+	};
+
+	struct __declspec(align(4)) ConCommand : ConCommandBase
+	{
+		$DBE510182F331AFA63E289BCE7D04441 u1;
+		$E9983340D3446DFCFEC741F54422A481 u2;
+		__int8 m_bHasCompletionCallback : 1;
+		__int8 m_bUsingNewCommandCallback : 1;
+		__int8 m_bUsingCommandCallbackInterface : 1;
+	};
+
 	struct CCvar_vtbl;
 	struct CCvar
 	{
@@ -505,8 +558,8 @@ namespace mods::blackmesa::game
 		ConCommandBase* (__thiscall* FindCommandBase)(CCvar*, const char*);
 		const ConVar* (__thiscall* FindVar_const)(CCvar*, const char*);
 		ConVar* (__thiscall* FindVar)(CCvar*, const char*);
-		//const ConCommand* (__thiscall* FindCommand_const)(CCvar*, const char*);
-		//ConCommand* (__thiscall* FindCommand)(CCvar*, const char*);
+		const ConCommand* (__thiscall* FindCommand_const)(CCvar*, const char*);
+		ConCommand* (__thiscall* FindCommand)(CCvar*, const char*);
 	};
 
 	struct cplane_t
@@ -684,4 +737,15 @@ namespace mods::blackmesa::game
 		int max_splitscreen_players_clientdll;
 	};
 
+	struct CGlobalVarsBase
+	{
+		float realtime;
+		int framecount;
+		float absoluteframetime;
+		float curtime;
+		float frametime;
+		int maxClients;
+		int tickcount;
+		// ....
+	};
 }

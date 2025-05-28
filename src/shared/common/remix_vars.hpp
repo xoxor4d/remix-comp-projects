@@ -10,7 +10,8 @@ namespace shared::common
 		remix_vars& operator=(const remix_vars&) = delete;
 
 		static remix_vars& get();
-		
+
+		static void initialize(std::function<bool()> is_game_paused_callback = nullptr, float* game_frametime = nullptr);
 		static void initialize(bool* is_game_paused, float* game_frametime);
 		static bool is_initialized() { return get().m_initialized; }
 
@@ -140,7 +141,12 @@ namespace shared::common
 
 		static bool is_paused()
 		{
-			if (get().is_initialized()) {
+			if (get().is_initialized()) 
+			{
+				if (get().m_is_paused_callback) {
+					return get().m_is_paused_callback();
+				}
+
 				return *get().m_is_game_paused_ptr;
 			}
 
@@ -160,6 +166,7 @@ namespace shared::common
 		remix_vars() : m_initialized(false) {}
 		bool m_initialized;
 
+		std::function<bool()> m_is_paused_callback;
 		bool* m_is_game_paused_ptr = nullptr;
 		bool m_is_game_paused_internal = false;
 

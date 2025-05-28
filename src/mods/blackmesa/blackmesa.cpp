@@ -2,6 +2,7 @@
 
 #include <windowsx.h>
 
+#include "modules/game_settings.hpp"
 #include "modules/imgui.hpp"
 #include "modules/renderer.hpp"
 #include "shared/common/flags.hpp"
@@ -163,7 +164,7 @@ namespace mods::blackmesa
 		game::cvar_uncheat_and_set_int("mat_softwarelighting", 0);
 		game::cvar_uncheat_and_set_int("mat_parallaxmap", 0);
 		game::cvar_uncheat_and_set_int("mat_normalmaps", 0);
-		game::cvar_uncheat_and_set_int("r_3dsky", 0);// make gamesetting just like l4d2
+		game::cvar_uncheat_and_set_int("r_3dsky", game_settings::get()->enable_3d_sky.get_as<bool>());
 		game::cvar_uncheat_and_set_int("r_flashlightrender", 0);
 		game::cvar_uncheat_and_set_int("r_occlusion", 0);
 
@@ -174,12 +175,28 @@ namespace mods::blackmesa
 		//game::cvar_uncheat_and_set_int("r_flashlightdepthtexture", 0); // breaks font rendering?
 		//game::cvar_uncheat_and_set_int("r_waterforceexpensive", 0); // breaks font rendering?
 		game::cvar_uncheat_and_set_int("mat_supports_d3d9ex", 0);
-		game::cvar_uncheat_and_set_int("cl_csm_enabled", 0);
+		
 
-		game::cvar_uncheat_and_set_int("r_staticprop_lod", 0);
-		game::cvar_uncheat_and_set_int("r_lod", 0);
-		game::cvar_uncheat_and_set_int("r_staticprop_lod", 0);
+		if (game_settings::get()->lod_forcing.get_as<bool>())
+		{
+			game::cvar_uncheat_and_set_int("r_staticprop_lod", 0);
+			game::cvar_uncheat_and_set_int("r_lod", 0);
+			game::cvar_uncheat_and_set_int("r_staticprop_lod", 0);
+		}
 
+		if (game_settings::get()->force_graphic_settings.get_as<bool>())
+		{
+			game::cvar_uncheat_and_set_int("cl_csm_enabled", 0);
+			game::cvar_uncheat_and_set_int("np_gr_quality", 0);
+			game::cvar_uncheat_and_set_int("nr_lights_quality", 0);
+			game::cvar_uncheat_and_set_int("nr_shadow_quality", 0);
+			game::cvar_uncheat_and_set_int("mat_geiger_noise_enable", 0);
+			game::cvar_uncheat_and_set_int("mat_chromatic_damage_enable", 0);
+			game::cvar_uncheat_and_set_int("mat_colorcorrection", 0);
+			game::cvar_uncheat_and_set_int("r_shadowrendertotexture", 0);
+		}
+		
+		game::cvar_uncheat_and_set_int("con_enable", 1);
 		game::cvar_uncheat_and_set_int("mat_fullbright", 1);
 		game::cvar_uncheat_and_set_int("mat_softwareskin", 1);
 		game::cvar_uncheat_and_set_int("mat_phong", 1);
@@ -188,6 +205,20 @@ namespace mods::blackmesa
 		game::cvar_uncheat_and_set_int("mat_disable_bloom", 1);
 		game::cvar_uncheat_and_set_int("mat_drawflat", 1); // was 0?
 		game::cvar_uncheat_and_set_int("mat_fastnobump", 1);
+	}
+
+	// logic after loading either map or game settings
+	void cross_handle_map_and_game_settings()
+	{
+		if (shared::common::remix_api::is_initialized())
+		{
+			// rtx.skyAutoDetect
+			const auto is_3d_sky_enabled = game_settings::get()->enable_3d_sky.get_as<bool>();
+
+			shared::common::remix_vars::set_option(
+				shared::common::remix_vars::get_option("rtx.skyAutoDetect"), 
+				shared::common::remix_vars::string_to_option_value(shared::common::remix_vars::OPTION_TYPE_FLOAT, is_3d_sky_enabled ? "1" : "0"));
+		}
 	}
 
 	// check if a boundingbox is within a specified radius around the player
@@ -303,15 +334,16 @@ namespace mods::blackmesa
 			nocull_dist = imgui::get()->m_anticull_distance;
 		}
 
-		const bool check_area = false;
+		//const bool check_area = false;
 
 		// MODE: force all leafs/nodes within a certain dist to the player (+ only in current area modifier)
 		if (nocull_dist > 0.0f)
 		{
 			for (auto i = 0; i < world->numleafs; i++)
 			{
-				if (auto& l = world->leafs[i];
-					!check_area || (int)l.area == g_current_area) // ignore area check if distance mode
+				//if (auto& l = world->leafs[i];
+				//	!check_area || (int)l.area == g_current_area) // ignore area check if distance mode
+				auto& l = world->leafs[i];
 				{
 					if (is_aabb_within_distance(l.m_vecCenter, l.m_vecHalfDiagonal, *game::get_current_view_origin(), nocull_dist)) {
 						force_leaf_vis(i);
@@ -389,10 +421,12 @@ namespace mods::blackmesa
 		shared::common::remix_api::initialize(on_begin_scene_cb, nullptr, nullptr, false);
 
 		// init remix variable system
-		//shared::common::remix_vars::initialize(game::g_is_paused, &shared::globals::frame_time_ms);
+		shared::common::remix_vars::initialize(game::is_paused, &game::get_global_vars()->frametime);
 
+		shared::common::loader::module_loader::register_module(std::make_unique<game_settings>());
 		shared::common::loader::module_loader::register_module(std::make_unique<imgui>());
-		shared::common::loader::module_loader::register_module(std::make_unique<mods::blackmesa::renderer>());
+		shared::common::loader::module_loader::register_module(std::make_unique<renderer>());
+
 
 		// CViewRender::DrawOneMonitor
 		shared::utils::hook::nop(CLIENT_BASE + 0x1F7E26, 6);

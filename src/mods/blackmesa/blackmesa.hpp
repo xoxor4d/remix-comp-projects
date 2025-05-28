@@ -11,12 +11,13 @@ namespace mods::blackmesa
 	extern int g_current_leaf;
 	extern int g_current_area;
 
-	void on_begin_scene_cb();
+	extern void on_begin_scene_cb();
 
-	void force_cvars();
+	extern void force_cvars();
+	extern void cross_handle_map_and_game_settings();
 
-	void install_signature_patches();
-	void main();
+	extern void install_signature_patches();
+	extern void main();
 
 	extern bool g_installed_signature_patches;
 	extern bool g_install_signature_patches_async;

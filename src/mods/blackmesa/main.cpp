@@ -1,7 +1,6 @@
 #include "std_include.hpp"
 #include <psapi.h>
 
-#include "modules/d3d9ex.hpp"
 #include "shared/common/flags.hpp"
 
 namespace mods::blackmesa
