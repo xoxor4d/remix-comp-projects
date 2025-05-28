@@ -4,6 +4,7 @@
 
 #include "modules/game_settings.hpp"
 #include "modules/imgui.hpp"
+#include "modules/interfaces.hpp"
 #include "modules/renderer.hpp"
 #include "shared/common/flags.hpp"
 #include "shared/common/remix_api.hpp"
@@ -73,6 +74,91 @@ namespace mods::blackmesa
 			// og
 			lea     eax, [ebp - 0x1AC];
 			jmp		cviewrenderer_drawonemonitor_retn;
+		}
+	}
+
+	//std::unordered_set<int> dumped_classes;
+	std::unordered_map<int, std::string> dumped_classes;
+
+	// called on EndScene - remix_api::end_scene_callback()
+	void iterate_entities()
+	{
+		if (interfaces::is_initialized())
+		{
+			const auto intf = interfaces::get();
+			const auto max_ent = intf->m_entity_list->get_max_entity();
+
+
+			for (auto i = 0; i < max_ent; i++)
+			{
+				if (const auto	entity = reinterpret_cast<sdk::c_base_player*>(intf->m_entity_list->get_client_entity(i));
+					entity)
+				{
+					if (const auto* m_classes = entity->client_class();
+						m_classes)
+					{
+
+						if (!dumped_classes.contains(m_classes->class_id))
+						{
+							dumped_classes[m_classes->class_id] = m_classes->network_name;
+							std::cout << "[CLASSID] " << m_classes->network_name << " = " << m_classes->class_id << ",\n";
+						}
+						
+
+						switch (m_classes->class_id)
+						{
+						default:
+							continue;
+
+						case sdk::CBlackMesaPlayer:
+						//case sdk::ET_SURVIVORBOT:
+						{
+							sdk::player_info_t info;
+							if (!intf->m_engine->get_player_info(i, &info)) {
+								continue;
+							}
+
+							if (const auto is_player = i == intf->m_engine->get_local_player();
+								is_player)
+							{
+								//auto xx = entity->get_eye_pos();
+								//auto yy = entity->get_flashlight();
+								//int x = 1;
+
+								const auto& flashlight_enabled = entity->read<bool>(0x13C5);
+								const auto& eyepos = entity->get_eye_pos(); //entity->read<Vector>(0x1110);
+
+								const auto& QAngle = entity->read<Vector>(0x1710);
+
+								Vector fwd, rt, up;
+								utils::vector::AngleVectors(QAngle, &fwd, &rt, &up);
+								int x = 1;
+								//const auto& fwd = entity->read<Vector>(0x111C);
+								//const auto& rt = entity->read<Vector>(0x1134);
+								//const auto& up = entity->read<Vector>(0x1128);
+								shared::common::remix_api::get().flashlight_create_or_update(info.name, eyepos, fwd, rt, up, flashlight_enabled, true);
+							}
+
+							else // SurvivorBot
+							{
+								int x = 1;
+								//const auto& m_fEffects = entity->read<int>(0xE0);
+								//const bool flashlight_enabled = m_fEffects & 4;
+
+								//const auto& eyepos = entity->get_eye_pos();
+								//const auto& angles = entity->read<Vector>(0x196C); // m_angEyeAngles[0] - DT_CSPlayer 
+
+								//Vector fwd, rt, up;
+								//utils::vector::AngleVectors(angles, &fwd, &rt, &up);
+
+								//shared::common::remix_api::get().flashlight_create_or_update(info.name, eyepos, fwd, rt, up, flashlight_enabled);
+							}
+							break;
+						}
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -147,6 +233,9 @@ namespace mods::blackmesa
 
 		// CM_LeafArea :: get current area the camera is in
 		g_current_area = shared::utils::hook::call<int(__cdecl)(int leafnum)>(ENGINE_BASE + 0x185A10)(current_leaf);
+
+		iterate_entities();
+		shared::common::remix_api::get().flashlight_frame();
 	}
 
 	HOOK_RETN_PLACE_DEF(cviewrenderer_renderview_retn);
@@ -425,6 +514,14 @@ namespace mods::blackmesa
 		std::cout << "[SIG] Installed " << std::to_string(install_counter) << "/" << std::to_string(total_patch_amount) << " signature patches.\n";
 	}
 
+	game::ConCommand xo_dump_classes{};
+	void xo_dump_classes_fn()
+	{
+		for (const auto& c : dumped_classes) {
+			std::cout << "[CLASSID] " << c.second << " = " << std::to_string(c.first) << ",\n";
+		}
+	}
+
 	void main()
 	{
 		game::init_game_addresses();
@@ -435,6 +532,7 @@ namespace mods::blackmesa
 		// init remix variable system
 		shared::common::remix_vars::initialize(game::is_paused, &game::get_global_vars()->frametime);
 
+		shared::common::loader::module_loader::register_module(std::make_unique<interfaces>());
 		shared::common::loader::module_loader::register_module(std::make_unique<game_settings>());
 		shared::common::loader::module_loader::register_module(std::make_unique<imgui>());
 		shared::common::loader::module_loader::register_module(std::make_unique<renderer>());
@@ -488,5 +586,7 @@ namespace mods::blackmesa
 		shared::utils::hook::set<BYTE>(CLIENT_BASE + 0x1FF55F + 6, 0x60);
 
 		MH_EnableHook(MH_ALL_HOOKS);
+
+		game::con_add_command(&xo_dump_classes, "xo_dump_classes", xo_dump_classes_fn, "Dump collected classes to console");
 	}
 }

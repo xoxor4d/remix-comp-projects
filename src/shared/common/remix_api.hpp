@@ -40,6 +40,9 @@ namespace shared::common
 		void debug_draw_box(const Vector& mins, const Vector& maxs, float line_width, const DEBUG_REMIX_LINE_COLOR& color);
 		void debug_draw_box(const VectorAligned& center, const VectorAligned& half_diagonal, float line_width, const DEBUG_REMIX_LINE_COLOR& color);
 
+		void flashlight_create_or_update(const char* player_name, const Vector& pos, const Vector& fwd, const Vector& rt, const Vector& up, bool is_enabled, bool is_player = false);
+		void flashlight_frame();
+
 		static void initialize(
 			PFN_remixapi_BridgeCallback begin_scene_callback,
 			PFN_remixapi_BridgeCallback end_scene_callback,
@@ -56,10 +59,16 @@ namespace shared::common
 
 		struct flashlight_def_s
 		{
-			Vector pos;
+			Vector pos = {};
 			Vector fwd = { 0.0f, 1.0f, 0.0f };
-			Vector rt;
-			Vector up;
+			Vector rt = {};
+			Vector up = {};
+			Vector offset = {};
+			float radius = 4.0f;
+			float angle = 30.0f;
+			float softness = 0.1f;
+			float expo = 0.0f;
+			float intensity = 4.0f;
 		};
 
 		struct flashlight_s

@@ -119,6 +119,11 @@ namespace mods::blackmesa::game
 		VERTEX_COMPRESSION_ON = 1
 	};
 
+	struct VMatrix
+	{
+		float m[4][4];
+	};
+
 	struct QAngle
 	{
 		float x;
