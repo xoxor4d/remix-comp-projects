@@ -39,7 +39,6 @@ namespace shared::common
 
 		void debug_draw_box(const Vector& mins, const Vector& maxs, float line_width, const DEBUG_REMIX_LINE_COLOR& color);
 		void debug_draw_box(const VectorAligned& center, const VectorAligned& half_diagonal, float line_width, const DEBUG_REMIX_LINE_COLOR& color);
-		void render_debug();
 
 		static void initialize(
 			PFN_remixapi_BridgeCallback begin_scene_callback,

@@ -45,7 +45,6 @@ namespace shared::common
 
 			// --
 
-			//const auto& im = imgui::get();
 			if (!api.m_debug_circles.empty())
 			{
 				for (const auto circle : api.m_debug_circles)
@@ -94,7 +93,38 @@ namespace shared::common
 				}
 			}
 
+
+			// --
+			// clear all after submitting them
+
+			if (api.m_debug_line_amount)
+			{
+				for (auto& line : api.m_debug_line_list)
+				{
+					if (line)
+					{
+						api.m_bridge.DestroyMesh(line);
+						line = nullptr;
+					}
+				}
+				api.m_debug_line_amount = 0;
+			}
+
+			if (!api.m_debug_circle_materials.empty())
+			{
+				for (auto& m : api.m_debug_circle_materials)
+				{
+					if (m) {
+						api.m_bridge.DestroyMaterial(m);
+					}
+				}
+				api.m_debug_circle_materials.clear();
+			}
+
+
+			// --
 			// external callback (if registered)
+
 			if (api.begin_scene_callback_external) {
 				api.begin_scene_callback_external();
 			}
@@ -539,44 +569,6 @@ namespace shared::common
 		debug_draw_box(center - half_diagonal, center + half_diagonal, line_width, color);
 	}
 
-	// call this once per frame to render remix api debug stuff
-	void remix_api::render_debug()
-	{
-		if (is_initialized())
-		{
-			//main_module::iterate_entities();
-			//remix_api::flashlight_frame();
-
-			init_debug_lines();
-
-			// destroy all lines added the prev. frame
-			if (m_debug_line_amount)
-			{
-				for (auto& line : m_debug_line_list)
-				{
-					if (line)
-					{
-						m_bridge.DestroyMesh(line);
-						line = nullptr;
-					}
-				}
-				m_debug_line_amount = 0;
-			}
-
-			// destroy all circles materials added the prev. frame
-			if (!m_debug_circle_materials.empty())
-			{
-				for (auto& m : m_debug_circle_materials)
-				{
-					if (m) {
-						m_bridge.DestroyMaterial(m);
-					}
-				}
-				m_debug_circle_materials.clear();
-			}
-		}
-	}
-
 	// ---
 
 	void remix_api::initialize(
@@ -596,6 +588,9 @@ namespace shared::common
 				instance.present_callback_external = present_callback;
 
 				remixapi::bridge_setRemixApiCallbacks(begin_scene_callback_internal, end_scene_callback_internal, present_callback_internal);
+
+				instance.init_debug_lines();
+
 				instance.m_initialized = true;
 				std::cout << "[RemixApi] Initialized remixApi!\n";
 			}

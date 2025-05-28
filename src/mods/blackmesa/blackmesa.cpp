@@ -115,6 +115,20 @@ namespace mods::blackmesa
 		// ----
 		// ----
 
+		/*auto org = *game::get_current_view_origin();
+		Vector mmin = {};
+		mmin.x = org.x - 30.0f;
+		mmin.y = org.y - 30.0f;
+		mmin.z = org.z - 30.0f;
+
+		Vector mmax = {};
+		mmax.x = org.x + 30.0f;
+		mmax.y = org.y + 30.0f;
+		mmax.z = org.z + 30.0f;
+
+		shared::common::remix_api::get().debug_draw_box(mmin, mmax, 4.0f, shared::common::remix_api::DEBUG_REMIX_LINE_COLOR::GREEN);*/
+
+
 		//choreo_events::on_client_frame();
 		shared::common::remix_vars::on_client_frame();
 		//remix_lights::on_client_frame();
@@ -133,8 +147,6 @@ namespace mods::blackmesa
 
 		// CM_LeafArea :: get current area the camera is in
 		g_current_area = shared::utils::hook::call<int(__cdecl)(int leafnum)>(ENGINE_BASE + 0x185A10)(current_leaf);
-
-		//remix_api::get()->on_renderview();
 	}
 
 	HOOK_RETN_PLACE_DEF(cviewrenderer_renderview_retn);
@@ -187,13 +199,13 @@ namespace mods::blackmesa
 		if (game_settings::get()->force_graphic_settings.get_as<bool>())
 		{
 			game::cvar_uncheat_and_set_int("cl_csm_enabled", 0);
-			game::cvar_uncheat_and_set_int("np_gr_quality", 0);
+			/*game::cvar_uncheat_and_set_int("np_gr_quality", 0);
 			game::cvar_uncheat_and_set_int("nr_lights_quality", 0);
 			game::cvar_uncheat_and_set_int("nr_shadow_quality", 0);
 			game::cvar_uncheat_and_set_int("mat_geiger_noise_enable", 0);
 			game::cvar_uncheat_and_set_int("mat_chromatic_damage_enable", 0);
 			game::cvar_uncheat_and_set_int("mat_colorcorrection", 0);
-			game::cvar_uncheat_and_set_int("r_shadowrendertotexture", 0);
+			game::cvar_uncheat_and_set_int("r_shadowrendertotexture", 0);*/
 		}
 		
 		game::cvar_uncheat_and_set_int("con_enable", 1);
