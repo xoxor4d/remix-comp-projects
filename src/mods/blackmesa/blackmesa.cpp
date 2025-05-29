@@ -759,6 +759,11 @@ namespace mods::blackmesa
 		HOOK_RETN_PLACE(save_viewid_retn, CLIENT_BASE + 0x1F8ADB);
 
 
+		// PixelVisibility_FractionVisible :: disable visiblity checks for glowsprites and other fx?
+		shared::utils::hook::nop(CLIENT_BASE + 0xD4D88, 2);
+		shared::utils::hook::conditional_jump_to_jmp(CLIENT_BASE + 0xD4DA6);
+
+
 		// --
 
 		// CModelLoader::Map_LoadModel :: called on map load

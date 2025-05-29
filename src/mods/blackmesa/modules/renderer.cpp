@@ -899,7 +899,6 @@ namespace mods::blackmesa
 		shared::utils::hook::conditional_jump_to_jmp(ENGINE_BASE + 0x10D060);
 		shared::utils::hook::conditional_jump_to_jmp(ENGINE_BASE + 0x10D07C);
 
-
 		m_initialized = true;
 		std::cout << "[RENDERER] loaded\n";
 	}
