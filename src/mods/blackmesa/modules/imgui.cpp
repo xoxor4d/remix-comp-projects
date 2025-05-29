@@ -198,10 +198,10 @@ namespace mods::blackmesa
 		const auto gs = game_settings::get();
 		ImGui::Checkbox("Enable LOD Forcing", gs->lod_forcing.get_as<bool*>()); TT(gs->lod_forcing.get_tooltip_string().c_str());
 
-		if (ImGui::Checkbox("Enable 3D Skybox (very unstable)", gs->enable_3d_sky.get_as<bool*>())) {
+		/*if (ImGui::Checkbox("Enable 3D Skybox (very unstable)", gs->enable_3d_sky.get_as<bool*>())) {
 			shared::common::remix_vars::set_option(shared::common::remix_vars::get_option("rtx.skyAutoDetect"), shared::common::remix_vars::string_to_option_value(shared::common::remix_vars::OPTION_TYPE_FLOAT, gs->enable_3d_sky.get_as<bool>() ? "1" : "0"));
 		}
-		TT(gs->enable_3d_sky.get_tooltip_string().c_str());
+		TT(gs->enable_3d_sky.get_tooltip_string().c_str());*/
 
 		SET_CHILD_WIDGET_WIDTH_MAN(120.0f);
 		auto gs_nocull_dist_ptr = game_settings::get()->default_nocull_distance.get_as<float*>();
@@ -330,8 +330,6 @@ namespace mods::blackmesa
 
 	void cont_general_quickcommands()
 	{
-		const auto& im = imgui::get();
-
 		{
 			//static float cont_cull_height = 0.0f;
 			//cont_cull_height = ImGui::Widget_ContainerWithCollapsingTitle("Camera", cont_cull_height, [&]
@@ -343,6 +341,7 @@ namespace mods::blackmesa
 		}
 
 #if DEBUG
+		const auto& im = imgui::get();
 		{
 			static float cont_debug_height = 0.0f;
 			cont_debug_height = ImGui::Widget_ContainerWithCollapsingTitle("DEBUG Build Section", cont_debug_height, [&]

@@ -7,6 +7,7 @@
 #define CLIENT_BASE				game::client_module
 //#define SERVER_BASE				game::server_module
 #define VSTDLIB_BASE			game::vstdlib_module
+#define STDSHADERDX9_BASE		game::stdshader_dx9_module
 
 namespace mods::blackmesa::game
 {
@@ -17,6 +18,7 @@ namespace mods::blackmesa::game
 	extern DWORD client_module;
 	//extern DWORD server_module;
 	extern DWORD vstdlib_module;
+	extern DWORD stdshader_dx9_module;
 
 	extern void con_add_command(ConCommand* cmd, const char* name, void(__cdecl* callback)(), const char* desc);
 	extern void cvar_uncheat(const char* name);

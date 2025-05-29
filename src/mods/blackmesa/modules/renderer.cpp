@@ -1,12 +1,25 @@
 #include "std_include.hpp"
 #include "renderer.hpp"
 
+#include "game_settings.hpp"
 #include "map_settings.hpp"
 #include "shared/common/flags.hpp"
 #include "shared/common/remix.hpp"
 
 namespace mods::blackmesa
 {
+	bool has_materialvar(game::IMaterialInternal* cmat, const char* var_name, game::IMaterialVar** out_var = nullptr)
+	{
+		bool found = false;
+		const auto var = cmat->vftable->FindVar(cmat, nullptr, var_name, &found, false);
+
+		if (out_var) {
+			*out_var = var;
+		}
+
+		return found;
+	}
+
 	void cmeshdx8_renderpass_pre_draw(game::CMeshDX8* mesh, [[maybe_unused]] /*CPrimList**/ std::uint32_t primlist)
 	{
 		const auto dev = game::get_d3d_device();
@@ -17,101 +30,86 @@ namespace mods::blackmesa
 			UINT ofs = 0; dev->GetStreamSource(0, &buffer9, &ofs, &stride);
 		}
 
-		//DWORD bufferedstateaddr = RENDERER_BASE + 0x19530;
-		//auto x = reinterpret_cast<components::IShaderAPIDX8*>(*(DWORD*)(RENDERER_BASE + 0xC9C50));
-		//auto y = reinterpret_cast<components::IShaderAPIDX8*>((RENDERER_BASE + 0xC9C54));
-
 		auto& ctx = renderer::primctx;
 		const auto shaderapi = game::get_shaderapi();
 
 		if (ctx.get_info_for_pass(shaderapi))
 		{
-#if 0
-			// added format check
-			if (mesh->m_VertexFormat == 0x480033 || mesh->m_VertexFormat == 0x80033)
+			if (game_settings::get()->enable_dual_layered_water.get_as<bool>())
 			{
-				if (ctx.info.shader_name.starts_with("Wa") && ctx.info.shader_name.contains("Water"))
+				if (mesh->m_VertexFormat == 0x480133 || mesh->m_VertexFormat == 0x80133)
 				{
-					game::IMaterialVar* var = nullptr;
-					if (has_materialvar(ctx.info.material, "$basetexture", &var))
+					if (ctx.info.shader_name.starts_with("Wa") && ctx.info.shader_name.contains("Water"))
 					{
-						// if material has NO defined basetexture
-						if (var && !var->vftable->IsDefined(var))
+						game::IMaterialVar* var = nullptr;
+						if (has_materialvar(ctx.info.material, "$basetexture", &var))
 						{
-							// check if it has a defined bottommaterial
-							var = nullptr;
-							const auto has_bottom_mat = has_materialvar(ctx.info.material, "$bottommaterial", &var);
-
-							if (has_bottom_mat)
+							// if material has NO defined basetexture
+							if (var && !var->vftable->IsDefined(var))
 							{
-								const auto& ms = map_settings::get_map_settings();
+								// check if it has a defined bottommaterial
+								var = nullptr;
+								const auto has_bottom_mat = has_materialvar(ctx.info.material, "$bottommaterial", &var);
 
-								// we only need one surface
-								ctx.modifiers.as_water = true;
-								ctx.modifiers.og_mesh_z_offset = ms.water_offset_bottom;
-								ctx.modifiers.dual_render_with_specified_texture = true;
-								ctx.modifiers.dual_render_texture_z_offset = ms.water_offset_top; //0.5f;
-								ctx.modifiers.dual_render_texture = shaderapi->vtbl->GetD3DTexture(shaderapi, nullptr, ctx.info.buffer_state.m_BoundTexture[2]);
-
-								// assign flowmap
-								IDirect3DBaseTexture9* tex = shaderapi->vtbl->GetD3DTexture(shaderapi, nullptr, ctx.info.buffer_state.m_BoundTexture[4]);
-								if (tex)
+								if (has_bottom_mat)
 								{
-									ctx.save_texture(dev, 0);
-									dev->SetTexture(0, tex);
+									const auto& ms = map_settings::get_map_settings();
+
+									// we only need one surface
+									ctx.modifiers.as_water = true;
+									ctx.modifiers.og_mesh_z_offset = ms.water_offset_bottom;
+									ctx.modifiers.dual_render_with_specified_texture = true;
+									ctx.modifiers.dual_render_texture_z_offset = ms.water_offset_top; //0.5f;
+									ctx.modifiers.dual_render_texture = shaderapi->vtbl->GetD3DTexture(shaderapi, nullptr, ctx.info.buffer_state.m_BoundTexture[4]);
+
+									// assign flowmap
+									IDirect3DBaseTexture9* tex = shaderapi->vtbl->GetD3DTexture(shaderapi, nullptr, ctx.info.buffer_state.m_BoundTexture[0]);
+									if (tex)
+									{
+										ctx.save_texture(dev, 0);
+										dev->SetTexture(0, tex);
+									}
+
+									// scale water uv
+									D3DXMATRIX scaleMatrix; // create a scaling matrix
+									D3DXMatrixScaling(&scaleMatrix, 1.5f * ms.water_uv_scale, 1.5f * ms.water_uv_scale, 1.0f);
+
+									ctx.save_ss(dev, D3DSAMP_ADDRESSU);
+									ctx.save_ss(dev, D3DSAMP_ADDRESSV);
+									dev->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP);
+									dev->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP);
+
+									ctx.set_texture_transform(dev, &scaleMatrix);
+									ctx.save_tss(dev, D3DTSS_TEXTURETRANSFORMFLAGS);
+									dev->SetTextureStageState(0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_COUNT2);
 								}
 
-								// scale water uv
-								D3DXMATRIX scaleMatrix; // create a scaling matrix
-								D3DXMatrixScaling(&scaleMatrix, 1.5f * ms.water_uv_scale, 1.5f * ms.water_uv_scale, 1.0f);
-
-								ctx.save_ss(dev, D3DSAMP_ADDRESSU);
-								ctx.save_ss(dev, D3DSAMP_ADDRESSV);
-								dev->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP);
-								dev->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP);
-
-								ctx.set_texture_transform(dev, &scaleMatrix);
-								ctx.save_tss(dev, D3DTSS_TEXTURETRANSFORMFLAGS);
-								dev->SetTextureStageState(0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_COUNT2);
-							}
-
-							// ignore 'beneath'
-							else
-							{
-								ctx.modifiers.do_not_render = true;
+								// ignore 'beneath'
+								else
+								{
+									ctx.modifiers.do_not_render = true;
+								}
 							}
 						}
 					}
 				}
 			}
-#endif
 		}
 
-		/*if (ctx.info.shader_name.starts_with("Black"))
+		/*if (ctx.info.shader_name.starts_with("Sky"))
 		{
 			int break_me = 0;
 		}*/
 
-		// no longer set cam transforms in 'main_module::on_renderview'
-		// setting them there causes meshes rendered with shaders to lag behind
 		dev->SetTransform(D3DTS_WORLD, &ctx.info.buffer_state.m_Transform[0]);
 		dev->SetTransform(D3DTS_VIEW, &ctx.info.buffer_state.m_Transform[1]);
 		dev->SetTransform(D3DTS_PROJECTION, &ctx.info.buffer_state.m_Transform[2]);
 
-		// shader: GBFast
-		// > __gbufferfast_brush00
-		// > __gbfastpropwrite000
-
-		/*if (ctx.info.material_name.contains("eye"))
-		{
-			int x = 1; 
-		}*/
-
 		if (ctx.info.shader_name == "GBFast") {
-			ctx.modifiers.do_not_render = true;
+			ctx.modifiers.do_not_render = true; // no longer needed ig
 		}
 		else if (ctx.info.shader_name == "GBLight") {
-			ctx.modifiers.do_not_render = true;
+			ctx.modifiers.do_not_render = true; // no longer needed ig
 		}
 
 		// EyeRefract_dx9
@@ -149,6 +147,14 @@ namespace mods::blackmesa
 		else if (mesh->m_VertexFormat == 0x80101)
 		{
 			ctx.modifiers.do_not_render = false; 
+
+			if (ctx.info.shader_name.starts_with("WriteZ")) {
+				ctx.modifiers.do_not_render = true;
+			}
+			/*else
+			{
+				int x = 1;
+			}*/
 
 			// FIRST "UI/HUD" elem (remix injection triggers here)
 			// -> fullscreen color transitions (damage etc.) and also "enables" the crosshair
@@ -217,7 +223,7 @@ namespace mods::blackmesa
 				};
 
 				dev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
-				dev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, vertices, sizeof(CUSTOMVERTEX));
+				dev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, vertices, sizeof(CUSTOMVERTEX)); 
 
 				// do not render the original mesh
 				ctx.modifiers.do_not_render = true;
@@ -225,6 +231,16 @@ namespace mods::blackmesa
 			else if (ctx.info.shader_name.contains("Sky")) 
 			{
 				ctx.modifiers.do_not_render = false;
+
+				//ctx.save_vs(dev);
+				//dev->SetVertexShader(nullptr);
+
+				ctx.save_rs(dev, D3DRS_FOGENABLE);
+				dev->SetRenderState(D3DRS_FOGENABLE, FALSE);
+
+				// this fixes the sky on intros or when no vgui is being drawn
+				dev->SetFVF(D3DFVF_XYZ | D3DFVF_TEX1);
+
 				// assign basemap2 to textureslot 0
 				/*if (const auto basemap2 = shaderapi->vtbl->GetD3DTexture(shaderapi, nullptr, ctx.info.buffer_state.m_BoundTexture[13]);
 					basemap2)
@@ -721,7 +737,21 @@ namespace mods::blackmesa
 
 			if (ctx.modifiers.as_water)
 			{
-				shared::common::remix::set_texture_hash(dev, shared::utils::string_hash32(ctx.info.material_name));
+				//set_remix_texture_hash(dev, ctx, utils::string_hash32(ctx.info.material_name));
+
+				const auto& scale_setting = map_settings::get_map_settings().water_uv_top_scale;
+				if (!shared::utils::float_equal(scale_setting, 0.0f)) // use scale of parent (bottom) water surface if 0
+				{
+					// restore
+					ctx.restore_texture_stage_state(dev, D3DTSS_TEXTURETRANSFORMFLAGS);
+
+					D3DXMATRIX scale_matrix;
+					D3DXMatrixScaling(&scale_matrix, 1.5f * scale_setting, 1.5f * scale_setting, 1.0f);
+
+					ctx.set_texture_transform(dev, &scale_matrix);
+					ctx.save_tss(dev, D3DTSS_TEXTURETRANSFORMFLAGS);
+					dev->SetTextureStageState(0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_COUNT2);
+				}
 			}
 
 			// re-draw surface
@@ -827,7 +857,7 @@ namespace mods::blackmesa
 			world = scale_matrix * mat_rotation * mat_translation;
 
 			// set remix texture hash ~req. dxvk-runtime changes - not really needed
-			dev->SetRenderState((D3DRENDERSTATETYPE)150, 100 + m.index);
+			//dev->SetRenderState((D3DRENDERSTATETYPE)150, 100 + m.index);
 
 			dev->SetTransform(D3DTS_WORLD, &world);
 			dev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, mesh_verts, sizeof(vertex));
@@ -858,6 +888,16 @@ namespace mods::blackmesa
 
 		// C_FuncAreaPortalWindow::DrawModel :: disable drawing Area Portal Brushmodels
 		shared::utils::hook::conditional_jump_to_jmp(CLIENT_BASE + 0xC0210);
+
+		// Sky_HDR_DX9 :: GetFallbackShader -> ignore dxlevel and always fall back to Sky_DX9
+		shared::utils::hook::conditional_jump_to_jmp(STDSHADERDX9_BASE + 0x7B1EE);
+
+		// Water_DX9_HDR :: GetFallbackShader ^
+		shared::utils::hook::nop(STDSHADERDX9_BASE + 0x93A35, 5);
+
+		// Shader_WorldEnd - skip render flashlight stuff before drawing the sky
+		shared::utils::hook::conditional_jump_to_jmp(ENGINE_BASE + 0x10D060);
+		shared::utils::hook::conditional_jump_to_jmp(ENGINE_BASE + 0x10D07C);
 
 
 		m_initialized = true;

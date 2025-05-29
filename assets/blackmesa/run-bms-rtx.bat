@@ -1,0 +1,1 @@
+START bms.exe -insecure -steam -novid -dx9 -dxlevel 95 -oldgameui -force_vendor_id 0x10DE -force_device_id 0x1180 -disable_d3d9_hacks -limitvsconst -softparticlesdefaultoff -disallowhwmorph -no_compressed_verts -nogamepadui +mat_phong 1 %*

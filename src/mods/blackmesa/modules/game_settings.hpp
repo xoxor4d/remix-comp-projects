@@ -308,6 +308,13 @@ namespace mods::blackmesa
 				"Enable tweaks required for the 3D skybox. Requires proper 3D skybox remix-runtime settings (sky auto detect). Can/will crash the game when its getting unfocused.",
 				false
 			};
+
+			variable enable_dual_layered_water =
+			{
+				"enable_dual_layered_water",
+				"Renders the normal map of water surfaces as a secondary layer on top of the original surface.",
+				false
+			};
 	
 			variable flashlight_offset_player =
 			{

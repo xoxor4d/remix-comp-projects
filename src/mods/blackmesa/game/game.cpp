@@ -11,6 +11,7 @@ namespace mods::blackmesa::game
 	DWORD client_module = 0u;
 	//DWORD server_module = 0u;
 	DWORD vstdlib_module = 0u;
+	DWORD stdshader_dx9_module = 0u;
 
 	view_id saved_view_id = VIEW_ILLEGAL;
 

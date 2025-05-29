@@ -170,6 +170,44 @@ namespace mods::blackmesa::game
 		CUtlSymbol m_Name;
 	};
 
+	struct ITexture;
+	struct IMaterial;
+	struct IMaterialVar_vtbl
+	{
+		ITexture* (__thiscall* GetTextureValue)(IMaterialVar*);
+		bool(__thiscall* IsTextureValueInternalEnvCubemap)(IMaterialVar*);
+		const char* (__fastcall* GetName)(IMaterialVar*);
+		unsigned __int16(__thiscall* GetNameAsSymbol)(IMaterialVar*);
+		void(__thiscall* SetFloatValue)(IMaterialVar*, float);
+		void(__thiscall* SetIntValue)(IMaterialVar*, int);
+		void(__thiscall* SetStringValue)(IMaterialVar*, const char*);
+		const char* (__thiscall* GetStringValue)(IMaterialVar*);
+		void(__thiscall* SetFourCCValue)(IMaterialVar*, unsigned int, void*);
+		void(__thiscall* GetFourCCValue)(IMaterialVar*, unsigned int*, void**);
+		void(__thiscall* SetVecValue0)(IMaterialVar*, float, float, float, float);
+		void(__thiscall* SetVecValue1)(IMaterialVar*, float, float, float);
+		void(__thiscall* SetVecValue2)(IMaterialVar*, float, float);
+		void(__thiscall* SetVecValue3)(IMaterialVar*, const float*, int);
+		void(__thiscall* GetLinearVecValue)(IMaterialVar*, float*, int);
+		void(__thiscall* SetTextureValue)(IMaterialVar*, ITexture*);
+		IMaterial* (__thiscall* GetMaterialValue)(IMaterialVar*);
+		void(__thiscall* SetMaterialValue)(IMaterialVar*, IMaterial*);
+		bool(__thiscall* IsDefined)(IMaterialVar*);
+		void(__thiscall* SetUndefined)(IMaterialVar*);
+		void(__thiscall* SetMatrixValue)(IMaterialVar*, const VMatrix*);
+		const VMatrix* (__thiscall* GetMatrixValue)(IMaterialVar*);
+		bool(__thiscall* MatrixIsIdentity)(IMaterialVar*);
+		void(__thiscall* CopyFrom)(IMaterialVar*, IMaterialVar*);
+		void(__thiscall* SetValueAutodetectType)(IMaterialVar*, const char*);
+		IMaterial* (__thiscall* GetOwningMaterial)(IMaterialVar*);
+		void(__thiscall* SetVecComponentValue)(IMaterialVar*, float, int);
+		int(__thiscall* GetIntValueInternal)(IMaterialVar*);
+		float(__thiscall* GetFloatValueInternal)(IMaterialVar*);
+		void(__thiscall* GetVecValueInternal0)(IMaterialVar*, float*, int);
+		const float* (__thiscall* GetVecValueInternal1)(IMaterialVar*);
+		int(__thiscall* VectorSizeInternal)(IMaterialVar*);
+	};
+
 	struct KeyValues;
 
 

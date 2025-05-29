@@ -388,7 +388,11 @@ namespace mods::blackmesa
 			game::cvar_uncheat_and_set_int("mat_colorcorrection", 1); // 0 breaks font rendering
 			game::cvar_uncheat_and_set_int("r_shadowrendertotexture", 0);
 		}
-		
+
+		// mat_hdr_level
+		//game::cvar_uncheat_and_set_float("mat_hdr_level", 0);
+		//game::cvar_uncheat_and_set_int("mat_use_compressed_hdr_textures", 0);
+
 		game::cvar_uncheat_and_set_int("con_enable", 1);
 		game::cvar_uncheat_and_set_int("mat_fullbright", 1);
 		game::cvar_uncheat_and_set_int("mat_softwareskin", 1);
@@ -735,7 +739,7 @@ namespace mods::blackmesa
 		shared::utils::hook(ENGINE_BASE + 0x108133, r_cullnode_wrapper, HOOK_CALL).install()->quick();
 
 		// disable displacement culling
-		shared::utils::hook::nop(CLIENT_BASE + 0xED2FB, 2);
+		shared::utils::hook::nop(ENGINE_BASE + 0xED2FB, 2);
 
 		// CBrushBatchRender::DrawOpaqueBrushModel :: :: backface check - nop 'if ( bShadowDepth )' to disable culling
 		//shared::utils::hook::nop(ENGINE_BASE + 0x7156E, 2); // 0125
@@ -743,8 +747,6 @@ namespace mods::blackmesa
 
 		// CClientLeafSystem::CollateRenderablesInLeaf :: skip culling checks
 		shared::utils::hook::nop(CLIENT_BASE + 0xFDCBF, 6);
-
-		// DrawDisplacementsInLeaf .. no culling check
 
 		// CSimpleWorldView::Setup :: nop 'DoesViewPlaneIntersectWater' check
 		shared::utils::hook::nop(CLIENT_BASE + 0x1FF55D, 2);
