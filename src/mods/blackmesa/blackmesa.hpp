@@ -1,4 +1,5 @@
 #pragma once
+#include "modules/map_settings.hpp"
 
 namespace mods::blackmesa
 {
@@ -10,9 +11,11 @@ namespace mods::blackmesa
 
 	extern int g_current_leaf;
 	extern int g_current_area;
+	extern map_settings::area_overrides_s* g_player_current_area_override;
 
 	extern void on_begin_scene_cb();
 
+	extern void trigger_vis_logic();
 	extern void force_cvars();
 	extern void cross_handle_map_and_game_settings();
 

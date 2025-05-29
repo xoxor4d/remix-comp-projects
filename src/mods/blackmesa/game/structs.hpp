@@ -3,6 +3,21 @@
 
 namespace mods::blackmesa::game
 {
+	enum view_id : __int32
+	{
+		VIEW_ILLEGAL = 0xFFFFFFFE,
+		VIEW_NONE = 0xFFFFFFFF,
+		VIEW_MAIN = 0x0,
+		VIEW_3DSKY = 0x1,
+		VIEW_MONITOR = 0x2,
+		VIEW_REFLECTION = 0x3,
+		VIEW_REFRACTION = 0x4,
+		VIEW_INTRO_PLAYER = 0x5,
+		VIEW_INTRO_CAMERA = 0x6,
+		VIEW_SHADOW_DEPTH_TEXTURE = 0x7,
+		VIEW_ID_COUNT = 0x8,
+	};
+
 	enum PreviewImageRetVal_t
 	{
 		MATERIAL_PREVIEW_IMAGE_BAD = 0,

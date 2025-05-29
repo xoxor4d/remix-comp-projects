@@ -17,11 +17,12 @@
 #include <cassert>
 #include <map>
 #include <set>
-#include <unordered_set>
 #include <fstream>
 #include <iostream>
 #include <xmmintrin.h>
 #include <intrin.h>
+#include <unordered_set>
+#include <vector>
 
 #pragma comment(lib, "psapi.lib")
 

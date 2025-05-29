@@ -544,6 +544,11 @@ namespace shared::common
 		remix_vars::interpolate_stack.clear();
 
 		utils::replace_all(map_name, ".bms", ".conf");
+
+		if (!map_name.ends_with(".conf")) {
+			map_name += ".conf";
+		}
+
 		parse_and_apply_conf_with_lerp(map_name, utils::string_hash64(map_name), EASE_TYPE_SIN_IN, 0.0f, 0.0f);
 	}
 

@@ -28,8 +28,6 @@ namespace mods::blackmesa
 		Vector m_debug_vector = { 0.0f, 0.0f, 0.0f };
 		Vector m_debug_vector2 = { 0.0f, 0.0f, 0.0f };
 
-		float m_anticull_distance = 0.0f;
-		
 		static bool is_initialized()
 		{
 			if (const auto im = get(); im && im->m_initialized) {
@@ -41,6 +39,7 @@ namespace mods::blackmesa
 	private:
 		void tab_general();
 		void tab_game_settings();
+		void tab_map_settings();
 		bool m_im_window_focused = false;
 		bool m_im_window_hovered = false;
 		std::string m_devgui_custom_footer_content;

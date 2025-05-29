@@ -1,6 +1,7 @@
 #include "std_include.hpp"
 #include "renderer.hpp"
 
+#include "map_settings.hpp"
 #include "shared/common/flags.hpp"
 #include "shared/common/remix.hpp"
 
@@ -512,10 +513,11 @@ namespace mods::blackmesa
 			dev->SetVertexShader(nullptr);
 		}
 
-		else 
-		{
+#if DEBUG
+		else {
 			auto break_me = 0;   
 		}
+#endif
 		//ctx.modifiers.do_not_render = true;  
 	}
 
@@ -753,7 +755,96 @@ namespace mods::blackmesa
 		}
 	}
 
+	// draw 'nocull' map_setting marker meshes
+	void renderer::draw_nocull_markers()
+	{
+		const auto& ms = map_settings::get_map_settings();
 
+		// early out - nope -> always render a single tri to register tex_addon texture
+		if (ms.map_markers.empty()) {
+			return;
+		}
+
+		struct vertex { D3DXVECTOR3 position; D3DCOLOR color; float tu, tv; };
+		const auto dev = game::get_d3d_device();
+
+		// save & restore after drawing
+		IDirect3DVertexShader9* og_vs = nullptr;
+		dev->GetVertexShader(&og_vs);
+		dev->SetVertexShader(nullptr);
+
+		IDirect3DBaseTexture9* og_tex = nullptr;
+		dev->GetTexture(0, &og_tex);
+		dev->SetTexture(0, tex_addons::white);
+
+		DWORD og_blend;
+		dev->GetRenderState(D3DRS_ALPHABLENDENABLE, &og_blend);
+
+		D3DXMATRIX og_tex_transform = {};
+		dev->GetTransform(D3DTS_TEXTURE0, &og_tex_transform);
+
+		dev->SetTransform(D3DTS_TEXTURE0, &shared::globals::IDENTITY);
+		dev->SetRenderState(D3DRS_ALPHABLENDENABLE, false);
+
+		DWORD og_ff;
+		dev->GetFVF(&og_ff);
+		dev->SetFVF(D3DFVF_XYZ | D3DFVF_DIFFUSE | D3DFVF_TEX1);
+
+		DWORD og_colop, og_colarg1, og_colarg2;
+		dev->GetTextureStageState(0, D3DTSS_COLOROP, &og_colop);
+		dev->GetTextureStageState(0, D3DTSS_COLORARG1, &og_colarg1);
+		dev->GetTextureStageState(0, D3DTSS_COLORARG2, &og_colarg2);
+
+		dev->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+		dev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+		dev->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+
+		for (auto& m : ms.map_markers)
+		{
+			// pre_recursive_world_node
+			if (m.is_hidden) {
+				continue;
+			}
+
+			const float f_index = static_cast<float>(m.index);
+			const vertex mesh_verts[4] =
+			{
+				D3DXVECTOR3(-4.1337f - (f_index * 0.01f), -4.1337f - (f_index * 0.01f), 0), D3DCOLOR_COLORVALUE(f_index * 0.001f, f_index * 0.001f, 0.0f, 1.0f), 0.0f, f_index / 100.0f,
+				D3DXVECTOR3( 4.1337f + (f_index * 0.01f), -4.1337f - (f_index * 0.01f), 0), D3DCOLOR_COLORVALUE(0.0f, f_index * 0.001f, 0.0f, 1.0f), f_index / 100.0f, 0.0,
+				D3DXVECTOR3( 4.1337f + (f_index * 0.01f),  4.1337f + (f_index * 0.01f), 0), D3DCOLOR_COLORVALUE(0.0f,0.0f, f_index * 0.001f, 1.0f), 0.0f, f_index / 100.0f,
+				D3DXVECTOR3(-4.1337f - (f_index * 0.01f),  4.1337f + (f_index * 0.01f), 0), D3DCOLOR_COLORVALUE(f_index, 0.0f, f_index * 0.001f, 1.0f), 0.0f, f_index / 100.0f,
+			};
+
+			D3DXMATRIX scale_matrix, rotation_x, rotation_y, rotation_z, mat_rotation, mat_translation, world;
+
+			D3DXMatrixScaling(&scale_matrix, m.scale.x, m.scale.y, m.scale.z);
+			D3DXMatrixRotationX(&rotation_x, m.rotation.x); // pitch
+			D3DXMatrixRotationY(&rotation_y, m.rotation.y); // yaw
+			D3DXMatrixRotationZ(&rotation_z, m.rotation.z); // roll
+			mat_rotation = rotation_z * rotation_y * rotation_x; // combine rotations (order: Z * Y * X)
+
+			D3DXMatrixTranslation(&mat_translation, m.origin.x, m.origin.y, m.origin.z);
+			world = scale_matrix * mat_rotation * mat_translation;
+
+			// set remix texture hash ~req. dxvk-runtime changes - not really needed
+			dev->SetRenderState((D3DRENDERSTATETYPE)150, 100 + m.index);
+
+			dev->SetTransform(D3DTS_WORLD, &world);
+			dev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, mesh_verts, sizeof(vertex));
+		}
+
+		// restore
+		dev->SetVertexShader(og_vs);
+		dev->SetTexture(0, og_tex);
+		dev->SetRenderState(D3DRS_ALPHABLENDENABLE, og_blend);
+
+		dev->SetTextureStageState(0, D3DTSS_COLOROP, og_colop);
+		dev->SetTextureStageState(0, D3DTSS_COLORARG1, og_colarg1);
+		dev->SetTextureStageState(0, D3DTSS_COLORARG2, og_colarg2);
+
+		dev->SetFVF(og_ff);
+		dev->SetTransform(D3DTS_WORLD, &shared::globals::IDENTITY);
+	}
 
 	renderer::renderer()
 	{

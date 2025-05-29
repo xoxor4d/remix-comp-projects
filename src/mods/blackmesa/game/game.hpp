@@ -37,17 +37,24 @@ namespace mods::blackmesa::game
 	inline Vector* get_current_view_right() { return reinterpret_cast<Vector*>(ENGINE_BASE + 0x3F3170); }
 	inline Vector* get_current_view_up() { return reinterpret_cast<Vector*>(ENGINE_BASE + 0x3F317C); }
 
+	inline view_id* get_current_view_id() { return reinterpret_cast<view_id*>(CLIENT_BASE + 0x539A54); }
+	extern view_id saved_view_id;
+
 	// CM_PointLeafnum
 	inline int get_leaf_from_position(const Vector& pos) { return shared::utils::hook::call<int(__cdecl)(const float*)>(ENGINE_BASE + 0x185D00)(&pos.x); }
 
 	inline bool is_paused()
 	{
-		// 4A9C38 BaseLocalClient
-		const auto blc = reinterpret_cast<void*>(ENGINE_BASE + 0x4A9C38);
-
-		// CClientState::IsPaused
-		return shared::utils::hook::call<BOOL(__fastcall)(void* this_ptr, void* null)>(ENGINE_BASE + 0xD4D00)(blc, nullptr);
+		// CEngineTool::IsGamePaused
+		return shared::utils::hook::call<bool(__cdecl)()>(ENGINE_BASE + 0xA6CC0)();
+		
+		//// 4A9C38 BaseLocalClient
+		//const auto blc = reinterpret_cast<void*>(ENGINE_BASE + 0x4A9C38);
+		//// CClientState::IsPaused
+		//return shared::utils::hook::call<BOOL(__fastcall)(void* this_ptr, void* null)>(ENGINE_BASE + 0xD4D00)(blc, nullptr);
 	}
+
+	extern void debug_add_text_overlay(const float* pos, const char* text, const int line_offset, const float r, const float g, const float b, const float a);
 
 	extern int get_visframecount();
 }

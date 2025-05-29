@@ -342,6 +342,8 @@ namespace mods::blackmesa
 		static inline renderer* p_this = nullptr;
 		static renderer* get() { return p_this; }
 
+		static void draw_nocull_markers();
+
 		static bool is_initialized()
 		{
 			if (const auto mod = get(); mod && mod->m_initialized) {

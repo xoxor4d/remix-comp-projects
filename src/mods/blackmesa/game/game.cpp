@@ -12,6 +12,8 @@ namespace mods::blackmesa::game
 	//DWORD server_module = 0u;
 	DWORD vstdlib_module = 0u;
 
+	view_id saved_view_id = VIEW_ILLEGAL;
+
 	// adds a simple console command
 	void con_add_command(ConCommand* cmd, const char* name, void(__cdecl* callback)(), const char* desc)
 	{
@@ -56,6 +58,22 @@ namespace mods::blackmesa::game
 
 	int get_visframecount() {
 		return *reinterpret_cast<int*>(ENGINE_BASE + 0x9B95F8); // 0125
+	}
+
+	/**
+	 * Calls CDebugOverlay::AddTextOverlay
+	 * @param pos			Position of text in 3D Space
+	 * @param text			The text
+	 * @param line_offset	Offset text position
+	 * @param r				red (0-1)
+	 * @param g				green (0-1)
+	 * @param b				blue (0-1)
+	 * @param a				alpha (0-1)
+	 */
+	void debug_add_text_overlay(const float* pos, const char* text, const int line_offset, const float r, const float g, const float b, const float a)
+	{
+		shared::utils::hook::call<void(__cdecl)(const float*, int, float, float, float, float, float, const char*)>(ENGINE_BASE + 0xE7390)
+			(pos, line_offset, 0.0f, r, g, b, a, text);
 	}
 
 	// init any adresses here

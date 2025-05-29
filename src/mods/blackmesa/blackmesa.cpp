@@ -5,6 +5,7 @@
 #include "modules/game_settings.hpp"
 #include "modules/imgui.hpp"
 #include "modules/interfaces.hpp"
+#include "modules/map_settings.hpp"
 #include "modules/renderer.hpp"
 #include "shared/common/flags.hpp"
 #include "shared/common/remix_api.hpp"
@@ -24,6 +25,11 @@ namespace mods::blackmesa
 
 	int g_current_leaf = -1;
 	int g_current_area = -1;
+	bool g_player_leaf_update = false;
+	int g_current_area_all_views = -1; // updated on each view-scene (eg. monitor + main)
+
+	// contains overrides for the current area, nullptr if no overrides exist
+	map_settings::area_overrides_s* g_player_current_area_override = nullptr;
 
 	void init_texture_addons([[maybe_unused]] bool release)
 	{
@@ -220,21 +226,16 @@ namespace mods::blackmesa
 
 		shared::common::remix_api::get().debug_draw_box(mmin, mmax, 4.0f, shared::common::remix_api::DEBUG_REMIX_LINE_COLOR::GREEN);*/
 
-
-		//choreo_events::on_client_frame();
 		shared::common::remix_vars::on_client_frame();
-		//remix_lights::on_client_frame();
-
 		force_cvars();
-
 
 		// TODO - find better spot to call this
 		//map_settings::spawn_markers_once();
-		//model_render::draw_nocull_markers();
+		renderer::draw_nocull_markers();
 
 		// CM_PointLeafnum :: get current leaf
 		const auto current_leaf = game::get_leaf_from_position(*game::get_current_view_origin());
-		//g_player_leaf_update = g_current_leaf != current_leaf;
+		g_player_leaf_update = g_current_leaf != current_leaf;
 		g_current_leaf = current_leaf;
 
 		// CM_LeafArea :: get current area the camera is in
@@ -255,6 +256,91 @@ namespace mods::blackmesa
 
 			push    0x178; // og
 			jmp		cviewrenderer_renderview_retn;
+		}
+	}
+
+	/**
+	 * Called from CModelLoader::Map_LoadModel
+	 * @param map_name  Name of loading map
+	 */
+	void on_map_load_hk(const char* map_name)
+	{
+		shared::common::remix_vars::on_map_load(map_name);
+		map_settings::on_map_load(map_name);
+	}
+
+	HOOK_RETN_PLACE_DEF(on_map_load_stub_retn);
+	__declspec(naked) void on_map_load_stub()
+	{
+		__asm
+		{
+			lea     eax, [ebx + 0x160];
+
+			pushad;
+			push    eax;
+			call	on_map_load_hk;
+			add		esp, 4;
+			popad;
+
+			// og
+			lea     eax, [ebx + 0x160];
+			jmp		on_map_load_stub_retn;
+
+		}
+	}
+
+	/**
+	 * Called from Host_Disconnect
+	 * on: disconnect, restart, killserver, stopdemo ...
+	 */
+	void on_host_disconnect_hk()
+	{
+		trigger_vis_logic();
+
+		// ----------
+
+		map_settings::on_map_unload();
+
+		// reload rtx.conf
+		shared::common::remix_vars::xo_vars_parse_options_fn();
+	}
+
+	HOOK_RETN_PLACE_DEF(on_host_disconnect_retn);
+	__declspec(naked) void on_host_disconnect_stub()
+	{
+		__asm
+		{
+			pushad;
+			call	on_host_disconnect_hk;
+			popad;
+
+			// og
+			mov     edx, 5;
+			jmp		on_host_disconnect_retn;
+		}
+	}
+
+	/**
+	 * Called from Host_Changelevel
+	 * Host_Disconnect is not called when this triggers
+	 */
+	void on_host_change_level_hk()
+	{
+		on_host_disconnect_hk();
+	}
+
+	HOOK_RETN_PLACE_DEF(on_host_change_level_retn);
+	__declspec(naked) void on_host_change_level_stub()
+	{
+		__asm
+		{
+			pushad;
+			call	on_host_change_level_hk;
+			popad;
+
+			// og
+			push    0x103;
+			jmp		on_host_change_level_retn;
 		}
 	}
 
@@ -426,21 +512,39 @@ namespace mods::blackmesa
 		force_node_vis(parent_node_index, hide);
 	}
 
+	// Trigger leaf/node forcing logic and updates 'g_player_current_area_override' when 'pre_recursive_world_node()' gets called
+	void trigger_vis_logic()
+	{
+		//g_player_current_leaf = -1;
+		g_player_leaf_update = true;
+		g_player_current_area_override = nullptr;
+	}
+
 	// Called once before 'R_RecursiveWorldNode' is getting called for the first time
 	void pre_recursive_world_node()
 	{
-		/*if (*game::get_current_view_id() == VIEW_3DSKY || *game::get_current_view_id() == VIEW_MONITOR) {
+		if (*game::get_current_view_id() == game::VIEW_3DSKY || *game::get_current_view_id() == game::VIEW_MONITOR) {
 			return;
-		}*/
+		}
 
 		const auto world = game::get_hoststate_worldbrush_data();
 		//auto& map_settings = map_settings::get_map_settings();
 
-		float nocull_dist = 6000.0f;
-		if (imgui::is_initialized()) {
-			nocull_dist = imgui::get()->m_anticull_distance;
+		float nocull_dist = game_settings::get()->default_nocull_distance.get_as<float>();
+
+		auto& ms = map_settings::get_map_settings();
+		if (!ms.area_settings.empty())
+		{
+			g_player_current_area_override = nullptr;
+			if (const auto& t = ms.area_settings.find(g_current_area); t != ms.area_settings.end()) {
+				g_player_current_area_override = &t->second; // cache
+			}
 		}
 
+		if (g_player_current_area_override) {
+			nocull_dist = g_player_current_area_override->nocull_distance;
+		}
+		
 		//const bool check_area = false;
 
 		// MODE: force all leafs/nodes within a certain dist to the player (+ only in current area modifier)
@@ -455,6 +559,26 @@ namespace mods::blackmesa
 					if (is_aabb_within_distance(l.m_vecCenter, l.m_vecHalfDiagonal, *game::get_current_view_origin(), nocull_dist)) {
 						force_leaf_vis(i);
 					}
+				}
+			}
+		}
+
+		// update visibility of nocull markers
+		if (g_player_leaf_update)
+		{
+			for (auto& m : ms.map_markers)
+			{
+				// ignore normal markers
+				if (m.areas.empty()) {
+					continue;
+				}
+
+				// hide marker
+				m.is_hidden = true;
+
+				// check if player is in specified area & not in specified leaf
+				if (m.areas.contains(g_current_area)) {
+					m.is_hidden = false; // show marker
 				}
 			}
 		}
@@ -482,10 +606,33 @@ namespace mods::blackmesa
 	// Return 0 to NOT cull the node
 	int r_cullnode_wrapper(game::Frustum_t* frustum, game::mnode_t* node, int unkown_flag)
 	{
+		const auto view_id = game::get_current_view_id();
+		const bool is_monitor = *view_id == game::VIEW_MONITOR || (*view_id == game::VIEW_ILLEGAL && game::saved_view_id == game::VIEW_MONITOR);
+
 		// "global" nocull distance if area has no overrides
-		float nocull_dist = 6000.0f;
-		if (imgui::is_initialized()) {
-			nocull_dist = imgui::get()->m_anticull_distance;
+		float nocull_dist = game_settings::get()->default_nocull_distance.get_as<float>();
+
+		// shortcut for monitor rendering
+		if (is_monitor)
+		{
+			// R_CullNode - uses area frustums if avail. and not in a solid - uses player frustum otherwise
+			if (!shared::utils::hook::call<bool(__cdecl)(game::Frustum_t*, game::mnode_t*, int)>(ENGINE_BASE + 0x1379C0)(frustum, node, unkown_flag)) { // #OFFS
+				return 0;
+			}
+
+			// this should work?
+			if (is_aabb_within_distance(node->m_vecCenter, node->m_vecHalfDiagonal, *game::get_current_view_origin(), nocull_dist)) {
+				return 0;
+			}
+
+			return 1;
+		}
+
+
+		if (g_player_current_area_override)
+		{
+			// nocull distance if area has override
+			nocull_dist = g_player_current_area_override->nocull_distance;
 		}
 
 		// if no area override or if cull mode is distance based
@@ -509,6 +656,18 @@ namespace mods::blackmesa
 
 		// cull node
 		return 1;
+	}
+
+	HOOK_RETN_PLACE_DEF(save_viewid_retn);
+	__declspec(naked) void save_viewid_stub()
+	{
+		__asm
+		{
+			mov     ecx, ebx; // og
+			mov		[ebp - 8], esi; // og - esi = g_CurrentViewID
+			mov		game::saved_view_id, esi; // save to our global
+			jmp		save_viewid_retn;
+		}
 	}
 
 	void install_signature_patches()
@@ -592,6 +751,25 @@ namespace mods::blackmesa
 
 		// ^ next instruction :: OR m_DrawFlags with 0x60 instead of 0x30
 		shared::utils::hook::set<BYTE>(CLIENT_BASE + 0x1FF55F + 6, 0x60);
+
+		// CBaseWorldView::DrawSetup :: save 'g_CurrentViewID' 
+		shared::utils::hook(CLIENT_BASE + 0x1F8AD6, save_viewid_stub, HOOK_JUMP).install()->quick();
+		HOOK_RETN_PLACE(save_viewid_retn, CLIENT_BASE + 0x1F8ADB);
+
+
+		// --
+
+		// CModelLoader::Map_LoadModel :: called on map load
+		shared::utils::hook::nop(ENGINE_BASE + 0x124B44, 6);
+		shared::utils::hook(ENGINE_BASE + 0x124B44, on_map_load_stub).install()->quick();
+		HOOK_RETN_PLACE(on_map_load_stub_retn, ENGINE_BASE + 0x124B4A);
+
+		// called on map unload
+		shared::utils::hook(ENGINE_BASE + 0x1CB3B1, on_host_disconnect_stub).install()->quick();
+		HOOK_RETN_PLACE(on_host_disconnect_retn, ENGINE_BASE + 0x1CB3B6);
+
+		shared::utils::hook(ENGINE_BASE + 0x1B9F78, on_host_change_level_stub).install()->quick();
+		HOOK_RETN_PLACE(on_host_change_level_retn, ENGINE_BASE + 0x1B9F7D);
 
 		MH_EnableHook(MH_ALL_HOOKS);
 
