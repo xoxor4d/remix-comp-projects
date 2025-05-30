@@ -28,6 +28,9 @@ namespace mods::blackmesa
 		Vector m_debug_vector = { 0.0f, 0.0f, 0.0f };
 		Vector m_debug_vector2 = { 0.0f, 0.0f, 0.0f };
 
+		bool m_debug_disable_rendering[64] = {};
+		bool m_debug_disable_unbake = false;
+
 		static bool is_initialized()
 		{
 			if (const auto im = get(); im && im->m_initialized) {

@@ -5,6 +5,7 @@
 #include "imgui_internal.h"
 #include "interfaces.hpp"
 #include "map_settings.hpp"
+#include "renderer.hpp"
 #include "shared/common/flags.hpp"
 #include "shared/common/remix_vars.hpp"
 #include "shared/imgui/imgui_helper.hpp"
@@ -330,16 +331,6 @@ namespace mods::blackmesa
 
 	void cont_general_quickcommands()
 	{
-		{
-			//static float cont_cull_height = 0.0f;
-			//cont_cull_height = ImGui::Widget_ContainerWithCollapsingTitle("Camera", cont_cull_height, [&]
-			//{
-			//	// m_anticull_distance
-			//	SET_CHILD_WIDGET_WIDTH_MAN(140.0f); ImGui::SliderFloat("AntiCull Distance", &im->m_anticull_distance, 0.0f, 20000.0f, "%.0f");
-
-			//}, true, ICON_FA_ELLIPSIS_H, &im->ImGuiCol_ContainerBackground, & im->ImGuiCol_ContainerBorder);
-		}
-
 #if DEBUG
 		const auto& im = imgui::get();
 		{
@@ -350,6 +341,15 @@ namespace mods::blackmesa
 					ImGui::DragFloat3("Debug Vector 2", &im->m_debug_vector2.x, 0.1f);
 
 					ImGui::Spacing(0, 6);
+
+					for (auto i = 0; i < sizeof(im->m_debug_disable_rendering); i++)
+					{
+						ImGui::PushID(i);
+						ImGui::Checkbox(shared::utils::va("Disable Rendering [%d]", i), &im->m_debug_disable_rendering[i]);
+						ImGui::PopID();
+					}
+
+					ImGui::Checkbox("Disable Unbaking", &im->m_debug_disable_unbake);
 
 					const auto coloredit_flags = ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_PickerHueBar | ImGuiColorEditFlags_Float;
 
@@ -1295,7 +1295,10 @@ namespace mods::blackmesa
 		{
 			ImGui::PopStyleColor();
 			ImGui::PopStyleVar(1);
-			//ADD_TAB("General", tab_general);
+
+#if DEBUG
+			ADD_TAB("Dev", tab_general);
+#endif
 			ADD_TAB("Game Settings", tab_game_settings);
 			ADD_TAB("Map Settings", tab_map_settings);
 			ImGui::EndTabBar();
@@ -1340,6 +1343,9 @@ namespace mods::blackmesa
 
 	void imgui::on_present()
 	{
+		// yea .. does not fit in here but yolo
+		renderer::on_present();
+
 		if (auto* im = imgui::get(); im)
 		{
 			if (const auto dev = game::get_d3d_device(); dev)

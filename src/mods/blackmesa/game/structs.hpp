@@ -75,6 +75,13 @@ namespace mods::blackmesa::game
 		NUM_IMAGE_FORMATS
 	};
 
+	enum OverrideType_t : int
+	{
+		OVERRIDE_NORMAL = 0x0,
+		OVERRIDE_BUILD_SHADOWS = 0x1,
+		OVERRIDE_DEPTH_WRITE = 0x2,
+	};
+
 	enum modtype_t : std::int32_t
 	{
 		mod_bad = 0x0,
@@ -774,9 +781,10 @@ namespace mods::blackmesa::game
 	struct model_t
 	{
 		void* fnHandle;
-		char szPathName[260];
+		const char* szPathName;
 		int nLoadFlags;
 		int nServerCount;
+		int unk;
 		modtype_t type;
 		int flags;
 		Vector mins;
@@ -784,7 +792,7 @@ namespace mods::blackmesa::game
 		float radius;
 		KeyValues* m_pKeyValues;
 		//$827FC955A655E715E2ACE31D316F483B ___u10;
-	};
+	}; STATIC_ASSERT_OFFSET(model_t, radius, 0x34);
 
 	struct CCommonHostState
 	{
@@ -805,5 +813,65 @@ namespace mods::blackmesa::game
 		int maxClients;
 		int tickcount;
 		// ....
+	};
+
+	struct studiohdr_t;
+	struct studiohwdata_t;
+	struct IClientRenderable;
+	struct StudioDecalHandle_t__;
+	struct DrawModelInfo_t;
+	struct CStudioHdr;
+	struct Ray_t;
+
+	struct DrawModelState_t
+	{
+		studiohdr_t* m_pStudioHdr;
+		studiohwdata_t* m_pStudioHWData;
+		IClientRenderable* m_pRenderable;
+		const shared::matrix3x4_t* m_pModelToWorld;
+		StudioDecalHandle_t__* m_decals;
+		int m_drawFlags;
+		int m_lod;
+	};
+
+	struct __declspec(align(4)) ModelRenderInfo_t
+	{
+		Vector origin;
+		QAngle angles;
+		IClientRenderable* pRenderable;
+		const model_t* pModel;
+		const shared::matrix3x4_t* pModelToWorld;
+		const shared::matrix3x4_t* pLightingOffset;
+		const Vector* pLightingOrigin;
+		int flags;
+		int entity_index;
+		int skin;
+		int body;
+		int hitboxset;
+		unsigned __int16 instance;
+	};
+
+	struct mstudio_modelvertexdata_t
+	{
+		const void* pVertexData;
+		const void* pTangentData;
+	};
+
+	struct mstudiomodel_t
+	{
+		char name[64];
+		int type;
+		float boundingradius;
+		int nummeshes;
+		int meshindex;
+		int numvertices;
+		int vertexindex;
+		int tangentsindex;
+		int numattachments;
+		int attachmentindex;
+		int numeyeballs;
+		int eyeballindex;
+		mstudio_modelvertexdata_t vertexdata;
+		int unused[8];
 	};
 }

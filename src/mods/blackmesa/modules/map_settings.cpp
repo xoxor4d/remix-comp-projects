@@ -302,6 +302,134 @@ namespace mods::blackmesa
 
 
 			// ####################
+			// parse 'HIDEMODEL' table
+			if (config.contains("HIDEMODEL"))
+			{
+				// try to find the loaded map
+				if (auto& hidemdl_table = config["HIDEMODEL"];
+					hidemdl_table.contains(m_map_settings.mapname))
+				{
+					if (const auto map = hidemdl_table[m_map_settings.mapname];
+						!map.is_empty())
+					{
+						if (map.contains("name"))
+						{
+							if (auto& names = map.at("name");
+								!names.is_empty())
+							{
+								if (const auto& narray = map.at("name").as_array();
+									!narray.empty())
+								{
+									for (auto& str : narray) {
+										m_map_settings.hide_models.substrings.insert(str.as_string());
+									}
+								}
+							}
+						}
+
+						if (map.contains("radius"))
+						{
+							if (auto& radii = map.at("radius");
+								!radii.is_empty())
+							{
+								if (const auto& rarray = map.at("radius").as_array();
+									!rarray.empty())
+								{
+									for (auto& r : rarray) {
+										m_map_settings.hide_models.radii.insert(to_float(r, -1.0f));
+									}
+								}
+							}
+						}
+					}
+				}
+			} // end 'HIDEMODEL'
+
+
+			// ####################
+			// parse 'UNBAKE' table
+			if (config.contains("UNBAKE"))
+			{
+				auto& unbake_table = config["UNBAKE"];
+
+				// try to find the loaded map
+				if (unbake_table.contains(m_map_settings.mapname))
+				{
+					if (const auto map = unbake_table[m_map_settings.mapname];
+						!map.is_empty())
+					{
+						if (map.contains("name"))
+						{
+							if (auto& names = map.at("name");
+								!names.is_empty())
+							{
+								if (const auto& arr = names.as_array();
+									!arr.empty())
+								{
+									for (auto& str : arr) {
+										m_map_settings.unbake_models.strings.insert(str.as_string());
+									}
+								}
+							}
+						}
+
+						if (map.contains("checksum"))
+						{
+							if (auto& checksum = map.at("checksum");
+								!checksum.is_empty())
+							{
+								if (const auto& arr = checksum.as_array();
+									!arr.empty())
+								{
+									for (auto& sum : arr) {
+										m_map_settings.unbake_models.checksums.insert(to_int(sum, 0u));
+									}
+								}
+							}
+						}
+					}
+				}
+
+
+				if (unbake_table.contains("ALL"))
+				{
+					if (auto& all = unbake_table.at("ALL");
+						!all.is_empty())
+					{
+						if (all.contains("name"))
+						{
+							if (auto& names = all.at("name");
+								!names.is_empty())
+							{
+								if (const auto& arr = names.as_array();
+									!arr.empty())
+								{
+									for (auto& str : arr) {
+										m_map_settings.unbake_models.strings.insert(str.as_string());
+									}
+								}
+							}
+						}
+
+						if (all.contains("checksum"))
+						{
+							if (auto& checksum = all.at("checksum");
+								!checksum.is_empty())
+							{
+								if (const auto& arr = checksum.as_array();
+									!arr.empty())
+								{
+									for (auto& sum : arr) {
+										m_map_settings.unbake_models.checksums.insert(to_uint(sum, 0u));
+									}
+								}
+							}
+						}
+					}
+				}
+			} // end 'UNBAKE'
+
+			// ####################
 			// parse 'MARKER' table
 			if (config.contains("MARKER"))
 			{
@@ -551,8 +679,11 @@ namespace mods::blackmesa
 	void map_settings::clear_map_settings()
 	{
 		m_map_settings.area_settings.clear();
+		m_map_settings.hide_models.substrings.clear();
+		m_map_settings.hide_models.radii.clear();
+		m_map_settings.unbake_models.strings.clear();
+		m_map_settings.unbake_models.checksums.clear();
 		m_map_settings.api_var_configs.clear();
-
 		m_map_settings = {};
 		m_loaded = false;
 

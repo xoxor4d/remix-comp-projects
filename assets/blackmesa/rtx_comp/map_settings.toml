@@ -1,0 +1,219 @@
+# Water Settings
+# :: Adjust various water related settings per map
+# ~~ Parameters: 
+#
+# <map name> = {
+#   scale =                 uv scale - small values reduce repetition while larger values will increase tiling              [float] << defaults to 1.0
+#   scale_top =             uv scale to top layer - a value of 0 will use 'scale' for top and bottom                        [float] << defaults to 0.0
+#   top_layer_offset =      can offset the dual rendered water mesh along the Z-Axis (usually the animated surface)         [float] << defaults to 0.5
+#   bottom_layer_offset =   can offset the original water mesh along the Z-Axis (usually the surface defining water color)  [float] << defaults to 0.0
+# }
+
+[WATER]
+    background10 = { scale = 1.00, scale_top = 0.86, top_layer_offset = 1.6, bottom_layer_offset = -0.70 }
+
+
+
+# #####################################################################################
+#
+# Override culling per game area
+# :: Useful console command: 'xo_debug_toggle_node_vis'
+# ~~ Parameters:
+#
+# <map name> = [
+#   {
+#       in_area =           the area the player has to be in                [int]
+#       nocull_dist =       |> Distance around the player where objects wont get culled - only used on certain cull modes   [float] << defaults to 600.0
+#   },  
+#   { ... },
+# ]
+
+[CULL]
+
+    bm_c0a0a = [
+        { in_area =   1, nocull_dist = 2000.00 },
+        { in_area =   3, nocull_dist = 4000.00 },
+        { in_area =   4, nocull_dist = 5000.00 },
+    ]
+
+    bm_c0a0b = [
+        { in_area =   2, nocull_dist = 4000.00 },
+        { in_area =   6, nocull_dist = 2500.00 },
+        { in_area =   7, nocull_dist = 4000.00 },
+        { in_area =   8, nocull_dist = 4000.00 },
+    ]
+
+
+    bm_c0a0c = [
+        { in_area =   1, nocull_dist = 2000.00 },
+        { in_area =   2, nocull_dist = 3500.00 },
+    ]
+
+    bm_c1a0a = [
+            { in_area =   4, nocull_dist = 1600.00 },
+        ]
+
+
+# #####################################################################################
+#
+# Hide Models
+# :: Can be used to hide models. When a certain model is used a lot, it can make sense to hide them and 
+#    manually re-add the models by adding them as references to map markers (toolkit) - will help with cpu bottlenecks)
+#
+# :: Useful console command: 'xo_debug_toggle_model_info'
+# ~~ Parameters:
+#
+# <map name> = {
+#   name = []             force hide models containing the specified substring                                                                [string array]
+#   radius = []           force hide models with this radius (checking for radii is generally faster and the preferred way to filter models)  [float array]
+# }
+
+[HIDEMODEL]
+    #background10 = { radius = [
+    #        209.7433472, #models/props_foliage/desert_brush/gnarly_treel.mdl
+    #    ]}
+
+
+
+# #####################################################################################
+#
+# Unbake Model Transforms
+# :: If a "static prop" has many unique hashes (remix) then it's likely that it's vertices contain world position data. This will prevent proper mesh-replacements in remix.
+# :: Specifying a substring or preferably the checksum of the model you want to replace here will prevent position/rotation/normal information
+#    from being backed into the model vertices and then use the fixed function world transform to transform it into the game world. 
+# :: String checks are costly so keep entries as small as possible and scope them per map if possible. (Just use checksums!) Use entry 'ALL' if it's a model used throughout the game.
+# :: This will cause issues with some models (mainly ones with sub-meshes)
+# :: Do not specify models if you do not intend to replace them. There is no benefit.
+# 
+# :: Useful console command: 'xo_mapsettings_get_unbake_info' to log all currently visible model names to '/logs/mapsettings_unbake_info.log' and 'xo_debug_toggle_unbake_model_info' for visualizations
+# ~~ Parameters:
+#
+# <map name> = {    per map
+#   name = []       unbake transform data from model vertices which contain the specified substring     [string array]
+#   checksum = []   ^ but using the mdl checksum                                                        [int array - hex format]
+# }
+#
+# ALL = {           ^ on every map
+#   name = []       ^                                                                                   [string array]
+#   checksum = []   ^                                                                                   [int array - hex format]
+# }                                                                                
+
+[UNBAKE]
+
+    ALL = { checksum = [
+        0xb0e398ee, # inbound_tram
+        0x685f1775, # inbound_tram_door
+        0x4354fd72, # railing01_long
+        0xfc97c8f8, # railing01_medium
+        0xaf27c2c4, # railing01_cap
+        0xbac65b23, # railing01_corner_soft
+        0x84e026e7, # railing01_short
+        0x3ba019fb, # railing01_cap_end
+        0xa1c85020, # railing01_end
+    ]}
+
+    #background10 = { name = [
+    #    "inbound_tram", 
+    #]}
+
+    #bm_c0a0a = { name = [
+    #    "inbound_tram", 
+    #]}
+
+    #bm_c0a0b = { name = [
+    #    "inbound_tram", 
+    #]}
+
+    #bm_c0a0c = { name = [
+    #    "inbound_tram", 
+    #]}
+
+    #bm_c1a0a = { name = [
+    #    "inbound_tram" 
+    #], checksum = [
+    #    0x4354fd72, # railing01_long
+    #    0xfc97c8f8, # railing01_medium
+    #    0xaf27c2c4, # railing01_cap
+    #    0xbac65b23, # railing01_corner_soft
+    #    0x84e026e7, # railing01_short
+    #    0x3ba019fb, # railing01_cap_end
+    #    0xa1c85020, # railing01_end
+    #]}
+
+
+
+# #####################################################################################
+#
+# Spawn unique markers meshes
+# :: Can be used as anchor mesh (same one can be spawned multiple times)
+# ~~ Parameters:
+#
+# <map name> = [                  [array of structure below]
+#   {
+#       nocull =                  number of marker mesh - never getting culled and spawned on map load (eg: useful for distant light)                         [int 0-inf]
+#       areas = []                (opt.) only show nocull marker when player is in specified area/s                                                           [int array]
+#       position = []             position of the marker mesh     [3D Vector]
+#       rotation = []             rotation of the marker mesh     [3D Vector]
+#       scale = []                scale of the marker mesh        [3D Vector]
+#   },  
+#   { ... },
+# ]
+
+[MARKER]
+
+    background10 = [
+        { nocull = 80, areas = [], position = [-1000.00, -852.00, -1000.00], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00] },
+    ]
+
+    bm_c0a0a = [
+        { nocull = 100, areas = [], position = [3498.47, 3260.22, -1000.00], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00] },
+    ]
+
+    bm_c0a0b = [
+        { nocull = 101, areas = [], position = [2689.96, -3590.37, -1000.00], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00] },
+    ]
+
+    bm_c2a4a = [
+        # asd
+        { nocull = 30, areas = [], position = [-2962.85, 179.75, 1230.25], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00] },
+    ]
+
+
+
+# #####################################################################################
+#
+# Remix variable configs
+# :: Useful console command: 'xo_scene_print' && 'xo_debug_toggle_node_vis' && 'xo_debug_toggle_sound_print'
+# ~~ Parameters:
+#
+# <map name> = {
+#
+#   startup = []            configs that will be loaded on map-load, conf matching the map name will be auto. loaded and does not need to be specified  [array of strings]
+# }
+
+[CONFIGVARS]
+
+    #bm_c0a0a = { startup = [ 
+    #    "chromatic_explosion.conf" 
+    #    ]}
+
+
+# #####################################################################################
+#
+# Set cvars on map load
+# :: Some maps or workflows might require setting cvars on certain maps
+#
+# <map name> = [                                        [string array]
+#   "cvar1 val",
+#   "cvar2 val",
+# ]
+
+[CVARS]
+
+    #bm_c0a0a = [
+    #        "r_drawopaqueworld 0",
+    #        "r_drawstaticprops 0",
+    #        "r_DrawDisp 0",
+    #        "r_drawdecals 0",
+    #        "r_DrawDetailProps 0",
+    #    ]

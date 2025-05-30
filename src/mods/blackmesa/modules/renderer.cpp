@@ -2,12 +2,21 @@
 #include "renderer.hpp"
 
 #include "game_settings.hpp"
+#include "imgui.hpp"
 #include "map_settings.hpp"
 #include "shared/common/flags.hpp"
 #include "shared/common/remix.hpp"
 
 namespace mods::blackmesa
 {
+	namespace cmd
+	{
+		bool model_info_vis = false;
+		bool unbake_model_info_vis = false;
+		bool ms_unbake_info = false;
+		std::unordered_set<std::string> ms_unbake_info_logged_strings;
+	}
+
 	bool has_materialvar(game::IMaterialInternal* cmat, const char* var_name, game::IMaterialVar** out_var = nullptr)
 	{
 		bool found = false;
@@ -29,6 +38,10 @@ namespace mods::blackmesa
 		{
 			UINT ofs = 0; dev->GetStreamSource(0, &buffer9, &ofs, &stride);
 		}
+
+#if DEBUG
+		const auto& im = imgui::get();
+#endif
 
 		auto& ctx = renderer::primctx;
 		const auto shaderapi = game::get_shaderapi();
@@ -124,16 +137,27 @@ namespace mods::blackmesa
 				}
 			}
 
-			ctx.modifiers.do_not_render = false;
+#if DEBUG
+			if (im->m_debug_disable_rendering[0]) ctx.modifiers.do_not_render = true;
+#endif
 		}
 
 		// VertexLitGeneric
 		// > models/props_lab/panel_safe_top_scroll
 		else if (mesh->m_VertexFormat == 0x82087) 
 		{
-			ctx.modifiers.do_not_render = false;
 			ctx.save_vs(dev);
 			dev->SetVertexShader(nullptr);
+
+			if (ctx.info.buffer_state.m_Transform[0] == shared::globals::IDENTITY)
+			{
+				auto wrld = &renderer::get()->m_unbake_transforms_p2w_transform;
+				dev->SetTransform(D3DTS_WORLD, wrld);
+			}
+
+#if DEBUG
+			if (im->m_debug_disable_rendering[1]) ctx.modifiers.do_not_render = true;
+#endif
 		}
 
 		// WriteZ_DX9
@@ -146,8 +170,6 @@ namespace mods::blackmesa
 		// > skybox/sky_st_day_01rt
 		else if (mesh->m_VertexFormat == 0x80101)
 		{
-			ctx.modifiers.do_not_render = false; 
-
 			if (ctx.info.shader_name.starts_with("WriteZ")) {
 				ctx.modifiers.do_not_render = true;
 			}
@@ -252,6 +274,10 @@ namespace mods::blackmesa
 					ctx.save_vs(dev);
 					dev->SetVertexShader(nullptr);
 				}*/
+
+#if DEBUG
+				if (im->m_debug_disable_rendering[2]) ctx.modifiers.do_not_render = true;
+#endif
 			}
 		}
 
@@ -342,6 +368,10 @@ namespace mods::blackmesa
 #endif
 			ctx.save_vs(dev); 
 			dev->SetVertexShader(nullptr);
+
+#if DEBUG
+			if (im->m_debug_disable_rendering[3]) ctx.modifiers.do_not_render = true;
+#endif
 		}
 
 		// also renders text 
@@ -349,9 +379,12 @@ namespace mods::blackmesa
 		// > console/background01_widescreen
 		else if (mesh->m_VertexFormat == 0x80107)
 		{
-			ctx.modifiers.do_not_render = false; 
 			//ctx.save_vs(dev);
 			//dev->SetVertexShader(nullptr);
+
+#if DEBUG
+			if (im->m_debug_disable_rendering[4]) ctx.modifiers.do_not_render = true;
+#endif
 		}
 
 		// VertexLitGeneric
@@ -360,63 +393,122 @@ namespace mods::blackmesa
 		{
 			ctx.save_vs(dev);
 			dev->SetVertexShader(nullptr);
+
+#if DEBUG
+			if (im->m_debug_disable_rendering[5]) ctx.modifiers.do_not_render = true;
+#endif
 		}
 
 		// Sprite_DX9
 		// > materials/sprites/glow_rendermode_9
 		else if (mesh->m_VertexFormat == 0x80105)
 		{
-			ctx.modifiers.do_not_render = false; 
 			ctx.save_vs(dev);
 			dev->SetVertexShader(nullptr);
+
+#if DEBUG
+			if (im->m_debug_disable_rendering[6]) ctx.modifiers.do_not_render = true;
+#endif
 		}
 
 		// VertexLitGeneric
 		// > models/props_am/am_lobby_blastdoors_frame
-		else if (  mesh->m_VertexFormat == 0xa0003
-				|| mesh->m_VertexFormat == 0xa2087)
+		else if (  mesh->m_VertexFormat == 0xa0003)
+				//|| mesh->m_VertexFormat == 0xa2087)
 		{
+			//ctx.modifiers.do_not_render = true;
 			ctx.save_vs(dev);
 			dev->SetVertexShader(nullptr);
+
+			//if (ctx.info.buffer_state.m_Transform[0] == shared::globals::IDENTITY)
+			//{
+			//	// holds identity or transposed poseToMesh on unbaked meshes (MapSettings [UNBAKE]) - see R_StudioSoftwareProcessMesh_hk
+			//	auto wrld = &renderer::get()->m_unbake_transforms_p2w_transform;
+
+			//	if (*wrld != shared::globals::IDENTITY)
+			//	{
+			//		int y = 0;
+			//		dev->SetTransform(D3DTS_WORLD, wrld);
+			//	}
+
+			//	int x = 1;
+			//	//dev->SetTransform(D3DTS_WORLD, wrld);
+
+			//}
+
+#if DEBUG
+			if (im->m_debug_disable_rendering[7]) ctx.modifiers.do_not_render = true;
+#endif
+		}
+
+
+		else if (mesh->m_VertexFormat == 0xa2087) // ?
+		{
+			//ctx.modifiers.do_not_render = true;
+
+			//if (ctx.info.buffer_state.m_Transform[0] == shared::globals::IDENTITY)
+			{
+				auto wrld = &renderer::get()->m_unbake_transforms_p2w_transform;
+				dev->SetTransform(D3DTS_WORLD, wrld);
+			}
+
+			ctx.save_vs(dev);
+			dev->SetVertexShader(nullptr);
+
+#if DEBUG
+			if (im->m_debug_disable_rendering[8]) ctx.modifiers.do_not_render = true;
+#endif
 		}
 
 		// Spritecard
 		// > particle/water/watersplash_001a
 		else if (mesh->m_VertexFormat == 0x114900105)
 		{
-			ctx.modifiers.do_not_render = false; 
+#if DEBUG
+			if (im->m_debug_disable_rendering[9]) ctx.modifiers.do_not_render = true;
+#endif
 		}
 
 		// Spritecard
 		// > particle/vistasmokev1/vistasmokev1
 		else if (mesh->m_VertexFormat == 0x24914900105)
 		{
-			ctx.modifiers.do_not_render = false;
+#if DEBUG
+			if (im->m_debug_disable_rendering[10]) ctx.modifiers.do_not_render = true;
+#endif
 		}
 
 		// Refract_DX90
 		// > particle/warp1_warp
 		else if (mesh->m_VertexFormat == 0x80137)
 		{
-			ctx.modifiers.do_not_render = false;
+#if DEBUG
+			if (im->m_debug_disable_rendering[11]) ctx.modifiers.do_not_render = true;
+#endif
 		}
 
 		// Water_DX9_HDR
 		// > liquids/slime
 		else if (mesh->m_VertexFormat == 0x80133)
 		{
-			ctx.modifiers.do_not_render = false;
 			ctx.save_vs(dev);
 			dev->SetVertexShader(nullptr);
+
+#if DEBUG
+			if (im->m_debug_disable_rendering[12]) ctx.modifiers.do_not_render = true;
+#endif
 		}
 
 		// Cable_DX9
 		// > cable/steel
 		else if (mesh->m_VertexFormat == 0x480135)
 		{
-			ctx.modifiers.do_not_render = false;
 			//ctx.save_texture(dev, 0);
 			//dev->SetTexture(0, tex_addons::black);
+
+#if DEBUG
+			if (im->m_debug_disable_rendering[13]) ctx.modifiers.do_not_render = true;
+#endif
 		}
 
 		// ShatteredGlass
@@ -425,6 +517,10 @@ namespace mods::blackmesa
 		{
 			ctx.save_vs(dev);
 			dev->SetVertexShader(nullptr);
+
+#if DEBUG
+			if (im->m_debug_disable_rendering[14]) ctx.modifiers.do_not_render = true;
+#endif
 		}
 
 		// Lightmapped_4WayBlend
@@ -511,6 +607,10 @@ namespace mods::blackmesa
 #endif
 			ctx.save_vs(dev); 
 			dev->SetVertexShader(nullptr);
+
+#if DEBUG
+			if (im->m_debug_disable_rendering[15]) ctx.modifiers.do_not_render = true;
+#endif
 		}
 
 		// LightmappedGeneric
@@ -519,14 +619,23 @@ namespace mods::blackmesa
 		{
 			ctx.save_vs(dev);
 			dev->SetVertexShader(nullptr);
+
+#if DEBUG
+			if (im->m_debug_disable_rendering[16]) ctx.modifiers.do_not_render = true;
+#endif
 		}
 
 		// VertexLitGeneric
 		// > decals/smscorch1model
 		else if (mesh->m_VertexFormat == 0x82181)
 		{
+			//ctx.modifiers.do_not_render = true;
 			ctx.save_vs(dev);
 			dev->SetVertexShader(nullptr);
+
+#if DEBUG
+			if (im->m_debug_disable_rendering[17]) ctx.modifiers.do_not_render = true;
+#endif
 		}
 
 #if DEBUG
@@ -876,9 +985,463 @@ namespace mods::blackmesa
 		dev->SetTransform(D3DTS_WORLD, &shared::globals::IDENTITY);
 	}
 
+	void __fastcall tbl_hk::model_renderer::DrawModelExecute::Detour(void* ecx, void* edx, const game::DrawModelState_t& state, const game::ModelRenderInfo_t& pInfo, shared::matrix3x4_t* pCustomBoneToWorld)
+	{
+		bool ignore = false;
+		const auto& hmsettings = map_settings::get_map_settings().hide_models;
+
+		for (const auto& hide_mdl_with_radius : hmsettings.radii)
+		{
+			if (pInfo.pModel->radius == hide_mdl_with_radius)
+			{
+				ignore = true;
+				break;
+			}
+		}
+
+		if (!ignore && !hmsettings.substrings.empty())
+		{
+			const auto mdl_string = std::string_view(pInfo.pModel->szPathName);
+			for (const auto& hide_mdl_with_substr : hmsettings.substrings)
+			{
+				if (mdl_string.contains(hide_mdl_with_substr))
+				{
+					ignore = true;
+					break;
+				}
+			}
+		}
+
+		// check for attached lights
+		//remix_lights::on_draw_model_exec(pInfo);
+
+		if (!ignore)
+		{
+			// draw the model
+			tbl_hk::model_renderer::table.original<FN>(Index)(ecx, edx, state, pInfo, pCustomBoneToWorld);
+
+			if (cmd::model_info_vis)
+			{
+				if (game::get_current_view_origin()->DistToSqr(pInfo.origin) < 1000.0f * 1000.0f)
+				{
+					game::debug_add_text_overlay(&pInfo.origin.x, pInfo.pModel->szPathName, 0, 1.0f, 1.0f, 1.0f, 1.0f);
+					game::debug_add_text_overlay(&pInfo.origin.x, shared::utils::va("Radius: %.7f", pInfo.pModel->radius), 1, 1.0f, 1.0f, 1.0f, 1.0f);
+					game::debug_add_text_overlay(&pInfo.origin.x, shared::utils::va("Origin: %.7f %.7f %.7f", pInfo.origin.x, pInfo.origin.y, pInfo.origin.z), 2, 1.0f, 1.0f, 1.0f, 1.0f);
+				}
+			}
+		}
+		else
+		{
+			if (cmd::model_info_vis)
+			{
+				if (game::get_current_view_origin()->DistToSqr(pInfo.origin) < 1000.0f * 1000.0f)
+				{
+					game::debug_add_text_overlay(&pInfo.origin.x, "#IGNORED#", 0, 1.0f, 0.6f, 0.6f, 0.6f);
+					game::debug_add_text_overlay(&pInfo.origin.x, pInfo.pModel->szPathName, 1, 1.0f, 0.6f, 0.6f, 0.6f);
+					game::debug_add_text_overlay(&pInfo.origin.x, shared::utils::va("Radius: %.7f", pInfo.pModel->radius), 2, 1.0f, 0.6f, 0.6f, 0.6f);
+				}
+			}
+		}
+	}
+
+	namespace unbake_transform
+	{
+#if 0
+		void transpose_matrix3x4_to_d3dxmatrix(const shared::matrix3x4_t& src, D3DXMATRIX& dest)
+		{
+			dest.m[0][0] = src.m_flMatVal[0][0];
+			dest.m[0][1] = src.m_flMatVal[1][0];
+			dest.m[0][2] = src.m_flMatVal[2][0];
+			dest.m[0][3] = 0.0f;
+
+			dest.m[1][0] = src.m_flMatVal[0][1];
+			dest.m[1][1] = src.m_flMatVal[1][1];
+			dest.m[1][2] = src.m_flMatVal[2][1];
+			dest.m[1][3] = 0.0f;
+
+			dest.m[2][0] = src.m_flMatVal[0][2];
+			dest.m[2][1] = src.m_flMatVal[1][2];
+			dest.m[2][2] = src.m_flMatVal[2][2];
+			dest.m[2][3] = 0.0f;
+
+			dest.m[3][0] = src.m_flMatVal[0][3];
+			dest.m[3][1] = src.m_flMatVal[1][3];
+			dest.m[3][2] = src.m_flMatVal[2][3];
+			dest.m[3][3] = 1.0f;
+		}
+
+		shared::matrix3x4_t og_pose = {}; 
+		void R_StudioDrawPoints_hk([[maybe_unused]] void* mesh_data, game::mstudiomodel_t* sub_model) // studiomeshdata_t* mesh_data
+		{
+			auto& unbake_transform = renderer::get()->m_unbake_transforms_on_next_static_prop;
+			unbake_transform = false; // always reset
+
+			if (imgui::get()->m_debug_disable_unbake) {
+				return;
+			}
+
+			const auto model_str = std::string_view(sub_model->name);
+
+			if (cmd::ms_unbake_info) {
+				cmd::ms_unbake_info_logged_strings.insert(model_str);
+			}
+
+			if (const auto& unbake_model_names = map_settings::get_map_settings().unbake_models;
+				!unbake_model_names.empty())
+			{
+				for (const auto& unbake_mdl_str : unbake_model_names)
+				{
+					if (model_str.contains(unbake_mdl_str))
+					{
+						unbake_transform = true;
+						break;
+					}
+				}
+			}
+		}
+
+		DWORD R_StudioDrawPoints_pSubModel_addr = 0u;
+		HOOK_RETN_PLACE_DEF(R_StudioDrawPoints_retn_addr);
+		void __declspec(naked) R_StudioDrawPoints_stub()
+		{
+			__asm
+			{
+				mov		R_StudioDrawPoints_pSubModel_addr, eax; // save addr
+				mov     eax, [esi + 0xB8]; // og
+
+				pushad;
+				push	R_StudioDrawPoints_pSubModel_addr;
+				push	eax;
+				call	R_StudioDrawPoints_hk;
+				add		esp, 8;
+				popad;
+
+				// og
+				mov     eax, [esi + 0xB8];
+				jmp		R_StudioDrawPoints_retn_addr;
+			}
+		}
+
+		// do not bake position/normals into vertices of "dynamic" static props
+		void R_StudioSoftwareProcessMesh_hk(shared::matrix3x4_t* pose_to_world)
+		{
+			og_pose = *pose_to_world;
+
+			if (imgui::get()->m_debug_disable_unbake) {
+				return;
+			}
+
+			auto& unbake_transform = renderer::get()->m_unbake_transforms_on_next_static_prop;
+			if (!unbake_transform)
+			{
+				renderer::get()->m_unbake_transforms_p2w_transform = shared::globals::IDENTITY;
+				return;
+			}
+
+			auto& wrld = renderer::get()->m_unbake_transforms_p2w_transform;
+			transpose_matrix3x4_to_d3dxmatrix(*pose_to_world, wrld);
+
+			pose_to_world->m_flMatVal[0][0] = 1.0f;
+			pose_to_world->m_flMatVal[0][1] = 0.0f;
+			pose_to_world->m_flMatVal[0][2] = 0.0f;
+			pose_to_world->m_flMatVal[0][3] = 0.0f; // transform x
+
+			pose_to_world->m_flMatVal[1][0] = 0.0f;
+			pose_to_world->m_flMatVal[1][1] = 1.0f;
+			pose_to_world->m_flMatVal[1][2] = 0.0f;
+			pose_to_world->m_flMatVal[1][3] = 0.0f; // transform y
+
+			pose_to_world->m_flMatVal[2][0] = 0.0f;
+			pose_to_world->m_flMatVal[2][1] = 0.0f;
+			pose_to_world->m_flMatVal[2][2] = 1.0f;
+			pose_to_world->m_flMatVal[2][3] = 0.0f; // transform z
+		}
+
+		// works but issues
+		//HOOK_RETN_PLACE_DEF(R_StudioSoftwareProcessMesh_retn_addr);
+		//void __declspec(naked) R_StudioSoftwareProcessMesh_stub()
+		//{
+		//	__asm
+		//	{
+		//		push    esi;
+		//		push    edi;
+		//		mov     ecx, [ebx + 8];
+		//		mov     eax, [ebx + 0xC]; // poseToWorld
+
+		//		pushad;
+		//		push	eax;
+		//		call	R_StudioSoftwareProcessMesh_hk;
+		//		add		esp, 4;
+		//		popad;
+
+		//		mov     ecx, [ebx + 8];
+		//		mov     eax, [ebx + 0xC]; // poseToWorld
+		//		jmp		R_StudioSoftwareProcessMesh_retn_addr;
+		//	}
+		//}
+
+		HOOK_RETN_PLACE_DEF(R_StudioSoftwareProcessMesh_retn_addr);
+		void __declspec(naked) R_StudioSoftwareProcessMesh_stub()
+		{
+			__asm
+			{
+
+				mov		eax, dword ptr[esi + 0xA0]; // poseToWorld
+				pushad;
+				push	eax;
+				call	R_StudioSoftwareProcessMesh_hk;
+				add		esp, 4;
+				popad;
+
+				push    dword ptr[esi + 0xA0];
+				jmp		R_StudioSoftwareProcessMesh_retn_addr;
+			}
+		}
+
+
+		void R_StudioSoftwareProcessMesh_Restore_hk(shared::matrix3x4_t* pose_to_world) {
+			*pose_to_world = og_pose;
+		}
+
+		// works but issue
+		//void __declspec(naked) R_StudioSoftwareProcessMesh_Restore_stub()
+		//{
+		//	__asm
+		//	{
+		//		pushad;
+
+		//		mov     eax, [ebx + 0xC];
+		//		push    eax;
+		//		call	R_StudioSoftwareProcessMesh_Restore_hk;
+		//		add		esp, 4;
+		//		popad;
+
+		//		// og
+		//		mov     esp, ebx;
+		//		pop     ebx;
+		//		retn;
+		//	}
+		//}
+
+		void __declspec(naked) R_StudioSoftwareProcessMesh_Restore_stub()
+		{
+			__asm
+			{
+				pushad;
+				mov		eax, dword ptr[esi + 0xA0]; // poseToWorld
+				push    eax;
+				call	R_StudioSoftwareProcessMesh_Restore_hk;
+				add		esp, 4;
+				popad;
+
+				// og
+				pop     edi;
+				pop     esi;
+				mov     esp, ebp;
+				pop     ebp;
+				retn    0x28;
+			}
+		}
+		void R_StudioRenderFinal_hk() {
+			renderer::get()->m_unbake_transforms_p2w_transform = shared::globals::IDENTITY;
+		}
+
+		void __declspec(naked) R_StudioRenderFinal_stub()
+		{
+			__asm
+			{
+				pushad;
+				call	R_StudioRenderFinal_hk;
+				popad;
+
+				// og
+				mov     eax, edi;
+				pop     edi;
+				pop     esi;
+				pop     ebx;
+				pop     ebp;
+				retn    0x28;
+			}
+		}
+#endif
+
+
+
+
+
+
+
+		struct studiohdr_t
+		{
+			int id;
+			int version;
+			int checksum;
+			char name[64];
+			int length;
+			Vector eyeposition;
+			Vector illumposition;
+			Vector hull_min;
+			Vector hull_max;
+			Vector view_bbmin;
+			Vector view_bbmax;
+			int flags;
+			int numbones;
+			int boneindex;
+		}; STATIC_ASSERT_OFFSET(studiohdr_t, numbones, 0x9C);
+
+		struct CStudioRender
+		{
+			//char pad[0xB0];
+			char pad[0x6C];
+			shared::matrix3x4_t m_StaticPropRootToWorld;
+			shared::matrix3x4_t* m_pBoneToWorld;
+			shared::matrix3x4_t* m_PoseToWorld;
+			int pad2[3];
+			studiohdr_t* m_pStudioHdr;
+			game::mstudiomodel_t* sub_model;
+		}; STATIC_ASSERT_OFFSET(CStudioRender, m_pStudioHdr, 0xB0);
+
+		int R_StudioDrawStaticMesh_hk(CStudioRender* studio)
+		{
+			if (imgui::get()->m_debug_disable_unbake) {
+				return 0;
+			}
+
+			const auto model_str = std::string_view(studio->sub_model->name);
+
+			bool requires_unbake = false;
+			const auto& unbake_model_names = map_settings::get_map_settings().unbake_models;
+
+			// check for unbake checksums
+			if (!unbake_model_names.checksums.empty())
+			{
+				for (const auto& unbake_mdl_checksum : unbake_model_names.checksums)
+				{
+					if (unbake_mdl_checksum == studio->m_pStudioHdr->checksum)
+					{
+						requires_unbake = true;
+						break;
+					}
+				}
+			}
+
+			// check for unbake strings if no checksum matched
+			if (!requires_unbake && !unbake_model_names.strings.empty())
+			{
+				for (const auto& unbake_mdl_str : unbake_model_names.strings)
+				{
+					if (model_str.contains(unbake_mdl_str))
+					{
+						requires_unbake = true;
+						break;
+					}
+				}
+			}
+
+			if (cmd::ms_unbake_info)
+			{
+				std::string str = std::string(model_str) + " --- checksum: " + shared::utils::to_hex_string(studio->m_pStudioHdr->checksum);
+				cmd::ms_unbake_info_logged_strings.insert(str);
+			}
+
+			if (cmd::unbake_model_info_vis)
+			{
+				const Vector org = { studio->m_PoseToWorld->m_flMatVal[0][3], studio->m_PoseToWorld->m_flMatVal[1][3], studio->m_PoseToWorld->m_flMatVal[2][3] };
+				if (game::get_current_view_origin()->DistToSqr(org) < 1000.0f * 1000.0f)
+				{
+					if (requires_unbake)
+					{
+						game::debug_add_text_overlay(&org.x, "#UNBAKED#", 0, 1.0f, 0.6f, 0.6f, 0.6f);
+					}
+					game::debug_add_text_overlay(&org.x, studio->sub_model->name, 1, 1.0f, 1.0f, 1.0f, 1.0f);
+					game::debug_add_text_overlay(&org.x, shared::utils::va("Checksum: %sf", shared::utils::to_hex_string(studio->m_pStudioHdr->checksum).c_str()), 2, 1.0f, 1.0f, 1.0f, 1.0f);
+				}
+			}
+
+			/*if (studio->m_pStudioHdr->numbones <= 1) 
+			{
+				return 0;
+			}*/
+
+			return requires_unbake;
+		}
+
+		HOOK_RETN_PLACE_DEF(R_StudioDrawStaticMesh_og_retn_addr);
+		HOOK_RETN_PLACE_DEF(R_StudioDrawStaticMesh_nop_retn_addr);
+		void __declspec(naked) R_StudioDrawStaticMesh_stub()
+		{
+			__asm
+			{
+				pushad;
+				push	edi; // CStudioRender
+				call	R_StudioDrawStaticMesh_hk;
+				add		esp, 4;
+
+				cmp		eax, 1;
+				je		SKIP_CHECK;	// jmp if eax = 1
+				popad;
+
+				// og
+				mov     eax, [edi + 4];
+				test    byte ptr[eax + 0x24], 2;
+				jmp		R_StudioDrawStaticMesh_og_retn_addr;
+
+			SKIP_CHECK:
+				popad;
+
+				mov     eax, [edi + 4]; // og
+				jmp		R_StudioDrawStaticMesh_nop_retn_addr;
+			}
+		}
+	}
+
+	// called from imgui::on_present
+	void renderer::on_present()
+	{
+		if (cmd::ms_unbake_info)
+		{
+			cmd::ms_unbake_info = false;
+			std::filesystem::create_directories(shared::globals::root_path + "\\rtx_comp\\logs\\");
+
+			std::ofstream file;
+			file.open((shared::globals::root_path + "\\rtx_comp\\logs\\mapsettings_unbake_info.log").c_str());
+
+			file << "MapSettings [UNBAKE] : Logfile containing names of models that were drawn in the capture frame." << "\n\n";
+
+			for (const auto& str : cmd::ms_unbake_info_logged_strings) {
+				file << str << "\n";
+			}
+
+			file.close();
+			cmd::ms_unbake_info_logged_strings.clear();
+		}
+	}
+
+	game::ConCommand xo_debug_toggle_model_info_cmd{};
+	void xo_debug_toggle_model_info_fn()
+	{
+		cmd::model_info_vis = !cmd::model_info_vis;
+	}
+
+	game::ConCommand xo_debug_toggle_unbake_model_info_cmd{};
+	void xo_debug_toggle_unbake_model_info_fn()
+	{
+		cmd::unbake_model_info_vis = !cmd::unbake_model_info_vis;
+	}
+
+	game::ConCommand xo_mapsettings_get_unbake_info_cmd{};
+	void xo_mapsettings_get_unbake_info_fn()
+	{
+		cmd::ms_unbake_info = true;
+	}
+
 	renderer::renderer()
 	{
 		p_this = this;
+
+		tbl_hk::model_renderer::_interface = shared::utils::module_interface.get<tbl_hk::model_renderer::IVModelRender*>("engine.dll", "VEngineModel016");
+		XASSERT(tbl_hk::model_renderer::table.init(tbl_hk::model_renderer::_interface) == false);
+		XASSERT(tbl_hk::model_renderer::table.hook(&tbl_hk::model_renderer::DrawModelExecute::Detour, tbl_hk::model_renderer::DrawModelExecute::Index) == false);
 
 		shared::utils::hook(RENDERER_BASE + 0x3C5E7, cmeshdx8_renderpass_pre_draw_stub, HOOK_JUMP).install()->quick();
 		HOOK_RETN_PLACE(cmeshdx8_renderpass_pre_draw_retn_addr, RENDERER_BASE + 0x3C5EC);
@@ -898,6 +1461,64 @@ namespace mods::blackmesa
 		// Shader_WorldEnd - skip render flashlight stuff before drawing the sky
 		shared::utils::hook::conditional_jump_to_jmp(ENGINE_BASE + 0x10D060);
 		shared::utils::hook::conditional_jump_to_jmp(ENGINE_BASE + 0x10D07C);
+
+
+#if 0
+		// Remove world-position baking for vertices of "dynamic" static props and use SetTransform(WORLD) to transform them into the world.
+		// This results in:
+		// - affected mesh instances having the same (remix) hash
+		// - stable hashes for some non-animated props (cube)
+
+		// CStudioRender::R_StudioRenderFinal -> 
+		// CStudioRender::R_StudioDrawPoints -> 
+		// CStudioRender::R_StudioDrawMesh -> 
+		// CStudioRender::R_StudioDrawStaticMesh ->
+		// CStudioRender::R_StudioSoftwareProcessMesh -> 
+		// CProcessMeshWrapper<0,0,0>::R_StudioSoftwareProcessMesh (hooked)
+		// :: transpose pPoseToWorld and use it as world-transform in 'cmeshdx8_renderpass_pre_draw'
+		// :: set pPoseToWorld to identity to remove position/normal baking
+
+
+		// works but issues
+		//shared::utils::hook(STUDIORENDER_BASE + 0x15C86, unbake_transform::R_StudioSoftwareProcessMesh_stub, HOOK_JUMP).install()->quick(); // y
+		//HOOK_RETN_PLACE(unbake_transform::R_StudioSoftwareProcessMesh_retn_addr, STUDIORENDER_BASE + 0x15C8E); // y
+
+		shared::utils::hook::nop(STUDIORENDER_BASE + 0x1BBA1, 6);
+		shared::utils::hook(STUDIORENDER_BASE + 0x1BBA1, unbake_transform::R_StudioSoftwareProcessMesh_stub, HOOK_JUMP).install()->quick(); // y
+		HOOK_RETN_PLACE(unbake_transform::R_StudioSoftwareProcessMesh_retn_addr, STUDIORENDER_BASE + 0x1BBA7); // y
+
+
+		// restore pPoseToWorld after building the mesh ^
+		// works but issues
+		//shared::utils::hook(STUDIORENDER_BASE + 0x1600E, unbake_transform::R_StudioSoftwareProcessMesh_Restore_stub, HOOK_JUMP).install()->quick(); // y hope
+
+		shared::utils::hook(STUDIORENDER_BASE + 0x1BBB4, unbake_transform::R_StudioSoftwareProcessMesh_Restore_stub, HOOK_JUMP).install()->quick(); // y hope
+
+
+
+		// CStudioRender::R_StudioRenderFinal
+		// :: some meshes are made up of multiple submodels or body parts, so 'cmeshdx8_renderpass_pre_draw' gets called multiple times
+		// :: we need to set the modified world-transform back to identity after we are done rendering the mesh to not affect subsequent meshes
+		shared::utils::hook(STUDIORENDER_BASE + 0x118F7, unbake_transform::R_StudioRenderFinal_stub, HOOK_JUMP).install()->quick(); // y
+
+		// CStudioRender::R_StudioDrawPoints
+		// :: get info about the current mesh and decide if we will be fixing the baked transform or not
+		shared::utils::hook::nop(STUDIORENDER_BASE + 0x109AE, 6); // y
+		shared::utils::hook(STUDIORENDER_BASE + 0x109AE, unbake_transform::R_StudioDrawPoints_stub, HOOK_JUMP).install()->quick(); // y
+		HOOK_RETN_PLACE(unbake_transform::R_StudioDrawPoints_retn_addr, STUDIORENDER_BASE + 0x109B4); // y
+#endif
+
+		shared::utils::hook::nop(STUDIORENDER_BASE + 0x10AC0, 7);
+		shared::utils::hook(STUDIORENDER_BASE + 0x10AC0, unbake_transform::R_StudioDrawStaticMesh_stub, HOOK_JUMP).install()->quick();
+		HOOK_RETN_PLACE(unbake_transform::R_StudioDrawStaticMesh_og_retn_addr, STUDIORENDER_BASE + 0x10AC7);
+		HOOK_RETN_PLACE(unbake_transform::R_StudioDrawStaticMesh_nop_retn_addr, STUDIORENDER_BASE + 0x10ACD);
+
+
+
+		game::con_add_command(&xo_debug_toggle_model_info_cmd, "xo_debug_toggle_model_info", xo_debug_toggle_model_info_fn, "Toggle model name and radius visualizations");
+		game::con_add_command(&xo_debug_toggle_unbake_model_info_cmd, "xo_debug_toggle_unbake_model_info", xo_debug_toggle_unbake_model_info_fn, "Draw model name checksums for [UNBAKE] (mapsettings)");
+
+		game::con_add_command(&xo_mapsettings_get_unbake_info_cmd, "xo_mapsettings_get_unbake_info", xo_mapsettings_get_unbake_info_fn, "This log names of drawn models in the current frame to a logfile in portal2-rtx/logs/. Useful for MapSettings : [UNBAKE]");
 
 		m_initialized = true;
 		std::cout << "[RENDERER] loaded\n";

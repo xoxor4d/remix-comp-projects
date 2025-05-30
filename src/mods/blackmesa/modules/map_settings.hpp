@@ -31,6 +31,53 @@ namespace mods::blackmesa
 			std::string value;
 		};
 
+		struct remix_light_settings_s
+		{
+			struct point_s
+			{
+				Vector position;
+				Vector radiance;
+				float radiance_scalar = 1.0f;
+				float radius = 1.0f;
+				float timepoint = 0.0f;
+				float smoothness = 0.5f;
+
+				// shaping
+				bool use_shaping = false;
+				Vector direction = { 0.0f, 0.0f, 1.0f };
+				float degrees = 180.0; // cone angle
+				float softness = 0.0f; // cone
+				float exponent = 0.0f; // focus
+
+				// volumetric
+				float volumetric_scale = 1.0f;
+			};
+
+			std::vector<point_s> points;
+			bool run_once = false;
+			bool loop = false;
+			bool loop_smoothing = false;
+			bool trigger_always = false;
+
+			std::string trigger_choreo_name;
+			std::string trigger_choreo_actor;
+			std::string trigger_choreo_event;
+			std::string trigger_choreo_param1;
+			std::uint32_t trigger_sound_hash;
+			float trigger_delay = 0.0f;
+
+			std::string kill_choreo_name;
+			std::uint32_t kill_sound_hash;
+			float kill_delay = 0.0f;
+
+			float attach_prop_radius = 0.0f;
+			std::string attach_prop_name;
+			Vector attach_prop_mins; // min bounds
+			Vector attach_prop_maxs; // max bounds
+
+			std::string comment;
+		};
+
 		// ---
 
 		static constexpr float DEFAULT_NOCULL_DIST = 1000.0f;
@@ -39,6 +86,18 @@ namespace mods::blackmesa
 		{
 			float nocull_distance = DEFAULT_NOCULL_DIST;
 			std::uint32_t area_index;
+		};
+
+		struct hide_models_s
+		{
+			std::unordered_set<std::string> substrings;
+			std::unordered_set<float> radii;
+		};
+
+		struct unbake_models_s
+		{
+			std::unordered_set<int> checksums;
+			std::unordered_set<std::string> strings;
 		};
 
 		struct map_settings_s
@@ -50,8 +109,13 @@ namespace mods::blackmesa
 			float water_offset_bottom = 0.0f; // bottom layer
 			std::unordered_map<std::uint32_t, area_overrides_s> area_settings;
 			float default_nocull_dist = DEFAULT_NOCULL_DIST;
+			hide_models_s hide_models;
+			//std::unordered_set<std::string> unbake_models;
+			unbake_models_s unbake_models;
+			//std::vector<remix_light_settings_s> remix_lights;
 			std::vector<marker_settings_s> map_markers;
 			std::vector<std::string> api_var_configs;
+			bool using_any_light_attached_to_prop = false;
 		};
 
 		static map_settings_s& get_map_settings() { return m_map_settings; }

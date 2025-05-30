@@ -180,8 +180,8 @@ namespace mods::blackmesa
 		const auto dev = game::get_d3d_device();
 
 		// resets
-		//renderer::get()->m_unbake_transforms_on_next_static_prop = false;
-		//renderer::get()->m_unbake_transforms_p2w_transform = game::IDENTITY;
+		renderer::get()->m_unbake_transforms_on_next_static_prop = false;
+		renderer::get()->m_unbake_transforms_p2w_transform = shared::globals::IDENTITY;
 
 		// setup main camera (currently req. for nocull markers)
 		{
@@ -395,8 +395,8 @@ namespace mods::blackmesa
 
 		game::cvar_uncheat_and_set_int("con_enable", 1);
 		game::cvar_uncheat_and_set_int("mat_fullbright", 1);
-		game::cvar_uncheat_and_set_int("mat_softwareskin", 1);
-		game::cvar_uncheat_and_set_int("mat_phong", 1);
+		game::cvar_uncheat_and_set_int("mat_softwareskin", 1); // .... studio + 0x10AC7 .. nop 2 to disable softwareskin
+		game::cvar_uncheat_and_set_int("mat_phong", 1); 
 		game::cvar_uncheat_and_set_int("mat_disable_ps_patch", 1);
 		game::cvar_uncheat_and_set_int("r_gbuffer_disable", 1);
 		game::cvar_uncheat_and_set_int("mat_disable_bloom", 1);
@@ -705,6 +705,7 @@ namespace mods::blackmesa
 
 		shared::common::loader::module_loader::register_module(std::make_unique<interfaces>());
 		shared::common::loader::module_loader::register_module(std::make_unique<game_settings>());
+		shared::common::loader::module_loader::register_module(std::make_unique<map_settings>());
 		shared::common::loader::module_loader::register_module(std::make_unique<imgui>());
 		shared::common::loader::module_loader::register_module(std::make_unique<renderer>());
 

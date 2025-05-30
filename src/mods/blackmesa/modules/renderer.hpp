@@ -3,6 +3,53 @@
 
 namespace mods::blackmesa
 {
+	namespace cmd
+	{
+		extern bool model_info_vis;
+		extern bool unbake_model_info_vis;
+		extern bool ms_unbake_info;
+	}
+
+	namespace tbl_hk::model_renderer
+	{
+		inline shared::utils::vtable table;
+
+		namespace DrawModelExecute
+		{
+			constexpr uint32_t Index = 19u;
+			using FN = void(__fastcall*)(void*, void*, const game::DrawModelState_t&, const game::ModelRenderInfo_t&, shared::matrix3x4_t*);
+			void __fastcall Detour(void* ecx, void* edx, const game::DrawModelState_t& state, const game::ModelRenderInfo_t& pInfo, shared::matrix3x4_t* pCustomBoneToWorld);
+		}
+
+		typedef unsigned short ModelInstanceHandle_t;
+		class IVModelRender
+		{
+		public:
+			virtual int						DrawModel(int flags, game::IClientRenderable* pRenderable, ModelInstanceHandle_t instance, int entity_index, const game::model_t* model, Vector const& origin, Vector const& angles, int skin, int body, int hitboxset, const shared::matrix3x4_t* modelToWorld = nullptr, const shared::matrix3x4_t* pLightingOffset = nullptr) = 0;
+			virtual void					ForcedMaterialOverride(game::IMaterial* newMaterial, game::OverrideType_t nOverrideType = game::OVERRIDE_NORMAL) = 0;
+			virtual void					SetViewTarget(const game::CStudioHdr* pStudioHdr, int nBodyIndex, const Vector& target) = 0;
+			virtual ModelInstanceHandle_t	CreateInstance(game::IClientRenderable* pRenderable, void* pCache = nullptr) = 0;
+			virtual void					DestroyInstance(ModelInstanceHandle_t handle) = 0;
+			virtual void					SetStaticLighting(ModelInstanceHandle_t handle, void* pHandle) = 0;
+			virtual void*					GetStaticLighting(ModelInstanceHandle_t handle) = 0;
+			virtual bool					ChangeInstance(ModelInstanceHandle_t handle, game::IClientRenderable* pRenderable) = 0;
+			virtual void					AddDecal(ModelInstanceHandle_t handle, game::Ray_t const& ray, Vector const& decalUp, int decalIndex, int body, bool noPokeThru = false, int maxLODToDecal = 0xFFFFFFFF) = 0;
+			virtual void					RemoveAllDecals(ModelInstanceHandle_t handle) = 0;
+			virtual void					RemoveAllDecalsFromAllModels() = 0;
+			virtual shared::matrix3x4_t*	DrawModelShadowSetup(game::IClientRenderable* pRenderable, int body, int skin, game::DrawModelInfo_t* pInfo, shared::matrix3x4_t* pCustomBoneToWorld = nullptr) = 0;
+			virtual void					DrawModelShadow(game::IClientRenderable* pRenderable, const game::DrawModelInfo_t& info, shared::matrix3x4_t* pCustomBoneToWorld = nullptr) = 0;
+			virtual bool					RecomputeStaticLighting(ModelInstanceHandle_t handle) = 0;
+			virtual void					ReleaseAllStaticPropColorData(void) = 0;
+			virtual void					RestoreAllStaticPropColorData(void) = 0;
+			virtual int						DrawModelEx(game::ModelRenderInfo_t& pInfo) = 0;
+			virtual int						DrawModelExStaticProp(game::ModelRenderInfo_t& pInfo) = 0;
+			virtual bool					DrawModelSetup(game::ModelRenderInfo_t& pInfo, game::DrawModelState_t* pState, shared::matrix3x4_t* pCustomBoneToWorld, shared::matrix3x4_t** ppBoneToWorldOut) = 0;
+			virtual void					DrawModelExecute(const game::DrawModelState_t& state, const game::ModelRenderInfo_t& pInfo, shared::matrix3x4_t* pCustomBoneToWorld = nullptr) = 0;
+		};
+
+		inline IVModelRender* _interface = nullptr;
+	}
+
 	class prim_fvf_context
 	{
 	public:
@@ -343,6 +390,7 @@ namespace mods::blackmesa
 		static renderer* get() { return p_this; }
 
 		static void draw_nocull_markers();
+		static void on_present();
 
 		static bool is_initialized()
 		{
@@ -353,6 +401,9 @@ namespace mods::blackmesa
 		}
 
 		static inline prim_fvf_context primctx{};
+
+		bool m_unbake_transforms_on_next_static_prop = false;
+		D3DXMATRIX m_unbake_transforms_p2w_transform = shared::globals::IDENTITY;
 
 	private:
 		bool m_initialized = false;
