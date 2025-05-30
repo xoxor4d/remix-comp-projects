@@ -37,21 +37,24 @@
     ]
 
     bm_c0a0b = [
+        { in_area =   1, nocull_dist = 2000.00 },
         { in_area =   2, nocull_dist = 4000.00 },
+        { in_area =   4, nocull_dist = 2500.00 },
         { in_area =   6, nocull_dist = 2500.00 },
         { in_area =   7, nocull_dist = 4000.00 },
         { in_area =   8, nocull_dist = 4000.00 },
     ]
 
-
     bm_c0a0c = [
         { in_area =   1, nocull_dist = 2000.00 },
         { in_area =   2, nocull_dist = 3500.00 },
+        { in_area =   4, nocull_dist = 2500.00 },
     ]
 
     bm_c1a0a = [
-            { in_area =   4, nocull_dist = 1600.00 },
-        ]
+        { in_area =   4, nocull_dist = 1600.00 },
+        { in_area =   5, nocull_dist = 1600.00 },
+    ]
 
 
 # #####################################################################################
@@ -171,6 +174,14 @@
 
     bm_c0a0b = [
         { nocull = 101, areas = [], position = [2689.96, -3590.37, -1000.00], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00] },
+    ]
+
+    bm_c0a0c = [
+        { nocull = 102, areas = [], position = [3593.61, -687.10, -2000.00], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00] },
+    ]
+
+    bm_c1a0a = [
+        { nocull = 103, areas = [], position = [316.30, -685.44, -2000.00], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00] },
     ]
 
     bm_c2a4a = [
