@@ -180,6 +180,7 @@ namespace mods::blackmesa
 		const auto dev = game::get_d3d_device();
 
 		// resets
+		renderer::get()->m_drew_model = false; // helper for nocull markers
 		renderer::get()->m_unbake_transforms_on_next_static_prop = false;
 		renderer::get()->m_unbake_transforms_p2w_transform = shared::globals::IDENTITY;
 
@@ -191,9 +192,9 @@ namespace mods::blackmesa
 			float colProj[4][4] = {};
 			shared::utils::transpose_float4x4(enginerender->m_matrixProjection.m[0], colProj[0]);
 
-			dev->SetTransform(D3DTS_WORLD, &shared::globals::IDENTITY);
-			dev->SetTransform(D3DTS_VIEW, reinterpret_cast<const D3DMATRIX*>(colView));
-			dev->SetTransform(D3DTS_PROJECTION, reinterpret_cast<const D3DMATRIX*>(colProj));
+			//dev->SetTransform(D3DTS_WORLD, &shared::globals::IDENTITY);
+			//dev->SetTransform(D3DTS_VIEW, reinterpret_cast<const D3DMATRIX*>(colView));
+			//dev->SetTransform(D3DTS_PROJECTION, reinterpret_cast<const D3DMATRIX*>(colProj));
 		}
 
 		{
@@ -231,7 +232,7 @@ namespace mods::blackmesa
 
 		// TODO - find better spot to call this
 		//map_settings::spawn_markers_once();
-		renderer::draw_nocull_markers();
+		//renderer::draw_nocull_markers();
 
 		// CM_PointLeafnum :: get current leaf
 		const auto current_leaf = game::get_leaf_from_position(*game::get_current_view_origin());
@@ -415,6 +416,10 @@ namespace mods::blackmesa
 			shared::common::remix_vars::set_option(
 				shared::common::remix_vars::get_option("rtx.skyAutoDetect"), 
 				shared::common::remix_vars::string_to_option_value(shared::common::remix_vars::OPTION_TYPE_FLOAT, is_3d_sky_enabled ? "1" : "0"));
+
+			shared::common::remix_vars::set_option(
+				shared::common::remix_vars::get_option("rtx.skyReprojectToMainCameraSpace"),
+				shared::common::remix_vars::string_to_option_value(shared::common::remix_vars::OPTION_TYPE_BOOL, is_3d_sky_enabled ? "True" : "False"));
 		}
 	}
 

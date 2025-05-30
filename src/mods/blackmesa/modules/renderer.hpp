@@ -405,6 +405,8 @@ namespace mods::blackmesa
 		bool m_unbake_transforms_on_next_static_prop = false;
 		D3DXMATRIX m_unbake_transforms_p2w_transform = shared::globals::IDENTITY;
 
+		bool m_drew_model = false;
+
 	private:
 		bool m_initialized = false;
 	};

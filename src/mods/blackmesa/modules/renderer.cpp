@@ -987,6 +987,13 @@ namespace mods::blackmesa
 
 	void __fastcall tbl_hk::model_renderer::DrawModelExecute::Detour(void* ecx, void* edx, const game::DrawModelState_t& state, const game::ModelRenderInfo_t& pInfo, shared::matrix3x4_t* pCustomBoneToWorld)
 	{
+		// draw nocull markers before drawing the first model - no particular reason besides that we dont want to draw them before rendering the sky
+		if (*game::get_current_view_id() != game::VIEW_3DSKY && !renderer::get()->m_drew_model)
+		{
+			renderer::draw_nocull_markers();
+			renderer::get()->m_drew_model = true;
+		}
+
 		bool ignore = false;
 		const auto& hmsettings = map_settings::get_map_settings().hide_models;
 
