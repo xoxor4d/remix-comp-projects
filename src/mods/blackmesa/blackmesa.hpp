@@ -7,6 +7,7 @@ namespace mods::blackmesa
 	{
 		extern LPDIRECT3DTEXTURE9 white;
 		extern LPDIRECT3DTEXTURE9 black;
+		extern LPDIRECT3DTEXTURE9 water_temp;
 	}
 
 	extern int g_current_leaf;

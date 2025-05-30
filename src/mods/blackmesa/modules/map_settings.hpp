@@ -104,9 +104,10 @@ namespace mods::blackmesa
 		{
 			std::string	mapname;
 			float water_uv_scale = 1.0f;
-			float water_uv_top_scale = 0.0f;
+			float water_uv_bottom_scale = 0.0f;
 			float water_offset_top = 0.5f; // top layer
-			float water_offset_bottom = 0.0f; // bottom layer
+			float water_scale_top = 1.0f; // top layer
+			float water_offset_base = 0.0f; // base layer
 			std::unordered_map<std::uint32_t, area_overrides_s> area_settings;
 			float default_nocull_dist = DEFAULT_NOCULL_DIST;
 			hide_models_s hide_models;

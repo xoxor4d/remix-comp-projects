@@ -10,7 +10,7 @@
 # }
 
 [WATER]
-    background10 = { scale = 1.00, scale_top = 0.86, top_layer_offset = 1.6, bottom_layer_offset = -0.70 }
+    background10 = { scale = 1.00, scale_top = 0.0, top_layer_offset = 0.5, bottom_layer_offset = 0.0 }
 
 
 
@@ -182,6 +182,10 @@
 
     bm_c1a0a = [
         { nocull = 103, areas = [], position = [316.30, -685.44, -2000.00], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00] },
+    ]
+
+    bm_c1a0b = [
+        { nocull = 104, areas = [], position = [-1329.61, 1922.69, -500.00], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00] },
     ]
 
     bm_c2a4a = [

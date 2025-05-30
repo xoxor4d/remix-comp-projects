@@ -244,7 +244,7 @@ namespace mods::blackmesa
 						}
 
 						if (map.contains("scale_top")) {
-							m_map_settings.water_uv_top_scale = to_float(map.at("scale_top"), 0.0f);
+							m_map_settings.water_uv_bottom_scale = to_float(map.at("scale_top"), 0.0f);
 						}
 
 						if (map.contains("top_layer_offset")) {
@@ -252,7 +252,7 @@ namespace mods::blackmesa
 						}
 
 						if (map.contains("bottom_layer_offset")) {
-							m_map_settings.water_offset_bottom = to_float(map.at("bottom_layer_offset"), 0.0f);
+							m_map_settings.water_offset_base = to_float(map.at("bottom_layer_offset"), 0.0f);
 						}
 					}
 				}

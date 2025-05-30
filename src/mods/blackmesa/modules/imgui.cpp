@@ -201,8 +201,10 @@ namespace mods::blackmesa
 
 		if (ImGui::Checkbox("Enable 3D Skybox (very unstable)", gs->enable_3d_sky.get_as<bool*>())) {
 			cross_handle_map_and_game_settings();
-		}
-		TT(gs->enable_3d_sky.get_tooltip_string().c_str());
+		} TT(gs->enable_3d_sky.get_tooltip_string().c_str());
+
+		ImGui::Checkbox("Enable dual layered water", gs->enable_dual_layered_water.get_as<bool*>()); 
+		TT(gs->enable_dual_layered_water.get_tooltip_string().c_str());
 
 		SET_CHILD_WIDGET_WIDTH_MAN(120.0f);
 		auto gs_nocull_dist_ptr = game_settings::get()->default_nocull_distance.get_as<float*>();
@@ -511,16 +513,20 @@ namespace mods::blackmesa
 			}
 
 			SET_CHILD_WIDGET_WIDTH_MAN(120.0f);
-			if (ImGui::DragFloat("UV Top Scale##Water", &ms.water_uv_top_scale, 0.05f, 0.01f, FLT_MAX, "%.2f")) {
-				ms.water_uv_top_scale = std::clamp(ms.water_uv_top_scale, 0.0f, FLT_MAX);
+			if (ImGui::DragFloat("UV Bottom Scale##Water", &ms.water_uv_bottom_scale, 0.05f, 0.01f, FLT_MAX, "%.2f")) {
+				ms.water_uv_bottom_scale = std::clamp(ms.water_uv_bottom_scale, 0.0f, FLT_MAX);
 			}
+
+			SET_CHILD_WIDGET_WIDTH_MAN(120.0f);
+			ImGui::DragFloat("Top Layer Scale", &ms.water_scale_top, 0.05f, -100.0f, 100.0f, "%.2f");
+			TT("This can can scale the dual rendered layer (usually the animated surface)");
 
 			SET_CHILD_WIDGET_WIDTH_MAN(120.0f);
 			ImGui::DragFloat("Top Layer Offset", &ms.water_offset_top, 0.05f, -100.0f, 100.0f, "%.2f");
 			TT("This can offset the dual rendered water mesh along the Z-Axis (usually the animated surface)");
 
 			SET_CHILD_WIDGET_WIDTH_MAN(120.0f);
-			ImGui::DragFloat("Bottom Layer Offset", &ms.water_offset_bottom, 0.05f, -100.0f, 100.0f, "%.2f");
+			ImGui::DragFloat("Base Layer Offset", &ms.water_offset_base, 0.05f, -100.0f, 100.0f, "%.2f");
 			TT("This can offset the original water mesh along the Z-Axis (usually the surface defining water color)");
 		}
 	}

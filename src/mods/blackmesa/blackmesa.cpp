@@ -21,6 +21,7 @@ namespace mods::blackmesa
 	{
 		LPDIRECT3DTEXTURE9 white;
 		LPDIRECT3DTEXTURE9 black;
+		LPDIRECT3DTEXTURE9 water_temp;
 	}
 
 	int g_current_leaf = -1;
@@ -36,6 +37,7 @@ namespace mods::blackmesa
 		const auto dev = shared::globals::d3d_device;
 		D3DXCreateTextureFromFileA(dev, "rtx_comp\\textures\\white.dds", &tex_addons::white);
 		D3DXCreateTextureFromFileA(dev, "rtx_comp\\textures\\black.dds", &tex_addons::black);
+		D3DXCreateTextureFromFileA(dev, "rtx_comp\\textures\\water_temp.png", &tex_addons::water_temp);
 	}
 
 	void on_begin_scene_cb()

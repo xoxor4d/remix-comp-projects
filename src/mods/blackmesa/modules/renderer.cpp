@@ -49,9 +49,8 @@ namespace mods::blackmesa
 
 		if (ctx.get_info_for_pass(shaderapi))
 		{
-			if (game_settings::get()->enable_dual_layered_water.get_as<bool>())
 			{
-				if (mesh->m_VertexFormat == 0x480133 || mesh->m_VertexFormat == 0x80133)
+				if (mesh->m_VertexFormat == 0x480133 || mesh->m_VertexFormat == 0x80133) 
 				{
 					if (ctx.info.shader_name.starts_with("Wa") && ctx.info.shader_name.contains("Water"))
 					{
@@ -69,19 +68,24 @@ namespace mods::blackmesa
 								{
 									const auto& ms = map_settings::get_map_settings();
 
-									// we only need one surface
 									ctx.modifiers.as_water = true;
-									ctx.modifiers.og_mesh_z_offset = ms.water_offset_bottom;
-									ctx.modifiers.dual_render_with_specified_texture = true;
-									ctx.modifiers.dual_render_texture_z_offset = ms.water_offset_top; //0.5f;
-									ctx.modifiers.dual_render_texture = shaderapi->vtbl->GetD3DTexture(shaderapi, nullptr, ctx.info.buffer_state.m_BoundTexture[4]);
+									ctx.modifiers.og_mesh_z_offset = ms.water_offset_base;
+
+									if (game_settings::get()->enable_dual_layered_water.get_as<bool>())
+									{
+										ctx.modifiers.dual_render_with_specified_texture = true;
+										ctx.modifiers.dual_render_texture_z_offset = ms.water_offset_top;
+										ctx.modifiers.dual_render_texture = tex_addons::water_temp; //shaderapi->vtbl->GetD3DTexture(shaderapi, nullptr, ctx.info.buffer_state.m_BoundTexture[2]);
+									}
 
 									// assign flowmap
-									IDirect3DBaseTexture9* tex = shaderapi->vtbl->GetD3DTexture(shaderapi, nullptr, ctx.info.buffer_state.m_BoundTexture[0]);
+									IDirect3DBaseTexture9* tex = shaderapi->vtbl->GetD3DTexture(shaderapi, nullptr, ctx.info.buffer_state.m_BoundTexture[1]);
 									if (tex)
 									{
 										ctx.save_texture(dev, 0);
 										dev->SetTexture(0, tex);
+										dev->SetTexture(1, nullptr);
+										dev->SetTexture(2, nullptr);
 									}
 
 									// scale water uv
@@ -110,10 +114,10 @@ namespace mods::blackmesa
 			}
 		}
 
-		/*if (ctx.info.shader_name.starts_with("Sky"))
-		{
-			int break_me = 0;
-		}*/
+		//if (ctx.info.shader_name.contains("Water"))
+		//{
+		//	int break_me = 0; 
+		//}
 
 		dev->SetTransform(D3DTS_WORLD, &ctx.info.buffer_state.m_Transform[0]);
 		dev->SetTransform(D3DTS_VIEW, &ctx.info.buffer_state.m_Transform[1]);
@@ -953,18 +957,31 @@ namespace mods::blackmesa
 			{
 				//set_remix_texture_hash(dev, ctx, utils::string_hash32(ctx.info.material_name));
 
-				const auto& scale_setting = map_settings::get_map_settings().water_uv_top_scale;
+				const auto& ms = map_settings::get_map_settings();
+				const auto& scale_setting = ms.water_uv_bottom_scale;
+
+				// scale water uv
+				D3DXMATRIX scale_matrix;
+
 				if (!shared::utils::float_equal(scale_setting, 0.0f)) // use scale of parent (bottom) water surface if 0
 				{
 					// restore
 					ctx.restore_texture_stage_state(dev, D3DTSS_TEXTURETRANSFORMFLAGS);
 
-					D3DXMATRIX scale_matrix;
+					// scale water uv
 					D3DXMatrixScaling(&scale_matrix, 1.5f * scale_setting, 1.5f * scale_setting, 1.0f);
 
 					ctx.set_texture_transform(dev, &scale_matrix);
 					ctx.save_tss(dev, D3DTSS_TEXTURETRANSFORMFLAGS);
 					dev->SetTextureStageState(0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_COUNT2);
+				}
+
+				if (ms.water_scale_top != 1.0f)
+				{
+					// scale water surface
+					D3DXMatrixScaling(&scale_matrix, ms.water_scale_top, ms.water_scale_top, 1.0f);
+					ctx.info.buffer_state.m_Transform[0] = scale_matrix * ctx.info.buffer_state.m_Transform[0];
+					dev->SetTransform(D3DTS_WORLD, &ctx.info.buffer_state.m_Transform[0]);
 				}
 			}
 
