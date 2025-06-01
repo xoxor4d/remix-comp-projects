@@ -405,6 +405,10 @@ namespace mods::blackmesa
 		game::cvar_uncheat_and_set_int("mat_disable_bloom", 1);
 		game::cvar_uncheat_and_set_int("mat_drawflat", 1);
 		game::cvar_uncheat_and_set_int("mat_fastnobump", 1);
+
+#if DEBUG
+		game::cvar_uncheat_and_set_int("sv_cheats", 1);
+#endif
 	}
 
 	// logic after loading either map or game settings
@@ -415,9 +419,9 @@ namespace mods::blackmesa
 			// rtx.skyAutoDetect
 			const auto is_3d_sky_enabled = game_settings::get()->enable_3d_sky.get_as<bool>();
 
-			shared::common::remix_vars::set_option(
+			/*shared::common::remix_vars::set_option(
 				shared::common::remix_vars::get_option("rtx.skyAutoDetect"), 
-				shared::common::remix_vars::string_to_option_value(shared::common::remix_vars::OPTION_TYPE_FLOAT, is_3d_sky_enabled ? "1" : "0"));
+				shared::common::remix_vars::string_to_option_value(shared::common::remix_vars::OPTION_TYPE_FLOAT, is_3d_sky_enabled ? "1" : "0"));*/
 
 			shared::common::remix_vars::set_option(
 				shared::common::remix_vars::get_option("rtx.skyReprojectToMainCameraSpace"),

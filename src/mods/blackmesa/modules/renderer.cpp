@@ -142,6 +142,9 @@ namespace mods::blackmesa
 				}
 			}
 
+			ctx.save_vs(dev);
+			dev->SetVertexShader(nullptr);
+
 #if DEBUG
 			if (im->m_debug_disable_rendering[0]) ctx.modifiers.do_not_render = true;
 #endif
@@ -500,6 +503,15 @@ namespace mods::blackmesa
 		// > models/props_inbound/inbound_door
 		else if (mesh->m_VertexFormat == 0xa2083)
 		{
+			if (ctx.info.shader_name.starts_with("Eye"))
+			{
+				if (const auto basemap2 = shaderapi->vtbl->GetD3DTexture(shaderapi, nullptr, ctx.info.buffer_state.m_BoundTexture[1]); basemap2)
+				{
+					ctx.save_texture(dev, 0);
+					dev->SetTexture(0, basemap2);
+				}
+			}
+
 			ctx.save_vs(dev);
 			dev->SetVertexShader(nullptr);
 
@@ -751,8 +763,9 @@ namespace mods::blackmesa
 		else {
 			auto break_me = 0;   
 		}
+
+		if (im->m_debug_disable_rendering[18]) ctx.modifiers.do_not_render = true;
 #endif
-		//ctx.modifiers.do_not_render = true;  
 	}
 
 
