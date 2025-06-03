@@ -341,6 +341,9 @@ namespace mods::blackmesa
 				{
 					ImGui::DragFloat3("Debug Vector", &im->m_debug_vector.x, 0.01f);
 					ImGui::DragFloat3("Debug Vector 2", &im->m_debug_vector2.x, 0.1f);
+					if (ImGui::SliderInt("Debug Int", &im->m_debug_int, 0, 13)) {
+						im->m_debug_int = std::clamp(im->m_debug_int, 0, 13);
+					}
 
 					ImGui::Spacing(0, 6);
 

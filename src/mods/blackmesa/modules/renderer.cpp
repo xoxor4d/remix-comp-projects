@@ -119,6 +119,21 @@ namespace mods::blackmesa
 		//	int break_me = 0; 
 		//}
 
+		// some metal textures just wont load?
+		/*if (ctx.info.material_name.contains("metal/r"))
+		{
+			IDirect3DBaseTexture9* tex = nullptr;
+			dev->GetTexture(0, &tex);
+			int x = 1;
+
+			if (const auto basemap2 = shaderapi->vtbl->GetD3DTexture(shaderapi, nullptr, ctx.info.buffer_state.m_BoundTexture[im->m_debug_int]);
+					basemap2)
+			{
+				ctx.save_texture(dev, 0);
+				dev->SetTexture(0, basemap2);
+			}
+		}*/
+
 		dev->SetTransform(D3DTS_WORLD, &ctx.info.buffer_state.m_Transform[0]);
 		dev->SetTransform(D3DTS_VIEW, &ctx.info.buffer_state.m_Transform[1]);
 		dev->SetTransform(D3DTS_PROJECTION, &ctx.info.buffer_state.m_Transform[2]);
@@ -534,7 +549,8 @@ namespace mods::blackmesa
 
 		// VertexLitGeneric
 		// > models/props_am/am_lobby_blastdoors_frame
-		else if (  mesh->m_VertexFormat == 0xa0003)
+		else if (  mesh->m_VertexFormat == 0xa0003
+				|| mesh->m_VertexFormat == 0xa0403)
 				//|| mesh->m_VertexFormat == 0xa2087)
 		{
 			//ctx.modifiers.do_not_render = true;
@@ -747,8 +763,8 @@ namespace mods::blackmesa
 		}
 
 		// VertexLitGeneric
-		// > decals/smscorch1model
-		else if (mesh->m_VertexFormat == 0x82181)
+		// > models/props_xen/rocks/crystals/xen_c4a2a_crystal_1a
+		else if (mesh->m_VertexFormat == 0xa2483)
 		{
 			//ctx.modifiers.do_not_render = true;
 			ctx.save_vs(dev);
@@ -757,6 +773,33 @@ namespace mods::blackmesa
 #if DEBUG
 			if (im->m_debug_disable_rendering[17]) ctx.modifiers.do_not_render = true;
 #endif
+			}
+
+		// VertexLitGeneric
+		// > decals/smscorch1model
+		else if (mesh->m_VertexFormat == 0x82181
+				|| mesh->m_VertexFormat == 0x3080101)
+		{
+			//ctx.modifiers.do_not_render = true;
+			ctx.save_vs(dev);
+			dev->SetVertexShader(nullptr);
+
+#if DEBUG
+			if (im->m_debug_disable_rendering[18]) ctx.modifiers.do_not_render = true;
+#endif
+		}
+
+		// DecalModulate_dx9
+		// > decals/bms_bloodsplatterfloor_002
+		else if (mesh->m_VertexFormat == 0x3080103)
+		{
+			//ctx.modifiers.do_not_render = true;
+			ctx.save_vs(dev);
+			dev->SetVertexShader(nullptr);
+
+#if DEBUG
+			if (im->m_debug_disable_rendering[19]) ctx.modifiers.do_not_render = true;
+#endif
 		}
 
 #if DEBUG
@@ -764,7 +807,7 @@ namespace mods::blackmesa
 			auto break_me = 0;   
 		}
 
-		if (im->m_debug_disable_rendering[18]) ctx.modifiers.do_not_render = true;
+		if (im->m_debug_disable_rendering[63]) ctx.modifiers.do_not_render = true;
 #endif
 	}
 
