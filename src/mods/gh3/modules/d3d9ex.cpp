@@ -1073,11 +1073,9 @@ namespace mods::gh3
 
 	d3d9ex::d3d9ex()
 	{
-		auto xx = GetModuleHandle(L"d3d9.dll");
-		auto xy = (DWORD)GetProcAddress(xx, "Direct3DCreate9");
-		//xy += 0x2;
-
-		MH_CreateHook((LPVOID)xy, &d3d9ex::HookedDirect3DCreate9, (LPVOID*)&Direct3DCreate9_original);
+		const auto addr = (DWORD)GetProcAddress(GetModuleHandle(L"d3d9.dll"), "Direct3DCreate9");
+;
+		MH_CreateHook((LPVOID)addr, &d3d9ex::HookedDirect3DCreate9, (LPVOID*)&Direct3DCreate9_original);
 		MH_EnableHook(MH_ALL_HOOKS);
 
 		// hook interface creation

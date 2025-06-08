@@ -6,6 +6,7 @@
 //#include "shared/common/flags.hpp"
 #include "shared/common/remix_api.hpp"
 //#include "shared/common/remix_vars.hpp"
+#include "shared/common/flags.hpp"
 #include "shared/common/shader_cache.hpp"
 
 namespace mods::gh3
@@ -287,7 +288,9 @@ namespace mods::gh3
 		// init remix variable system
 		//shared::common::remix_vars::initialize(game::g_is_paused, &shared::globals::frame_time_ms);
 
-		shared::common::dinput::init();
+		if (!shared::common::flags::has_flag("no_dinput_hook")) {
+			shared::common::dinput::init();
+		}
 
 		// detect meshes rendering with normalmaps in stage0
 		shared::utils::hook(0x64966F, set_texture_stub, HOOK_JUMP).install()->quick();
@@ -296,9 +299,9 @@ namespace mods::gh3
 		shared::common::g_shader_cache.add_to_whitelist(0xE53982FB); // crowd 1
 		shared::common::g_shader_cache.add_to_whitelist(0xEC856774); // crowd 2
 
-#ifdef DEBUG
+//#ifdef DEBUG
 		shared::common::loader::module_loader::register_module(std::make_unique<imgui>());
-#endif
+//#endif
 
 		MH_EnableHook(MH_ALL_HOOKS);
 	}
