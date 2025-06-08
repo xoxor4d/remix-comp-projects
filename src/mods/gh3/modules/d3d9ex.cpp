@@ -3,6 +3,7 @@
 
 #include "imgui.hpp"
 #include "shared/common/remix_vars.hpp"
+#include "shared/common/shader_cache.hpp"
 
 namespace mods::gh3
 {
@@ -96,6 +97,8 @@ namespace mods::gh3
 
 	HRESULT d3d9ex::D3D9Device::Reset(D3DPRESENT_PARAMETERS* pPresentationParameters)
 	{
+		shared::common::g_shader_cache.clear_cache();
+
 		ImGui_ImplDX9_InvalidateDeviceObjects();
 		const auto hr = m_pIDirect3DDevice9->Reset(pPresentationParameters);
 		ImGui_ImplDX9_CreateDeviceObjects();

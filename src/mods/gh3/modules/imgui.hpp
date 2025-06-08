@@ -29,8 +29,7 @@ namespace mods::gh3
 		Vector m_debug_vector2 = { 0.0f, 0.0f, 0.0f };
 
 
-		bool m_dbg_disable_shaders = false;
-
+		bool m_dbg_disable_shaders = true;
 		bool m_dbg_texture_stage1_hack = true;
 		bool m_dbg_disable_stage0 = true;
 		int m_dbg_texture_stage_index = 1;

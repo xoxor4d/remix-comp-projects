@@ -1,14 +1,12 @@
 #include "std_include.hpp"
 
-#include <windowsx.h>
-
+//#include <windowsx.h>
 #include "modules/imgui.hpp"
 #include "shared/common/dinput_hook.hpp"
-#include "shared/common/flags.hpp"
+//#include "shared/common/flags.hpp"
 #include "shared/common/remix_api.hpp"
-#include "shared/common/remix_vars.hpp"
-
-// -setup
+//#include "shared/common/remix_vars.hpp"
+#include "shared/common/shader_cache.hpp"
 
 namespace mods::gh3
 {
@@ -23,10 +21,10 @@ namespace mods::gh3
 		{
 			if (tex_addons::white) tex_addons::white->Release();
 			return;
-		}*/
+		}
 
 		const auto dev = shared::globals::d3d_device;
-		D3DXCreateTextureFromFileA(dev, "rtx_comp\\textures\\white.dds", &tex_addons::white);
+		D3DXCreateTextureFromFileA(dev, "rtx_comp\\textures\\white.dds", &tex_addons::white);*/
 	}
 
 	void on_begin_scene_cb()
@@ -74,7 +72,6 @@ namespace mods::gh3
 			}
 		}
 	}
-
 
 	IDirect3DVertexShader9* ff_og_shader = nullptr;
 	bool ff_was_modified = false;
@@ -180,16 +177,24 @@ namespace mods::gh3
 
 			if (im->m_dbg_disable_shaders)
 			{
-				D3DXMATRIX* world = reinterpret_cast<D3DXMATRIX*>(0xC5B944);
-				D3DXMATRIX* view = reinterpret_cast<D3DXMATRIX*>(0xC5BA04);
+				// Get current vertex shader
+				dev->GetVertexShader(&ff_og_shader);
 
-				shared::globals::d3d_device->SetTransform(D3DTS_WORLD, world);
-				shared::globals::d3d_device->SetTransform(D3DTS_VIEW, view);
-				shared::globals::d3d_device->SetTransform(D3DTS_PROJECTION, proj);
+				// Check if shader is whitelisted
+				ff_use_shader = ff_og_shader && shared::common::g_shader_cache.is_shader_whitelisted(ff_og_shader);
+				if (!ff_use_shader)
+				{
+					D3DXMATRIX* world = reinterpret_cast<D3DXMATRIX*>(0xC5B944);
+					D3DXMATRIX* view = reinterpret_cast<D3DXMATRIX*>(0xC5BA04);
 
-				dev->GetVertexShader(&ff_og_shader);  
-				dev->SetVertexShader(nullptr);
-				ff_was_modified = true;
+					shared::globals::d3d_device->SetTransform(D3DTS_WORLD, world);
+					shared::globals::d3d_device->SetTransform(D3DTS_VIEW, view);
+					shared::globals::d3d_device->SetTransform(D3DTS_PROJECTION, proj);
+
+					dev->GetVertexShader(&ff_og_shader);
+					dev->SetVertexShader(nullptr);
+					ff_was_modified = true;
+				}
 			}
 		}
 	}
@@ -206,15 +211,6 @@ namespace mods::gh3
 		ff_stage0_normalmap = false;
 		ff_was_modified = false;
 		ff_use_shader = false;
-	}
-
-	void install_signature_patches()
-	{
-		std::uint32_t install_counter = 0u;
-		std::uint32_t total_patch_amount = 0u;
-
-		// ------------------
-		std::cout << "[SIG] Installed " << std::to_string(install_counter) << "/" << std::to_string(total_patch_amount) << " signature patches.\n";
 	}
 
 	struct texdata_s
@@ -239,12 +235,6 @@ namespace mods::gh3
 		int unk4;
 	}; STATIC_ASSERT_OFFSET(texdata_s, tex, 0x1C);
 
-	std::uint16_t g_last_stage0_lflag1 = 0u;
-	std::uint16_t g_last_stage0_hflag1 = 0u;
-	//DWORD g_last_stage0_unk3 = 0u;
-
-	
-
 	void set_texture_hk(int stage, texdata_s* info)
 	{
 		if (!imgui::is_initialized() || !info || !info->tex) {
@@ -255,7 +245,7 @@ namespace mods::gh3
 
 		if (im->m_dbg_disable_stage0 && stage == 0 && info->unk1 == 0x0102280a) // normalmaps
 		{
-			shared::globals::d3d_device->SetTexture(stage, tex_addons::white);
+			//shared::globals::d3d_device->SetTexture(stage, tex_addons::white);
 			ff_stage0_normalmap = true;
 		}
 		else
@@ -278,6 +268,15 @@ namespace mods::gh3
 		}
 	}
 
+	void install_signature_patches()
+	{
+		std::uint32_t install_counter = 0u;
+		std::uint32_t total_patch_amount = 0u;
+
+		// ------------------
+		std::cout << "[SIG] Installed " << std::to_string(install_counter) << "/" << std::to_string(total_patch_amount) << " signature patches.\n";
+	}
+
 	void main()
 	{
 		game::init_game_addresses();
@@ -293,6 +292,9 @@ namespace mods::gh3
 		// detect meshes rendering with normalmaps in stage0
 		shared::utils::hook(0x64966F, set_texture_stub, HOOK_JUMP).install()->quick();
 
+		// vertex shader whitelist (stuff not to render with FF)
+		shared::common::g_shader_cache.add_to_whitelist(0xE53982FB); // crowd 1
+		shared::common::g_shader_cache.add_to_whitelist(0xEC856774); // crowd 2
 
 #ifdef DEBUG
 		shared::common::loader::module_loader::register_module(std::make_unique<imgui>());
