@@ -633,6 +633,69 @@ workspace "remix-comp-proj"
 		dependencies.projects()
 	group ""
 
+
+	---------------------------
+
+	project "gh3-rtx"
+	kind "SharedLib"
+	language "C++"
+
+	linkoptions {
+		"/PDBCompress"
+	}
+
+	pchheader "std_include.hpp"
+	pchsource "src/mods/gh3/std_include.cpp"
+
+	files {
+		"./src/mods/gh3/**.hpp",
+		"./src/mods/gh3/**.cpp",
+	}
+
+	includedirs {
+		"%{prj.location}/src",
+		"./src",
+	}
+
+	links {
+		"_shared"
+	}
+
+	resincludedirs {
+		"$(ProjectDir)src" 
+	}
+
+	buildoptions { 
+		"/Zm100 -Zm100" 
+	}
+
+	-- Specific configurations
+	flags { 
+		"UndefinedIdentifiers" 
+	}
+
+	filter "configurations:Debug or configurations:Release"
+		if(os.getenv("GH3_ROOT")) then
+			print ("Setup paths using environment variable 'GH3_ROOT' :: '" .. os.getenv("GH3_ROOT") .. "'")
+			targetdir(os.getenv("GH3_ROOT"))
+			debugdir (os.getenv("GH3_ROOT"))
+			debugcommand (os.getenv("GH3_ROOT") .. "/" .. "GH3.exe")
+		end
+	filter {}
+
+	warnings "Extra"
+
+	-- Post-build
+	postbuildcommands {
+		"MOVE /Y \"$(TargetDir)gh3-rtx.dll\" \"$(TargetDir)a_gh3-rtx.asi\"",
+	}
+
+	dependencies.imports()
+
+	group "Dependencies"
+		dependencies.projects()
+	group ""
+
 	---------------------------
 
 	project "ue2fixes-rtx"

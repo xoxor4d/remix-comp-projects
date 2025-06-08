@@ -22,6 +22,7 @@ __[Bioshock 1 (GOG)](#bioshock-1-gog)__
 __[SWAT 4 Gold (GOG)](#swat-4---gold-gog)__  
 __[Fear 1 Platinum (GOG)](#fear-1-platinum-gog)__  
 __[Delta Force Black Hawk Down 2003 (GOG)](#delta-force-black-hawk-down-2003)__   
+__[Guitar Hero 3 1.31 (HATRED)](#guitar-hero-3)__   
 __[Mirrors Edge (GOG)](#mirrors-edge-gog)__ (Broken)  
 __[Anno 1404 Gold Edition (GOG)](#anno-1404-gold-edition-gog)__ (Broken)  
 __[Manhunt (Steam)](#manhunt-steam)__   
@@ -135,6 +136,28 @@ This can also happen randomly when walking through doorways which will ultimativ
 
 ###### Usage:
 - Change your fov/resolution via `scripts\BHD_Asi.ini` and make sure to use __1280x1024__ in-game
+
+
+<br>
+<br>
+<br>
+
+<div align="center" markdown="1"> 
+
+### Guitar Hero 3 
+![img](.github/img/gh3.jpg)
+
+</div>
+
+###### The good:  
+- stable
+- most things rendered via fixed function
+
+###### The bad:
+- crowd looks a little odd (still rendered via shader - remix issue?)
+
+###### Usage:
+- Make sure to read the _README in assets/gh3
 
 <br>
 <br>
@@ -263,3 +286,5 @@ This can also happen randomly when walking through doorways which will ultimativ
 - [minhook](https://github.com/TsudaKageyu/minhook)
 - [toml11](https://github.com/ToruNiina/toml11)
 - [dxwrapper](https://github.com/elishacloud/dxwrapper)
+- [Ultimate-ASI-Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader)
+- All of the 🍓
