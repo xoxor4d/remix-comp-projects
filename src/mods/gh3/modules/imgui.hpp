@@ -31,8 +31,8 @@ namespace mods::gh3
 
 		bool m_dbg_disable_shaders = false;
 
-		bool m_dbg_texture_stage1_hack = false;
-		bool m_dbg_disable_stage0 = false;
+		bool m_dbg_texture_stage1_hack = true;
+		bool m_dbg_disable_stage0 = true;
 		int m_dbg_texture_stage_index = 1;
 		int m_dbg_textureflags_index = 0;
 		int m_dbg_textureflags_index2 = 0;

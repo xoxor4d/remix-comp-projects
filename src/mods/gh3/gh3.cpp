@@ -75,12 +75,11 @@ namespace mods::gh3
 		}
 	}
 
+
 	IDirect3DVertexShader9* ff_og_shader = nullptr;
 	bool ff_was_modified = false;
 	bool ff_use_shader = false;
-	bool is_rendering_mesh = false;
-
-	bool g_is_normalmap = false;
+	bool ff_stage0_normalmap = false;
 
 	void pre_drawindexedprim()
 	{ 
@@ -165,20 +164,21 @@ namespace mods::gh3
 
 			D3DXMATRIX* proj = reinterpret_cast<D3DXMATRIX*>(0xC5BA84);
 
-			if (proj->m[3][3] == 1.0f &&
+			/*if (proj->m[3][3] == 1.0f &&
 				proj->m[2][3] == 0.0f)
 			{
 				return;
-			}
+			}*/
 
-			if (im->m_dbg_texture_stage1_hack && g_is_normalmap)
+			// some objects have colordata in stage1 and normal map data in stage0
+			if (im->m_dbg_texture_stage1_hack && ff_stage0_normalmap)
 			{
 				IDirect3DBaseTexture9* base = nullptr;
 				shared::globals::d3d_device->GetTexture(1, &base);
 				shared::globals::d3d_device->SetTexture(0, base);
 			}
 
-			//if (im->m_dbg_disable_shaders)
+			if (im->m_dbg_disable_shaders)
 			{
 				D3DXMATRIX* world = reinterpret_cast<D3DXMATRIX*>(0xC5B944);
 				D3DXMATRIX* view = reinterpret_cast<D3DXMATRIX*>(0xC5BA04);
@@ -203,8 +203,7 @@ namespace mods::gh3
 			dev->SetTransform(D3DTS_WORLD, &shared::globals::IDENTITY);
 		}
 
-		g_is_normalmap = false;
-		is_rendering_mesh = false;
+		ff_stage0_normalmap = false;
 		ff_was_modified = false;
 		ff_use_shader = false;
 	}
@@ -254,42 +253,16 @@ namespace mods::gh3
 
 		const auto im = imgui::get();
 
-		// og func
-		if (im->m_dbg_disable_stage0 && stage == 0 && info->unk1 == 0x0102280a/*& im->m_dbg_textureflags[im->m_dbg_textureflags_index2]*/)
+		if (im->m_dbg_disable_stage0 && stage == 0 && info->unk1 == 0x0102280a) // normalmaps
 		{
 			shared::globals::d3d_device->SetTexture(stage, tex_addons::white);
-			g_is_normalmap = true;
-			g_last_stage0_lflag1 = info->lflag1;
-			g_last_stage0_hflag1 = info->hflag1;
-			//g_last_stage0_unk3 = info->unk3;
+			ff_stage0_normalmap = true;
 		}
 		else
 		{
+			// og func
 			shared::globals::d3d_device->SetTexture(stage, info->tex);
-			g_last_stage0_lflag1 = 0;
-			g_last_stage0_hflag1 = 0;
-			//g_last_stage0_unk3 = 0;
 		}
-
-		//if (stage == im->m_dbg_texture_stage_index)
-		//{
-		//	if (im->m_dbg_texture_stage1_hack /*&& info->unk1 == 0x0002280a*/ /*&& info->unk1 != 0x0102280a*//*&& g_last_stage0_lflag1*///)
-		//		/*&& g_last_stage0_flag1 == im->m_dbg_textureflags[im->m_dbg_textureflags_index2]*/
-		//		&& info->lflag4 & im->m_dbg_textureflags[im->m_dbg_textureflags_index] /*&& info->unk3 == 0x0001040a*/ /*&& info->unk3 == 0x0005080a*/)
-		//	{
-		//		/*IDirect3DBaseTexture9* base = nullptr;
-		//		shared::globals::d3d_device->GetTexture(0, &base);*/
-
-		//		//auto asd = info[-1];
-		//		//shared::globals::d3d_device->SetTexture(0, asd.tex);
-		//		shared::globals::d3d_device->SetTexture(0, info->tex); 
-		//		//*reinterpret_cast<IDirect3DBaseTexture9**>(0xC5E788) = info->tex;
-		//	}
-		//}
-		//else
-		//{
-		//	int x = 0;  
-		//}
 	}
 
 	__declspec(naked) void set_texture_stub()
@@ -305,21 +278,6 @@ namespace mods::gh3
 		}
 	}
 
-
-
-	__declspec(naked) void set_texture0_stub()
-	{
-		static uint32_t retn_addr = 0x64965A;
-		__asm
-		{
-			push	eax;
-			push	ebx;
-			call	set_texture_hk;
-			add		esp, 8;
-			jmp		retn_addr;
-		}
-	}
-	
 	void main()
 	{
 		game::init_game_addresses();
@@ -332,17 +290,13 @@ namespace mods::gh3
 
 		shared::common::dinput::init();
 
-
-		// 1
-		//shared::utils::hook(0x649648, set_texture0_stub, HOOK_JUMP).install()->quick();
-
-		// 2
+		// detect meshes rendering with normalmaps in stage0
 		shared::utils::hook(0x64966F, set_texture_stub, HOOK_JUMP).install()->quick();
 
 
-//#ifdef DEBUG
+#ifdef DEBUG
 		shared::common::loader::module_loader::register_module(std::make_unique<imgui>());
-//#endif
+#endif
 
 		MH_EnableHook(MH_ALL_HOOKS);
 	}

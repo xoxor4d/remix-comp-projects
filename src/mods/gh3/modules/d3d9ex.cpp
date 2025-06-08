@@ -371,6 +371,7 @@ namespace mods::gh3
 
 	HRESULT d3d9ex::D3D9Device::SetTexture(DWORD Stage, IDirect3DBaseTexture9* pTexture)
 	{
+		// we need stage 1 as it holds the color data for dynamic objects?
 		//if (Stage > 0u) 
 		//{
 		//	// allow clearing stages > 0

@@ -36,7 +36,7 @@ namespace mods::gh3
 	bool imgui::input_message(const UINT message_type, const WPARAM wparam, const LPARAM lparam, [[maybe_unused]] bool& inout_pass_msg_to_game)
 	{
 		if (message_type == WM_KEYUP && wparam == VK_F5) {
-			imgui::get()->m_dbg_use_fake_camera = !imgui::get()->m_dbg_use_fake_camera;
+			imgui::get()->m_dbg_disable_shaders = !imgui::get()->m_dbg_disable_shaders;
 		}
 
 		/*if (message_type == WM_KEYUP && wparam == VK_F6) {
@@ -96,7 +96,7 @@ namespace mods::gh3
 			cont_cull_height = ImGui::Widget_ContainerWithCollapsingTitle("Camera", cont_cull_height, [&]
 			{
 				ImGui::Checkbox("Disable Shaders", &im->m_dbg_disable_shaders);
-				ImGui::Checkbox("Use Fake Camera", &im->m_dbg_use_fake_camera);
+				//ImGui::Checkbox("Use Fake Camera", &im->m_dbg_use_fake_camera);
 
 				ImGui::Checkbox("Texture Hack Enabled", &im->m_dbg_texture_stage1_hack);
 
