@@ -2,6 +2,8 @@
 
 namespace mods::gh3
 {
+	extern bool g_is_ingame;
+
 	namespace tex_addons
 	{
 		extern LPDIRECT3DTEXTURE9 white;
@@ -15,6 +17,4 @@ namespace mods::gh3
 
 	extern bool g_installed_signature_patches;
 	extern bool g_install_signature_patches_async;
-
-	extern bool is_rendering_mesh;
 }

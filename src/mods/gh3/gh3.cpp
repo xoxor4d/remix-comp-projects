@@ -11,6 +11,9 @@
 
 namespace mods::gh3
 {
+	std::string g_current_level_pak;
+	bool g_is_ingame = false;
+
 	namespace tex_addons
 	{
 		LPDIRECT3DTEXTURE9 white;
@@ -18,19 +21,88 @@ namespace mods::gh3
 
 	void init_texture_addons([[maybe_unused]] bool release)
 	{
-		/*if (release)
+		if (release)
 		{
 			if (tex_addons::white) tex_addons::white->Release();
 			return;
 		}
 
 		const auto dev = shared::globals::d3d_device;
-		D3DXCreateTextureFromFileA(dev, "rtx_comp\\textures\\white.dds", &tex_addons::white);*/
+		D3DXCreateTextureFromFileA(dev, "rtx_comp\\textures\\white.dds", &tex_addons::white);
+	}
+
+	void draw_nocull_markers()
+	{
+		if (g_current_level_pak.empty()) {
+			return;
+		}
+
+		const auto dev = shared::globals::d3d_device;
+
+		struct vertex { D3DXVECTOR3 position; D3DCOLOR color; float tu, tv; };
+
+		// save & restore after drawing
+		IDirect3DVertexShader9* og_vs = nullptr;
+		dev->GetVertexShader(&og_vs);
+		dev->SetVertexShader(nullptr);
+
+		IDirect3DBaseTexture9* og_tex = nullptr;
+		dev->GetTexture(0, &og_tex);
+		dev->SetTexture(0, tex_addons::white);
+
+		//DWORD og_rs;
+		//dev->GetRenderState((D3DRENDERSTATETYPE)150, &og_rs);
+
+		DWORD og_ff;
+		dev->GetFVF(&og_ff);
+		dev->SetFVF(D3DFVF_XYZ | D3DFVF_DIFFUSE | D3DFVF_TEX1);
+
+		dev->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+		dev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+		dev->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+
+		{
+			size_t hash = 0;
+			for (const char c : g_current_level_pak) {
+				hash = hash * 31 + c;
+			}
+			const float f_index = 1.0f + (static_cast<float>(hash % 40000) / 40000.0f) * 4.0f;
+
+			const vertex mesh_verts[4] =
+			{
+				D3DXVECTOR3(-1.337f - (f_index), 0, -1.337f - (f_index)), D3DCOLOR_COLORVALUE(f_index, 0.0f, 0.0f, 1.0f), 0.0f, f_index / 100.0f,
+				D3DXVECTOR3(1.337f + (f_index), 0, -1.337f - (f_index)), D3DCOLOR_COLORVALUE(0.0f, f_index, 0.0f, 1.0f), f_index / 100.0f, 0.0,
+				D3DXVECTOR3(1.337f + (f_index), 0,  1.337f + (f_index)), D3DCOLOR_COLORVALUE(0.0f,0.0f, f_index, 1.0f), 0.0f, f_index / 100.0f,
+				D3DXVECTOR3(-1.337f - (f_index), 0,  1.337f + (f_index)), D3DCOLOR_COLORVALUE(f_index, 0.0f, f_index, 1.0f), 0.0f, f_index / 100.0f,
+			};
+
+			D3DXMATRIX scale_matrix, mat_translation, world;
+			D3DXMatrixTranslation(&mat_translation, 0.0f, -100.0f, 0.0f);
+			D3DXMatrixScaling(&scale_matrix, 5.0f, 5.0f, 5.0f);
+			world = scale_matrix * mat_translation;
+
+			// set remix texture hash ~req. dxvk-runtime changes - not really needed
+			//dev->SetRenderState((D3DRENDERSTATETYPE)150, 100 + m.index);
+
+			dev->SetTransform(D3DTS_WORLD, &world);
+			dev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, mesh_verts, sizeof(vertex));
+		}
+		// restore
+		dev->SetVertexShader(og_vs);
+		dev->SetTexture(0, og_tex);
+		//dev->SetRenderState((D3DRENDERSTATETYPE)150, og_rs);
+		dev->SetFVF(og_ff);
+		dev->SetTransform(D3DTS_WORLD, &shared::globals::IDENTITY);
 	}
 
 	void on_begin_scene_cb()
 	{
-		//draw_nocull_markers();
+		if (g_is_ingame) {
+			draw_nocull_markers();
+		}
+
+		// always reset at start of a frame
+		g_is_ingame = false;
 
 		if (static bool initiated_vars_once = false; !initiated_vars_once)
 		{
@@ -80,7 +152,10 @@ namespace mods::gh3
 	bool ff_stage0_normalmap = false;
 
 	void pre_drawindexedprim()
-	{ 
+	{
+		// we are ingame if this is called
+		g_is_ingame = true;
+
 		const auto& dev = shared::globals::d3d_device;
 
 		if (!shared::globals::imgui_is_rendering)
@@ -269,6 +344,67 @@ namespace mods::gh3
 		}
 	}
 
+	//void print_string(const char* str)
+	//{
+	//	/*std::ofstream logFile("hashlog.log", std::ios::app);
+	//	if (logFile.is_open()) 
+	//	{
+	//		logFile << str << "\n";
+	//		logFile.close();
+	//	
+	//	}*/
+
+	//	/*const auto xx = std::string_view(str);
+	//	if (xx.starts_with("zones/z_dive")) {
+	//		int break_me = 0;
+	//	}*/
+	//}
+
+	//__declspec(naked) void gen_checksum_stub()
+	//{
+	//	static uint32_t retn_addr = 0x4FFC26;
+	//	__asm
+	//	{
+	//		mov     edx, [esp + 8];
+
+	//		pushad;
+	//		push	edx;
+	//		call	print_string;
+	//		add		esp, 4;
+	//		popad;
+
+	//		mov     edx, [esp + 8];
+	//		test    edx, edx;
+	//		jmp		retn_addr;
+	//	}
+	//}
+
+
+	void save_level_name(const char* str)
+	{
+		g_current_level_pak = str;
+		std::cout << "[PAK] Loaded zone pak: " << str << "\n";
+	}
+
+	__declspec(naked) void on_zone_pak_load_stub()
+	{
+		static uint32_t retn_addr = 0xD94430;
+		__asm
+		{
+			lea     eax, [esp + 0x40]; // zone name
+
+			pushad;
+			push	eax;
+			call	save_level_name;
+			add		esp, 4;
+			popad;
+
+			lea     eax, [esp + 0x40];
+			push    eax;
+			jmp		retn_addr;
+		}
+	}
+
 	void install_signature_patches()
 	{
 		std::uint32_t install_counter = 0u;
@@ -283,7 +419,7 @@ namespace mods::gh3
 		game::init_game_addresses();
 
 		// init remix api
-		shared::common::remix_api::initialize(nullptr, nullptr, nullptr, false);
+		//shared::common::remix_api::initialize(nullptr, nullptr, nullptr, false);
 
 		// init remix variable system
 		//shared::common::remix_vars::initialize(game::g_is_paused, &shared::globals::frame_time_ms);
@@ -298,6 +434,13 @@ namespace mods::gh3
 		// vertex shader whitelist (stuff not to render with FF)
 		shared::common::g_shader_cache.add_to_whitelist(0xE53982FB); // crowd 1
 		shared::common::g_shader_cache.add_to_whitelist(0xEC856774); // crowd 2
+
+
+		//shared::utils::hook::nop(0x4FFC20, 6);
+		//shared::utils::hook(0x4FFC20, gen_checksum_stub, HOOK_JUMP).install()->quick();
+
+		// triggers when a zone pak loads
+		shared::utils::hook(0xD9442B, on_zone_pak_load_stub, HOOK_JUMP).install()->quick();
 
 //#ifdef DEBUG
 		shared::common::loader::module_loader::register_module(std::make_unique<imgui>());
