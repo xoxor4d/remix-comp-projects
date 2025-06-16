@@ -678,7 +678,7 @@ workspace "remix-comp-proj"
 			print ("Setup paths using environment variable 'BLACKMESA_ROOT' :: '" .. os.getenv("BLACKMESA_ROOT") .. "'")
 			targetdir(os.getenv("BLACKMESA_ROOT") .. "/bin/")
 			debugdir (os.getenv("BLACKMESA_ROOT"))
-			debugcommand (os.getenv("BLACKMESA_ROOT") .. "/" .. "bms.exe")
+			debugcommand (os.getenv("BLACKMESA_ROOT") .. "/" .. "run-bms-rtx.bat")
 		end
 	filter {}
 
