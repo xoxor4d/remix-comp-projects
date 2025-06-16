@@ -5,6 +5,7 @@
 #include "imgui.hpp"
 #include "interfaces.hpp"
 #include "map_settings.hpp"
+#include "remix_lights.hpp"
 #include "shared/common/flags.hpp"
 #include "shared/common/remix.hpp"
 
@@ -16,6 +17,34 @@ namespace mods::blackmesa
 		bool unbake_model_info_vis = false;
 		bool ms_unbake_info = false;
 		std::unordered_set<std::string> ms_unbake_info_logged_strings;
+	}
+
+	bool renderer::world2screen(const Vector& in, Vector& out)
+	{
+		auto& matrix = interfaces::get()->m_engine->world_to_screen_matrix();
+
+		out.x = in.Dot(matrix.m[0]) + matrix.m[0][3];
+		out.y = in.Dot(matrix.m[1]) + matrix.m[1][3];
+		out.z = 0.0f;
+
+		const float perspective_div = in.Dot(matrix.m[3]) + matrix.m[3][3];
+		if (perspective_div < 0.001f)
+		{
+			out.x *= 100000.0f;
+			out.y *= 100000.0f;
+			return false;
+		}
+
+		out.x /= perspective_div;
+		out.y /= perspective_div;
+
+		int screen_w, screen_h;
+		interfaces::get()->m_engine->get_screen_size(screen_w, screen_h);
+
+		out.x = ((float)screen_w / 2.0f) + (out.x * (float)screen_w) / 2.0f;
+		out.y = ((float)screen_h / 2.0f) - (out.y * (float)screen_h) / 2.0f;
+
+		return true;
 	}
 
 	bool has_materialvar(game::IMaterialInternal* cmat, const char* var_name, game::IMaterialVar** out_var = nullptr)
@@ -1198,7 +1227,7 @@ namespace mods::blackmesa
 		}
 
 		// check for attached lights
-		//remix_lights::on_draw_model_exec(pInfo);
+		remix_lights::on_draw_model_exec(pInfo);
 
 		if (!ignore)
 		{

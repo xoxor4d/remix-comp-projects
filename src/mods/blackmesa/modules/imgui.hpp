@@ -11,6 +11,7 @@ namespace mods::blackmesa
 		static imgui* get() { return p_this; }
 
 		static void on_present();
+		static void on_map_load();
 
 		void devgui();
 		bool input_message(UINT message_type, WPARAM wparam, LPARAM lparam, bool& inout_pass_msg_to_game);
@@ -30,6 +31,14 @@ namespace mods::blackmesa
 
 		bool m_debug_disable_rendering[64] = {};
 		bool m_debug_disable_unbake = false;
+
+		bool m_light_edit_mode = false;
+		bool m_debugvis_live = false;
+		bool m_debugvis_radius = true;
+		bool m_debugvis_shaping = true;
+		bool m_debugvis_attach_bounds = true;
+		float m_debugvis_cone_height = 60.0f;
+		int m_debugvis_cone_steps = 3u;
 
 		int m_debug_int = {};
 

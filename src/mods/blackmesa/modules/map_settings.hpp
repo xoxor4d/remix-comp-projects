@@ -113,9 +113,10 @@ namespace mods::blackmesa
 			hide_models_s hide_models;
 			//std::unordered_set<std::string> unbake_models;
 			unbake_models_s unbake_models;
-			//std::vector<remix_light_settings_s> remix_lights;
+			std::vector<remix_light_settings_s> remix_lights;
 			std::vector<marker_settings_s> map_markers;
 			std::vector<std::string> api_var_configs;
+			//bool using_any_light_sound_hash = false;
 			bool using_any_light_attached_to_prop = false;
 		};
 
@@ -124,6 +125,7 @@ namespace mods::blackmesa
 
 		static std::string build_map_marker_string_for_current_map(const std::vector<map_settings::marker_settings_s>& markers);
 		static std::string build_culling_overrides_string_for_current_map(const std::unordered_map<std::uint32_t, map_settings::area_overrides_s>& areas);
+		static std::string build_light_string_for_single_light(const map_settings::remix_light_settings_s& def);
 
 		void set_settings_for_map(const std::string& map_name);
 		static void on_map_load(const std::string& map_name);

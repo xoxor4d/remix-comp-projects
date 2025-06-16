@@ -6,6 +6,7 @@
 #include "modules/imgui.hpp"
 #include "modules/interfaces.hpp"
 #include "modules/map_settings.hpp"
+#include "modules/remix_lights.hpp"
 #include "modules/renderer.hpp"
 #include "shared/common/flags.hpp"
 #include "shared/common/remix_api.hpp"
@@ -17,7 +18,6 @@
 
 // TODO:
 // - animated lights
-// - set config vars per map / game settings (3d sky) (bm_c0a0b)
 
 // - sand blending on train ride outdoor
 
@@ -237,6 +237,7 @@ namespace mods::blackmesa
 		shared::common::remix_api::get().debug_draw_box(mmin, mmax, 4.0f, shared::common::remix_api::DEBUG_REMIX_LINE_COLOR::GREEN);*/
 
 		shared::common::remix_vars::on_client_frame();
+		remix_lights::on_client_frame();
 		force_cvars();
 
 		// TODO - find better spot to call this
@@ -275,7 +276,9 @@ namespace mods::blackmesa
 	 */
 	void on_map_load_hk(const char* map_name)
 	{
+		imgui::on_map_load();
 		shared::common::remix_vars::on_map_load(map_name);
+		remix_lights::on_map_load();
 		map_settings::on_map_load(map_name);
 	}
 
@@ -726,7 +729,7 @@ namespace mods::blackmesa
 		shared::common::loader::module_loader::register_module(std::make_unique<map_settings>());
 		shared::common::loader::module_loader::register_module(std::make_unique<imgui>());
 		shared::common::loader::module_loader::register_module(std::make_unique<renderer>());
-
+		shared::common::loader::module_loader::register_module(std::make_unique<remix_lights>());
 
 		// CViewRender::DrawOneMonitor
 		shared::utils::hook::nop(CLIENT_BASE + 0x1F7E26, 6);

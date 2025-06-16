@@ -4,6 +4,7 @@
 #include "game_settings.hpp"
 #include "imgui.hpp"
 #include "interfaces.hpp"
+#include "remix_lights.hpp"
 #include "shared/common/flags.hpp"
 #include "shared/common/remix_api.hpp"
 #include "shared/common/toml.hpp"
@@ -97,6 +98,148 @@ namespace mods::blackmesa
 		return toml_str;
 	}
 
+	/// Builds a toml string for the provided light definition
+	/// @param def	ref to the light def
+	/// @return		the final string in toml format
+	std::string map_settings::build_light_string_for_single_light(const map_settings::remix_light_settings_s& def)
+	{
+		std::string toml_str = "# " + def.comment + "\n";
+
+		toml_str += "        {";
+
+		// choreo trigger
+		if (!def.trigger_choreo_name.empty())
+		{
+			toml_str += " trigger = { choreo = \"" + def.trigger_choreo_name + "\"";
+
+			if (!def.trigger_choreo_actor.empty()) {
+				toml_str += ", actor = \"" + def.trigger_choreo_actor + "\"";
+			}
+
+			if (!def.trigger_choreo_event.empty()) {
+				toml_str += ", event = \"" + def.trigger_choreo_event + "\"";
+			}
+
+			if (!def.trigger_choreo_param1.empty()) {
+				toml_str += ", param1 = \"" + def.trigger_choreo_param1 + "\"";
+			}
+
+			if (!shared::utils::float_equal(def.trigger_delay, 0.0f)) {
+				toml_str += ", delay = " + format_float(def.trigger_delay);
+			}
+
+			if (def.trigger_always) {
+				toml_str += ", always = " + (def.trigger_always ? "true"s : "false"s);
+			}
+
+			toml_str += " },"; // end table
+		}
+		// sound trigger
+		else if (def.trigger_sound_hash)
+		{
+			toml_str += " trigger = { sound = " + std::format("0x{:X}", def.trigger_sound_hash);
+
+			if (!shared::utils::float_equal(def.trigger_delay, 0.0f)) {
+				toml_str += ", delay = " + format_float(def.trigger_delay);
+			}
+
+			if (def.trigger_always) {
+				toml_str += ", always = " + (def.trigger_always ? "true"s : "false"s);
+			}
+
+			toml_str += " },"; // end table
+		}
+
+		// kill
+		if (const auto has_kill_choreo = !def.kill_choreo_name.empty();
+			has_kill_choreo || def.kill_sound_hash != 0u)
+		{
+			if (has_kill_choreo) {
+				toml_str += " kill = { choreo = \"" + def.kill_choreo_name + "\"";
+			}
+			else { // sound
+				toml_str += " kill = { sound = " + std::format("0x{:X}", def.kill_sound_hash);
+			}
+
+			if (!shared::utils::float_equal(def.kill_delay, 0.0f)) {
+				toml_str += ", delay = " + format_float(def.kill_delay);
+			}
+
+			toml_str += " },"; // end table
+		}
+
+		// attach
+		if (const auto has_attach_radius = def.attach_prop_radius != 0.0f;
+			has_attach_radius || !def.attach_prop_name.empty())
+		{
+			if (has_attach_radius) {
+				toml_str += " attach = { radius = " + std::to_string(def.attach_prop_radius); //format_float(def.attach_prop_radius);
+			}
+			else { // name str
+				toml_str += " attach = { name = \"" + def.attach_prop_name + "\"";
+			}
+
+			if (!(def.attach_prop_mins.IsZero() && def.attach_prop_maxs.IsZero()))
+			{
+				toml_str += ", bounds = ["
+					+ format_float(def.attach_prop_mins.x) + ", " + format_float(def.attach_prop_mins.y) + ", " + format_float(def.attach_prop_mins.z) + ", "
+					+ format_float(def.attach_prop_maxs.x) + ", " + format_float(def.attach_prop_maxs.y) + ", " + format_float(def.attach_prop_maxs.z) + "]";
+			}
+
+			toml_str += " },"; // end table
+		}
+
+		// points
+		toml_str += " points = [\n";
+
+		for (const auto& p : def.points)
+		{
+			toml_str += "            { ";
+
+			toml_str += "position = [" + format_float(p.position.x) + ", " + format_float(p.position.y) + ", " + format_float(p.position.z) + "]";
+			toml_str += ", radiance = [" + format_float(p.radiance.x) + ", " + format_float(p.radiance.y) + ", " + format_float(p.radiance.z) + "]";
+			toml_str += ", scalar = " + format_float(p.radiance_scalar);
+			toml_str += ", radius = " + format_float(p.radius);
+			toml_str += ", smoothness = " + format_float(p.smoothness);
+
+			// only write shaping if deg != 180
+			if (!shared::utils::float_equal(p.degrees, 180.0f))
+			{
+				toml_str += ", direction = [" + format_float(p.direction.x) + ", " + format_float(p.direction.y) + ", " + format_float(p.direction.z) + "]";
+				toml_str += ", degrees = " + format_float(p.degrees);
+				toml_str += ", softness = " + format_float(p.softness);
+				toml_str += ", exponent = " + format_float(p.exponent);
+			}
+
+			toml_str += ", volumetric_scale = " + format_float(p.volumetric_scale);
+
+			// ignore t0
+			if (!shared::utils::float_equal(p.timepoint, 0.0f)) {
+				toml_str += ", timepoint = " + format_float(p.timepoint);
+			}
+
+			toml_str += " },\n";
+		}
+
+		// end points
+		toml_str += "        ]";
+
+		if (def.run_once) {
+			toml_str += ", run_once = " + (def.run_once ? "true"s : "false"s);
+		}
+
+		if (def.loop) {
+			toml_str += ", loop = " + (def.loop ? "true"s : "false"s);
+		}
+
+		if (def.loop_smoothing) {
+			toml_str += ", loop_smoothing = " + (def.loop_smoothing ? "true"s : "false"s);
+		}
+
+		toml_str += " },";
+		return toml_str;
+	}
+
 
 	void map_settings::set_settings_for_map(const std::string& map_name)
 	{
@@ -124,9 +267,30 @@ namespace mods::blackmesa
 			}
 
 			cross_handle_map_and_game_settings();
+
+			// lights are spawned manually in edit mode
+			if (!imgui::get()->m_light_edit_mode) {
+				remix_lights::get()->add_all_map_setting_lights_without_creation_trigger();
+			}
 		}
 
 		m_map_settings.default_nocull_dist = game_settings::get()->default_nocull_distance.get_as<float>();
+
+		// are we using any sound hashes to trigger light spawning?
+		/*{
+			if (!m_map_settings.remix_lights.empty())
+			{
+				for (const auto& l : m_map_settings.remix_lights)
+				{
+					if (l.trigger_sound_hash || l.kill_sound_hash)
+					{
+						m_map_settings.using_any_light_sound_hash = true;
+						break;
+					}
+				}
+			}
+		}*/
+
 		m_loaded = true;
 	}
 
@@ -557,6 +721,348 @@ namespace mods::blackmesa
 				}
 			} // end 'CONFIGVARS'
 
+			// ####################
+			// parse 'LIGHTS' table
+			if (config.contains("LIGHTS"))
+			{
+				auto& light_table = config["LIGHTS"];
+
+				// #
+				auto process_light_entry = [to_bool, to_int, to_uint, to_float](const toml::value& entry)
+					{
+						if (entry.contains("points") && !entry.at("points").as_array().empty())
+						{
+							// - parse trigger
+
+							std::string temp_trigger_choreo_name;
+							std::string temp_trigger_choreo_actor;
+							std::string temp_trigger_choreo_event;
+							std::string temp_trigger_choreo_param1;
+
+							std::uint32_t temp_trigger_sound = 0u;
+							float temp_trigger_delay = 0.0f;
+							bool temp_trigger_always = false;
+
+							std::string temp_comment;
+							if (!entry.comments().empty())
+							{
+								temp_comment = entry.comments().at(0);
+								temp_comment.erase(0, 2); // rem '# '
+							}
+
+							if (entry.contains("trigger"))
+							{
+								bool has_valid_trigger = false;
+								const auto& trigger = entry.at("trigger");
+
+								// choreo trigger
+								if (trigger.contains("choreo"))
+								{
+									try { temp_trigger_choreo_name = trigger.at("choreo").as_string(); }
+									CATCH_ERR;
+
+									if (trigger.contains("actor"))
+									{
+										try { temp_trigger_choreo_actor = trigger.at("actor").as_string(); }
+										CATCH_ERR;
+									}
+
+									if (trigger.contains("event"))
+									{
+										try { temp_trigger_choreo_event = trigger.at("event").as_string(); }
+										CATCH_ERR;
+									}
+
+									if (trigger.contains("param1"))
+									{
+										try { temp_trigger_choreo_param1 = trigger.at("param1").as_string(); }
+										CATCH_ERR;
+									}
+
+									has_valid_trigger = true;
+								}
+								// sound trigger
+								else if (trigger.contains("sound"))
+								{
+									temp_trigger_sound = to_uint(trigger.at("sound"), 0u);
+									has_valid_trigger = true;
+								}
+
+								if (has_valid_trigger)
+								{
+									if (trigger.contains("delay")) {
+										temp_trigger_delay = to_float(trigger.at("delay"), 0.0f);
+									}
+
+									if (trigger.contains("always")) {
+										temp_trigger_always = to_bool(trigger.at("always"), false);
+									}
+								}
+								else { TOML_ERROR("[LIGHTS] #trigger", trigger, "defined trigger with no choreo / sound hash"); }
+							}
+
+							// - parse kill
+
+							std::string temp_kill_choreo_name;
+							std::uint32_t temp_kill_sound = 0u;
+							float temp_kill_delay = 0.0f;
+
+							if (entry.contains("kill"))
+							{
+								bool has_valid_kill_trigger = false;
+								const auto& kill = entry.at("kill");
+
+								// choreo
+								if (kill.contains("choreo"))
+								{
+									try { temp_kill_choreo_name = kill.at("choreo").as_string(); }
+									CATCH_ERR;
+
+									has_valid_kill_trigger = true;
+								}
+								// sound
+								else if (kill.contains("sound"))
+								{
+									temp_kill_sound = to_uint(kill.at("sound"), 0u);
+									has_valid_kill_trigger = true;
+								}
+
+								if (has_valid_kill_trigger)
+								{
+									if (kill.contains("delay")) {
+										temp_kill_delay = to_float(kill.at("delay"), 0.0f);
+									}
+								}
+								else { TOML_ERROR("[LIGHTS] #trigger", kill, "defined kill trigger with no choreo / sound hash"); }
+							}
+
+							// - parse points
+
+							const auto& parray = entry.at("points").as_array();
+							std::vector<remix_light_settings_s::point_s> temp_points;
+
+							// for each point
+							for (auto i = 0u; i < parray.size(); i++)
+							{
+								bool point_has_valid_position = false;
+
+								const auto& p = parray[i];
+								if (p.contains("position"))
+								{
+									if (const auto& positions = p.at("position").as_array(); positions.size() == 3) {
+										point_has_valid_position = true;
+									}
+									else { TOML_ERROR("[LIGHTS] #position", p.at("position"), "expected a 3D vector but got => %d ", p.at("position").as_array().size()); }
+								}
+
+								if (!i && !point_has_valid_position) // first point needs to define a position
+								{
+									TOML_ERROR("[LIGHTS] #position", p, "first point needs to define a position! Ignoring light");
+									break;
+								}
+
+								Vector temp_radiance = { 10.0f, 10.0f, 10.0f };
+								if (p.contains("radiance"))
+								{
+									if (const auto& radiance = p.at("radiance").as_array(); radiance.size() == 3)
+									{
+										temp_radiance = Vector(to_float(radiance[0], 10.0f), to_float(radiance[1], 10.0f), to_float(radiance[2], 10.0f));
+									}
+									else { TOML_ERROR("[LIGHTS] #radiance", p.at("radiance"), "expected a 3D vector but got => %d ", p.at("radiance").as_array().size()); }
+								}
+
+								float temp_radiance_scalar = 1.0f;
+								if (p.contains("scalar")) {
+									temp_radiance_scalar = to_float(p.at("scalar"), 1.0f);
+								}
+
+								float temp_radius = 1.0f;
+								if (p.contains("radius")) {
+									temp_radius = to_float(p.at("radius"), 1.0f);
+								}
+
+								float temp_timepoint = 0.0f;
+								if (i && p.contains("timepoint")) { // do not set timepoint for first point
+									temp_timepoint = to_float(p.at("timepoint"), 0.0f);
+								}
+
+								float temp_smoothness = 0.5f;
+								if (p.contains("smoothness"))
+								{
+									temp_smoothness = to_float(p.at("smoothness"), 0.5f);
+									temp_smoothness = std::clamp<float>(temp_smoothness, 0.0f, 10.0f);
+								}
+
+
+								// shaping
+
+								Vector temp_direction = { 0.0f, 0.0f, 1.0f };
+								if (p.contains("direction"))
+								{
+									if (const auto& direction = p.at("direction").as_array(); direction.size() == 3)
+									{
+										temp_direction = Vector(to_float(direction[0], 0.0f), to_float(direction[1], 0.0f), to_float(direction[2], 1.0f));
+										temp_direction.Normalize();
+									}
+									else { TOML_ERROR("[LIGHTS] #direction", p.at("direction"), "expected a 3D vector but got => %d ", p.at("direction").as_array().size()); }
+								}
+
+								bool temp_shaping_enabled = false;
+								float temp_degrees = 180.0f;
+								if (p.contains("degrees"))
+								{
+									temp_degrees = to_float(p.at("degrees"), 180.0f);
+									temp_degrees = std::clamp<float>(temp_degrees, 0.0f, 180.0f);
+									temp_shaping_enabled = temp_degrees != 180.0f;
+								}
+
+								float temp_softness = 0.0f;
+								if (p.contains("softness"))
+								{
+									temp_softness = to_float(p.at("softness"), 0.0f);
+									temp_softness = std::clamp<float>(temp_softness, 0.0f, M_PI);
+								}
+
+								float temp_exponent = 0.0f;
+								if (p.contains("exponent")) {
+									temp_exponent = to_float(p.at("exponent"), 0.0f);
+								}
+
+								// volumetrics
+								float temp_volumetric = 0.0f;
+								if (p.contains("volumetric_scale")) { // volumetricRadianceScale
+									temp_volumetric = to_float(p.at("volumetric_scale"), 1.0f);
+								}
+
+								// to avoid code duplication
+								Vector pt;
+
+								// using either position defined in current point or previous position
+								if (point_has_valid_position)
+								{
+									const auto& positions = p.at("position").as_array();
+									pt = Vector(to_float(positions[0]), to_float(positions[1]), to_float(positions[2]));
+								}
+								else {
+									pt = temp_points.back().position; // pos of previous point
+								}
+
+								temp_points.emplace_back(
+									remix_light_settings_s::point_s(
+										pt,
+										temp_radiance,
+										temp_radiance_scalar,
+										temp_radius,
+										temp_timepoint,
+										temp_smoothness,
+										temp_shaping_enabled,
+										temp_direction,
+										temp_degrees,
+										temp_softness,
+										temp_exponent,
+										temp_volumetric)
+								);
+							}
+
+							// attach settings
+
+							float temp_attach_prop_radius = 0.0f;
+							std::string temp_attach_prop_str;
+							Vector temp_attach_prop_bounds_min;
+							Vector temp_attach_prop_bounds_max;
+
+							if (entry.contains("attach"))
+							{
+								bool has_valid_attach = false;
+								const auto& attach = entry.at("attach");
+
+								if (attach.contains("radius"))
+								{
+									temp_attach_prop_radius = to_float(attach.at("radius"), 0.0f);
+									has_valid_attach = true;
+								}
+								else if (attach.contains("name"))
+								{
+									try { temp_attach_prop_str = attach.at("name").as_string(); }
+									CATCH_ERR;
+
+									has_valid_attach = true;
+								}
+
+								if (has_valid_attach)
+								{
+									m_map_settings.using_any_light_attached_to_prop = true;
+
+									if (attach.contains("bounds"))
+									{
+										if (const auto& bounds = attach.at("bounds").as_array();
+											bounds.size() == 6u)
+										{
+											temp_attach_prop_bounds_min = Vector(to_float(bounds[0]), to_float(bounds[1]), to_float(bounds[2]));
+											temp_attach_prop_bounds_max = Vector(to_float(bounds[3]), to_float(bounds[4]), to_float(bounds[5]));
+										}
+									}
+								}
+							}
+
+							// - parse general settings
+
+							if (!temp_points.empty())
+							{
+								bool temp_run_once = false;
+								if (entry.contains("run_once")) {
+									temp_run_once = to_bool(entry.at("run_once"), false);
+								}
+
+								bool temp_loop = false;
+								if (entry.contains("loop")) {
+									temp_loop = to_bool(entry.at("loop"), false);
+								}
+
+								bool temp_loop_smoothing = false;
+								if (entry.contains("loop_smoothing")) {
+									temp_loop_smoothing = to_bool(entry.at("loop_smoothing"), false);
+								}
+
+								m_map_settings.remix_lights.push_back(
+									remix_light_settings_s(
+										std::move(temp_points),
+										temp_run_once,
+										temp_loop,
+										temp_loop_smoothing,
+										temp_trigger_always,
+										std::move(temp_trigger_choreo_name),
+										std::move(temp_trigger_choreo_actor),
+										std::move(temp_trigger_choreo_event),
+										std::move(temp_trigger_choreo_param1),
+										temp_trigger_sound,
+										temp_trigger_delay,
+										std::move(temp_kill_choreo_name),
+										temp_kill_sound,
+										temp_kill_delay,
+										temp_attach_prop_radius,
+										std::move(temp_attach_prop_str),
+										temp_attach_prop_bounds_min,
+										temp_attach_prop_bounds_max,
+										std::move(temp_comment))
+								);
+							}
+						}
+						else { TOML_ERROR("[LIGHTS] #points", entry, "needs at least one point to define a light"); }
+					};
+
+				// try to find the loaded map
+				if (light_table.contains(m_map_settings.mapname))
+				{
+					if (const auto& map = light_table[m_map_settings.mapname];
+						!map.is_empty() && !map.as_array().empty())
+					{
+						for (const auto& entry : map.as_array()) {
+							process_light_entry(entry);
+						}
+					}
+				}
+			} // end 'LIGHTS'
 
 			// ####################
 			// parse 'CVARS' table
@@ -673,6 +1179,19 @@ namespace mods::blackmesa
 			auto& markers = map_settings::get_map_settings().map_markers;
 			file << "    " << build_map_marker_string_for_current_map(markers) << "\n\n";
 
+			file << "[LIGHTS]\n";
+			const auto lights = remix_lights::get();
+
+			if (const auto edit_light = lights->get_first_active_light(); edit_light)
+			{
+				auto temp_def = edit_light->def;
+				if (edit_light->mover.is_initialized()) {
+					temp_def.points = edit_light->mover.get_points_vec();
+				}
+
+				file << "    " << build_light_string_for_single_light(temp_def) << "\n\n";
+			}
+
 			file.close();
 		}
 
@@ -687,6 +1206,11 @@ namespace mods::blackmesa
 		m_map_settings.unbake_models.strings.clear();
 		m_map_settings.unbake_models.checksums.clear();
 		m_map_settings.api_var_configs.clear();
+
+		remix_lights::get()->destroy_and_clear_all_active_lights();
+		m_map_settings.remix_lights.clear();
+		//m_map_settings.using_any_light_sound_hash = false;
+
 		m_map_settings = {};
 		m_loaded = false;
 
@@ -698,6 +1222,7 @@ namespace mods::blackmesa
 	{
 		clear_map_settings();
 		map_settings::get()->set_settings_for_map("");
+		imgui::get()->m_light_edit_mode = false;
 	}
 
 	map_settings::map_settings()

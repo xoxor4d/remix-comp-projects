@@ -389,6 +389,8 @@ namespace mods::blackmesa
 		static inline renderer* p_this = nullptr;
 		static renderer* get() { return p_this; }
 
+		static bool world2screen(const Vector& in, Vector& out);
+
 		static void draw_nocull_markers();
 		static void on_present();
 
