@@ -645,6 +645,9 @@ namespace mods::blackmesa
 
 	void map_settings::on_map_load(const std::string& map_name)
 	{
+		is_level.reset();
+		is_level.update(map_name);
+
 		if (m_loaded) {
 			get()->clear_map_settings();
 		}

@@ -131,6 +131,23 @@ namespace mods::blackmesa
 		static void clear_map_settings();
 		static void reload();
 
+		struct level_bool_s
+		{
+			bool bm_c0a0b = false;
+
+			void update(const std::string& n)
+			{
+				if (n == "bm_c0a0b") bm_c0a0b = true;
+			}
+
+			void reset()
+			{
+				memset(this, 0, sizeof(level_bool_s));
+			}
+		};
+
+		static inline level_bool_s is_level = {};
+
 	private:
 		static inline map_settings_s m_map_settings = {};
 		static inline std::vector<std::string> m_args;

@@ -15,6 +15,13 @@
 
 // -dx9 -dxlevel 95 -oldgameui -window -w 1920 -h 1080
 
+// TODO:
+// - animated lights
+// - set config vars per map / game settings (3d sky) (bm_c0a0b)
+
+// - sand blending on train ride outdoor
+
+
 namespace mods::blackmesa
 {
 	namespace tex_addons
@@ -360,7 +367,7 @@ namespace mods::blackmesa
 		game::cvar_uncheat_and_set_int("mat_softwarelighting", 0);
 		game::cvar_uncheat_and_set_int("mat_parallaxmap", 0);
 		game::cvar_uncheat_and_set_int("mat_normalmaps", 0);
-		game::cvar_uncheat_and_set_int("r_3dsky", game_settings::get()->enable_3d_sky.get_as<bool>());
+		game::cvar_uncheat_and_set_int("r_3dsky", game_settings::get()->enable_3d_sky.get_as<bool>() || map_settings::get()->is_level.bm_c0a0b);
 		game::cvar_uncheat_and_set_int("r_flashlightrender", 0);
 		game::cvar_uncheat_and_set_int("r_occlusion", 0);
 
@@ -417,7 +424,7 @@ namespace mods::blackmesa
 		if (shared::common::remix_api::is_initialized())
 		{
 			// rtx.skyAutoDetect
-			const auto is_3d_sky_enabled = game_settings::get()->enable_3d_sky.get_as<bool>();
+			const auto is_3d_sky_enabled = game_settings::get()->enable_3d_sky.get_as<bool>() || map_settings::get()->is_level.bm_c0a0b;
 
 			/*shared::common::remix_vars::set_option(
 				shared::common::remix_vars::get_option("rtx.skyAutoDetect"), 
