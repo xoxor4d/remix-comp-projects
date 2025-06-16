@@ -46,6 +46,8 @@ namespace mods::blackmesa
 				toml_str += "]";
 			}
 
+			toml_str += ", blend = " + (m.is_blend_marker ? "true"s : "false"s);
+
 			toml_str += ", position = [" + format_float(m.origin.x) + ", " + format_float(m.origin.y) + ", " + format_float(m.origin.z) + "]";
 			toml_str += ", rotation = [" + format_float(RAD2DEG(m.rotation.x)) + ", " + format_float(RAD2DEG(m.rotation.y)) + ", " + format_float(RAD2DEG(m.rotation.z)) + "]";
 
@@ -600,15 +602,15 @@ namespace mods::blackmesa
 				auto& marker_table = config["MARKER"];
 
 				// #
-				auto process_marker_entry = [to_int, to_float](const toml::value& entry)
+				auto process_marker_entry = [to_bool, to_int, to_float](const toml::value& entry)
 					{
-						bool temp_is_nocull_marker = false;
+						//bool temp_is_nocull_marker = false;
 						std::uint32_t temp_marker_index = 0u;
 
 						if (entry.contains("nocull"))
 						{
 							temp_marker_index = static_cast<std::uint32_t>(to_int(entry.at("nocull"), 0u));
-							temp_is_nocull_marker = true;
+							//temp_is_nocull_marker = true;
 						}
 						else
 						{
@@ -661,6 +663,12 @@ namespace mods::blackmesa
 									}
 								}
 
+								// optional
+								bool blending = false;
+								if (entry.contains("blend")) {
+									blending = to_bool(entry.at("blend"), false);
+								}
+
 								m_map_settings.map_markers.emplace_back(
 									marker_settings_s
 									{
@@ -669,7 +677,8 @@ namespace mods::blackmesa
 										.rotation = temp_rotation,
 										.scale = temp_scale,
 										.areas = std::move(temp_area_set),
-										.comment = std::move(temp_comment)
+										.comment = std::move(temp_comment),
+										.is_blend_marker = blending,
 									});
 							}
 							else { TOML_ERROR("[MARKER] #position", entry.at("position"), "expected a 3D vector but got => %d ", entry.at("position").as_array().size()); }

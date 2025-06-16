@@ -560,7 +560,7 @@ namespace mods::blackmesa
 		// MARKER TABLE
 
 		ImGui::TableHeaderDropshadow();
-		if (ImGui::BeginTable("MarkerTable", 8,
+		if (ImGui::BeginTable("MarkerTable", 9,
 			ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_ContextMenuInBody |
 			ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_ScrollY, ImVec2(0, 380)))
 		{
@@ -568,6 +568,7 @@ namespace mods::blackmesa
 			ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_NoHide, 12.0f);
 			ImGui::TableSetupColumn("Num", ImGuiTableColumnFlags_NoResize, 24.0f);
 			ImGui::TableSetupColumn("Areas", ImGuiTableColumnFlags_WidthStretch, 80.0f);
+			ImGui::TableSetupColumn("Blend", ImGuiTableColumnFlags_NoResize, 24.0f);
 			ImGui::TableSetupColumn("Comment", ImGuiTableColumnFlags_WidthStretch, 200.0f);
 			ImGui::TableSetupColumn("Pos", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultHide, 200.0f);
 			ImGui::TableSetupColumn("Rot", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultHide, 180.0f);
@@ -634,6 +635,10 @@ namespace mods::blackmesa
 				ImGui::Spacing();
 				ImGui::TextWrapped_IntegersFromUnorderedSet(m.areas);
 				ImGui::Spacing();
+
+				// - Blending
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(m.is_blend_marker ? "x" : "");
 
 				// - comment
 				ImGui::TableNextColumn();

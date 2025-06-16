@@ -1160,10 +1160,10 @@ namespace mods::blackmesa
 			const float f_index = static_cast<float>(m.index);
 			const vertex mesh_verts[4] =
 			{
-				D3DXVECTOR3(-4.1337f - (f_index * 0.01f), -4.1337f - (f_index * 0.01f), 0), D3DCOLOR_COLORVALUE(f_index * 0.001f, f_index * 0.001f, 0.0f, 1.0f), 0.0f, f_index / 100.0f,
-				D3DXVECTOR3( 4.1337f + (f_index * 0.01f), -4.1337f - (f_index * 0.01f), 0), D3DCOLOR_COLORVALUE(0.0f, f_index * 0.001f, 0.0f, 1.0f), f_index / 100.0f, 0.0,
-				D3DXVECTOR3( 4.1337f + (f_index * 0.01f),  4.1337f + (f_index * 0.01f), 0), D3DCOLOR_COLORVALUE(0.0f,0.0f, f_index * 0.001f, 1.0f), 0.0f, f_index / 100.0f,
-				D3DXVECTOR3(-4.1337f - (f_index * 0.01f),  4.1337f + (f_index * 0.01f), 0), D3DCOLOR_COLORVALUE(f_index, 0.0f, f_index * 0.001f, 1.0f), 0.0f, f_index / 100.0f,
+				D3DXVECTOR3(-4.1337f - (f_index * 0.01f), -4.1337f - (f_index * 0.01f), 0), D3DCOLOR_COLORVALUE(f_index * 0.001f, f_index * 0.001f, 0.0f,			  1.0f), 0.0f, f_index / 100.0f,
+				D3DXVECTOR3( 4.1337f + (f_index * 0.01f), -4.1337f - (f_index * 0.01f), 0), D3DCOLOR_COLORVALUE(0.0f,			  f_index * 0.001f, 0.0f,			  1.0f), f_index / 100.0f, 0.0,
+				D3DXVECTOR3( 4.1337f + (f_index * 0.01f),  4.1337f + (f_index * 0.01f), 0), D3DCOLOR_COLORVALUE(0.0f,			  0.0f,				f_index * 0.001f, 1.0f), 0.0f, f_index / 100.0f,
+				D3DXVECTOR3(-4.1337f - (f_index * 0.01f),  4.1337f + (f_index * 0.01f), 0), D3DCOLOR_COLORVALUE(f_index,		  0.0f,				f_index * 0.001f, 1.0f), 0.0f, f_index / 100.0f,
 			};
 
 			D3DXMATRIX scale_matrix, rotation_x, rotation_y, rotation_z, mat_rotation, mat_translation, world;
@@ -1181,7 +1181,43 @@ namespace mods::blackmesa
 			//dev->SetRenderState((D3DRENDERSTATETYPE)150, 100 + m.index);
 
 			dev->SetTransform(D3DTS_WORLD, &world);
-			dev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, mesh_verts, sizeof(vertex));
+
+			DWORD og_srcblend, og_destblend, og_alphaop, og_alphaarg1, og_alphaarg2;
+			if (m.is_blend_marker)
+			{
+				dev->GetRenderState(D3DRS_SRCBLEND, &og_srcblend);
+				dev->GetRenderState(D3DRS_DESTBLEND, &og_destblend);
+				dev->GetTextureStageState(0, D3DTSS_ALPHAOP, &og_alphaop);
+				dev->GetTextureStageState(0, D3DTSS_ALPHAARG1, &og_alphaarg1);
+				dev->GetTextureStageState(0, D3DTSS_ALPHAARG2, &og_alphaarg2);
+
+				dev->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+				dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+				dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+				dev->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+				dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+				dev->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+
+				const vertex mesh_verts_alpha[4] =
+				{
+					D3DXVECTOR3(-8.1337f - (f_index * 0.01f), -8.1337f - (f_index * 0.01f), 0), D3DCOLOR_COLORVALUE(f_index * 0.001f, f_index * 0.001f, 0.0f,			  1.0f), 0.0f, f_index / 100.0f,
+					D3DXVECTOR3( 8.1337f + (f_index * 0.01f), -8.1337f - (f_index * 0.01f), 0), D3DCOLOR_COLORVALUE(0.0f,			  f_index * 0.001f, 0.0f,			  1.0f), f_index / 100.0f, 0.0,
+					D3DXVECTOR3( 8.1337f + (f_index * 0.01f),  8.1337f + (f_index * 0.01f), 0), D3DCOLOR_COLORVALUE(0.0f,			  0.0f,				f_index * 0.001f, 1.0f), 0.0f, f_index / 100.0f,
+					D3DXVECTOR3(-8.1337f - (f_index * 0.01f),  8.1337f + (f_index * 0.01f), 0), D3DCOLOR_COLORVALUE(f_index,		  0.0f,				f_index * 0.001f, 0.0f), 0.0f, f_index / 100.0f,
+				};
+
+				dev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, mesh_verts_alpha, sizeof(vertex));
+
+				dev->SetRenderState(D3DRS_SRCBLEND, og_srcblend);
+				dev->SetRenderState(D3DRS_DESTBLEND, og_destblend);
+				dev->SetTextureStageState(0, D3DTSS_ALPHAOP, og_alphaop);
+				dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, og_alphaarg1);
+				dev->SetTextureStageState(0, D3DTSS_ALPHAARG2, og_alphaarg2);
+			}
+			else
+			{
+				dev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, mesh_verts, sizeof(vertex));
+			}
 		}
 
 		// restore

@@ -20,6 +20,7 @@ namespace mods::blackmesa
 			Vector scale = { 1.0f, 1.0f, 1.0f }; // no_cull only
 			std::unordered_set<std::uint32_t> areas; // no_cull only
 			std::string comment;
+			bool is_blend_marker = false;
 
 			void* handle = nullptr; // internal use
 			bool is_hidden = false; // internal use
