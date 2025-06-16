@@ -12,14 +12,16 @@
 #include "shared/common/remix_api.hpp"
 #include "shared/common/remix_vars.hpp"
 
-// -setup
-
+// commandline:
 // -dx9 -dxlevel 95 -oldgameui -window -w 1920 -h 1080
 
 // TODO:
-// - animated lights
-
 // - sand blending on train ride outdoor
+// ---> needs blend settings on marker:
+// device->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE);
+// device->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+// device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+// device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
 
 
 namespace mods::blackmesa
@@ -370,7 +372,11 @@ namespace mods::blackmesa
 		game::cvar_uncheat_and_set_int("mat_softwarelighting", 0);
 		game::cvar_uncheat_and_set_int("mat_parallaxmap", 0);
 		game::cvar_uncheat_and_set_int("mat_normalmaps", 0);
+#if DEBUG
+		game::cvar_uncheat_and_set_int("r_3dsky", game_settings::get()->enable_3d_sky.get_as<bool>());
+#else
 		game::cvar_uncheat_and_set_int("r_3dsky", game_settings::get()->enable_3d_sky.get_as<bool>() || map_settings::get()->is_level.bm_c0a0b);
+#endif
 		game::cvar_uncheat_and_set_int("r_flashlightrender", 0);
 		game::cvar_uncheat_and_set_int("r_occlusion", 0);
 
@@ -427,7 +433,11 @@ namespace mods::blackmesa
 		if (shared::common::remix_api::is_initialized())
 		{
 			// rtx.skyAutoDetect
+#if DEBUG
+			const auto is_3d_sky_enabled = game_settings::get()->enable_3d_sky.get_as<bool>();
+#else
 			const auto is_3d_sky_enabled = game_settings::get()->enable_3d_sky.get_as<bool>() || map_settings::get()->is_level.bm_c0a0b;
+#endif
 
 			/*shared::common::remix_vars::set_option(
 				shared::common::remix_vars::get_option("rtx.skyAutoDetect"), 
