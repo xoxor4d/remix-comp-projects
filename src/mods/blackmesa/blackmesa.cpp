@@ -31,6 +31,8 @@ namespace mods::blackmesa
 		LPDIRECT3DTEXTURE9 white;
 		LPDIRECT3DTEXTURE9 black;
 		LPDIRECT3DTEXTURE9 water_temp;
+		LPDIRECT3DTEXTURE9 sky;
+		LPDIRECT3DTEXTURE9 decal;
 	}
 
 	int g_current_leaf = -1;
@@ -47,6 +49,8 @@ namespace mods::blackmesa
 		D3DXCreateTextureFromFileA(dev, "rtx_comp\\textures\\white.dds", &tex_addons::white);
 		D3DXCreateTextureFromFileA(dev, "rtx_comp\\textures\\black.dds", &tex_addons::black);
 		D3DXCreateTextureFromFileA(dev, "rtx_comp\\textures\\water_temp.png", &tex_addons::water_temp);
+		D3DXCreateTextureFromFileA(dev, "rtx_comp\\textures\\sky.png", &tex_addons::sky);
+		D3DXCreateTextureFromFileA(dev, "rtx_comp\\textures\\decal.png", &tex_addons::decal);
 	}
 
 	void on_begin_scene_cb()

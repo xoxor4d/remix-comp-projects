@@ -560,7 +560,7 @@ namespace mods::blackmesa
 		// MARKER TABLE
 
 		ImGui::TableHeaderDropshadow();
-		if (ImGui::BeginTable("MarkerTable", 9,
+		if (ImGui::BeginTable("MarkerTable", 10,
 			ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_ContextMenuInBody |
 			ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_ScrollY, ImVec2(0, 380)))
 		{
@@ -569,6 +569,7 @@ namespace mods::blackmesa
 			ImGui::TableSetupColumn("Num", ImGuiTableColumnFlags_NoResize, 24.0f);
 			ImGui::TableSetupColumn("Areas", ImGuiTableColumnFlags_WidthStretch, 80.0f);
 			ImGui::TableSetupColumn("Blend", ImGuiTableColumnFlags_NoResize, 24.0f);
+			ImGui::TableSetupColumn("Sky", ImGuiTableColumnFlags_NoResize, 24.0f);
 			ImGui::TableSetupColumn("Comment", ImGuiTableColumnFlags_WidthStretch, 200.0f);
 			ImGui::TableSetupColumn("Pos", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultHide, 200.0f);
 			ImGui::TableSetupColumn("Rot", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultHide, 180.0f);
@@ -636,9 +637,13 @@ namespace mods::blackmesa
 				ImGui::TextWrapped_IntegersFromUnorderedSet(m.areas);
 				ImGui::Spacing();
 
-				// - Blending
+				// - blending
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted(m.is_blend_marker ? "x" : "");
+
+				// - sky
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(m.is_sky_marker ? "x" : "");
 
 				// - comment
 				ImGui::TableNextColumn();
@@ -788,6 +793,9 @@ namespace mods::blackmesa
 				}
 				selection->index = (std::uint32_t)temp_num;
 			}
+
+			ImGui::Checkbox("Blend Marker", &selection->is_blend_marker);
+			ImGui::Checkbox("Sky Marker", &selection->is_sky_marker);
 
 			//ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.6f, 0.5f));
 			ImGui::Widget_PrettyDragVec3("Origin", &selection->origin.x, true, 80.0f, 0.5f,

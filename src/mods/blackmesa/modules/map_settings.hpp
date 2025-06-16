@@ -21,6 +21,7 @@ namespace mods::blackmesa
 			std::unordered_set<std::uint32_t> areas; // no_cull only
 			std::string comment;
 			bool is_blend_marker = false;
+			bool is_sky_marker = false;
 
 			void* handle = nullptr; // internal use
 			bool is_hidden = false; // internal use

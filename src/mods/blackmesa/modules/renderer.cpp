@@ -1182,6 +1182,11 @@ namespace mods::blackmesa
 
 			dev->SetTransform(D3DTS_WORLD, &world);
 
+
+			if (m.is_sky_marker) {
+				dev->SetTexture(0, tex_addons::sky);
+			}
+
 			DWORD og_srcblend, og_destblend, og_alphaop, og_alphaarg1, og_alphaarg2;
 			if (m.is_blend_marker)
 			{
@@ -1197,6 +1202,8 @@ namespace mods::blackmesa
 				dev->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
 				dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
 				dev->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+
+				dev->SetTexture(0, tex_addons::decal);
 
 				const vertex mesh_verts_alpha[4] =
 				{
@@ -1214,8 +1221,7 @@ namespace mods::blackmesa
 				dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, og_alphaarg1);
 				dev->SetTextureStageState(0, D3DTSS_ALPHAARG2, og_alphaarg2);
 			}
-			else
-			{
+			else {
 				dev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, mesh_verts, sizeof(vertex));
 			}
 		}

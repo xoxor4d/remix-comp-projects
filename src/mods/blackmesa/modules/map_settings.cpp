@@ -669,6 +669,12 @@ namespace mods::blackmesa
 									blending = to_bool(entry.at("blend"), false);
 								}
 
+								// optional
+								bool is_sky = false;
+								if (entry.contains("sky")) {
+									is_sky = to_bool(entry.at("sky"), false);
+								}
+
 								m_map_settings.map_markers.emplace_back(
 									marker_settings_s
 									{
@@ -679,6 +685,7 @@ namespace mods::blackmesa
 										.areas = std::move(temp_area_set),
 										.comment = std::move(temp_comment),
 										.is_blend_marker = blending,
+										.is_sky_marker = is_sky,
 									});
 							}
 							else { TOML_ERROR("[MARKER] #position", entry.at("position"), "expected a 3D vector but got => %d ", entry.at("position").as_array().size()); }
