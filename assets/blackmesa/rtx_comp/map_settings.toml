@@ -158,6 +158,8 @@
 #   {
 #       nocull =                  number of marker mesh - never getting culled and spawned on map load (eg: useful for distant light)                         [int 0-inf]
 #       areas = []                (opt.) only show nocull marker when player is in specified area/s                                                           [int array]
+#       blend =                   (opt.) enables vertex alpha blending on the marker (if you want to use vertex alpha on replacement meshes)                  [bool]
+#       sky =                     (opt.) use sky texture on marker                                                                                            [bool]
 #       position = []             position of the marker mesh     [3D Vector]
 #       rotation = []             rotation of the marker mesh     [3D Vector]
 #       scale = []                scale of the marker mesh        [3D Vector]
@@ -177,6 +179,8 @@
 
     bm_c0a0b = [
         { nocull = 101, areas = [], position = [2689.96, -3590.37, -1000.00], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00] },
+        { nocull = 105, blend = true, areas = [], position = [2689.96, -3590.37, -990.00], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00] },
+        { nocull = 106, sky = true, areas = [], position = [2689.96, -3590.37, -980.00], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00] },
     ]
 
     bm_c0a0c = [
