@@ -571,6 +571,10 @@ namespace mods::blackmesa
 			ctx.save_vs(dev);
 			dev->SetVertexShader(nullptr);
 
+			if (ctx.info.material_name.starts_with("materials/sprites/glow")) {
+				ctx.modifiers.do_not_render = true;
+			}
+
 #if DEBUG
 			if (im->m_debug_disable_rendering[6]) ctx.modifiers.do_not_render = true;
 #endif
