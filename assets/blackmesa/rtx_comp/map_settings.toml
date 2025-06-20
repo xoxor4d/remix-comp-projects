@@ -298,19 +298,19 @@
 
         # welding
         { points = [
-            { position = [317.82, -6344.11, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 5000.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00 },
+            { position = [317.82, -6344.11, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 10000.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00 },
             { position = [317.82, -6350.36, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 0.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 0.10 },
             { position = [317.82, -6350.36, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 0.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 0.38 },
-            { position = [317.82, -6350.36, 170.52], radiance = [100.00, 100.00, 100.00], scalar = 1000.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 0.49 },
+            { position = [317.82, -6350.36, 170.52], radiance = [100.00, 100.00, 100.00], scalar = 3000.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 0.49 },
             { position = [317.32, -6350.36, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 0.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 0.71 },
             { position = [317.32, -6350.36, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 0.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 1.48 },
-            { position = [317.32, -6350.36, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 5000.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 1.62 },
-            { position = [324.07, -6350.36, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 5000.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 1.75 },
+            { position = [317.32, -6350.36, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 1000.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 1.62 },
+            { position = [324.07, -6350.36, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 1000.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 1.75 },
             { position = [317.32, -6350.36, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 0.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 1.99 },
             { position = [317.32, -6350.36, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 0.00, radius = 1.00, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 2.26 },
             { position = [313.82, -6348.86, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 0.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 2.39 },
             { position = [313.82, -6348.86, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 0.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 2.51 },
-            { position = [313.82, -6348.86, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 5000.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 2.61 },
+            { position = [313.82, -6348.86, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 10000.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 2.61 },
             { position = [313.82, -6348.86, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 0.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 2.71 },
         ], loop = true },
 
