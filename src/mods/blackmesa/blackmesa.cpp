@@ -33,6 +33,7 @@ namespace mods::blackmesa
 		LPDIRECT3DTEXTURE9 water_temp;
 		LPDIRECT3DTEXTURE9 sky;
 		LPDIRECT3DTEXTURE9 decal;
+		LPDIRECT3DTEXTURE9 fence_alpha;
 	}
 
 	int g_current_leaf = -1;
@@ -51,6 +52,7 @@ namespace mods::blackmesa
 		D3DXCreateTextureFromFileA(dev, "rtx_comp\\textures\\water_temp.png", &tex_addons::water_temp);
 		D3DXCreateTextureFromFileA(dev, "rtx_comp\\textures\\sky.png", &tex_addons::sky);
 		D3DXCreateTextureFromFileA(dev, "rtx_comp\\textures\\decal.png", &tex_addons::decal);
+		D3DXCreateTextureFromFileA(dev, "rtx_comp\\textures\\fence_alpha.png", &tex_addons::fence_alpha);
 	}
 
 	void on_begin_scene_cb()
@@ -425,6 +427,11 @@ namespace mods::blackmesa
 		game::cvar_uncheat_and_set_int("mat_disable_bloom", 1);
 		game::cvar_uncheat_and_set_int("mat_drawflat", 1);
 		game::cvar_uncheat_and_set_int("mat_fastnobump", 1);
+
+		// mat_compressedtextures
+		//game::cvar_uncheat_and_set_int("mat_compressedtextures", 0);
+		//game::cvar_uncheat_and_set_int("mat_managedtextures", 0);
+		//game::cvar_uncheat_and_set_int("mat_bufferprimitives", 0);
 
 #if DEBUG
 		game::cvar_uncheat_and_set_int("sv_cheats", 1);

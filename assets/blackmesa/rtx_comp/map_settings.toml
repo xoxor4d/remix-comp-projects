@@ -116,6 +116,7 @@
         0x84e026e7, # railing01_short
         0x3ba019fb, # railing01_cap_end
         0xa1c85020, # railing01_end
+        0xb9351d7d, # mopbucket01
     ]}
 
     #background10 = { name = [

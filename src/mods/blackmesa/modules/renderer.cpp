@@ -609,7 +609,17 @@ namespace mods::blackmesa
 			// UnlitTwoTexture_DX9 + vol_light...
 			if (ctx.info.shader_name.starts_with("Un") && ctx.info.material_name.contains("vol_light")) {
 				ctx.modifiers.do_not_render = true;
-			} 
+			}
+
+			if (ctx.info.material_name.contains("fence_alpha")) 
+			{
+				//ctx.restore_vs(dev);
+				//if (const auto basemap2 = shaderapi->vtbl->GetD3DTexture(shaderapi, nullptr, ctx.info.buffer_state.m_BoundTexture[im->m_debug_int]); basemap2)
+				{
+					ctx.save_texture(dev, 0);
+					dev->SetTexture(0, tex_addons::fence_alpha);
+				}
+			}
 
 #if DEBUG
 			if (im->m_debug_disable_rendering[7]) ctx.modifiers.do_not_render = true;

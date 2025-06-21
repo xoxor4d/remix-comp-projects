@@ -10,6 +10,7 @@ namespace mods::blackmesa
 		extern LPDIRECT3DTEXTURE9 water_temp;
 		extern LPDIRECT3DTEXTURE9 sky;
 		extern LPDIRECT3DTEXTURE9 decal;
+		extern LPDIRECT3DTEXTURE9 fence_alpha;
 	}
 
 	extern int g_current_leaf;
