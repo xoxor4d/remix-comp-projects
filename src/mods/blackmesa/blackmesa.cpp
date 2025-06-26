@@ -16,12 +16,7 @@
 // -dx9 -dxlevel 95 -oldgameui -window -w 1920 -h 1080
 
 // TODO:
-// - sand blending on train ride outdoor
-// ---> needs blend settings on marker:
-// device->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE);
-// device->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-// device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
-// device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+// - trigger configs on leafs to disable 3dsky on bm_c0a0c after passing lasers
 
 
 namespace mods::blackmesa
@@ -53,6 +48,13 @@ namespace mods::blackmesa
 		D3DXCreateTextureFromFileA(dev, "rtx_comp\\textures\\sky.png", &tex_addons::sky);
 		D3DXCreateTextureFromFileA(dev, "rtx_comp\\textures\\decal.png", &tex_addons::decal);
 		D3DXCreateTextureFromFileA(dev, "rtx_comp\\textures\\fence_alpha.png", &tex_addons::fence_alpha);
+	}
+
+	bool is_3dsky_required()
+	{
+		return game_settings::get()->enable_3d_sky.get_as<bool>()
+			|| map_settings::get()->is_level.bm_c0a0b
+			|| map_settings::get()->is_level.bm_c0a0c;
 	}
 
 	void on_begin_scene_cb()
@@ -381,7 +383,7 @@ namespace mods::blackmesa
 #if DEBUG
 		game::cvar_uncheat_and_set_int("r_3dsky", game_settings::get()->enable_3d_sky.get_as<bool>());
 #else
-		game::cvar_uncheat_and_set_int("r_3dsky", game_settings::get()->enable_3d_sky.get_as<bool>() || map_settings::get()->is_level.bm_c0a0b);
+		game::cvar_uncheat_and_set_int("r_3dsky", is_3dsky_required());
 #endif
 		game::cvar_uncheat_and_set_int("r_flashlightrender", 0);
 		game::cvar_uncheat_and_set_int("r_occlusion", 0);
@@ -447,7 +449,7 @@ namespace mods::blackmesa
 #if DEBUG
 			const auto is_3d_sky_enabled = game_settings::get()->enable_3d_sky.get_as<bool>();
 #else
-			const auto is_3d_sky_enabled = game_settings::get()->enable_3d_sky.get_as<bool>() || map_settings::get()->is_level.bm_c0a0b;
+			const auto is_3d_sky_enabled = is_3dsky_required();
 #endif
 
 			/*shared::common::remix_vars::set_option(

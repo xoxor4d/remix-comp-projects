@@ -138,10 +138,12 @@ namespace mods::blackmesa
 		struct level_bool_s
 		{
 			bool bm_c0a0b = false;
+			bool bm_c0a0c = false;
 
 			void update(const std::string& n)
 			{
-				if (n == "bm_c0a0b") bm_c0a0b = true;
+					 if (n == "bm_c0a0b") bm_c0a0b = true;
+				else if (n == "bm_c0a0c") bm_c0a0c = true;
 			}
 
 			void reset()
