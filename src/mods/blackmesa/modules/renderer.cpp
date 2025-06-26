@@ -667,6 +667,12 @@ namespace mods::blackmesa
 		// > particle/warp1_warp
 		else if (mesh->m_VertexFormat == 0x80137)
 		{
+			if (const auto basemap2 = shaderapi->vtbl->GetD3DTexture(shaderapi, nullptr, ctx.info.buffer_state.m_BoundTexture[3]); basemap2)
+			{
+				ctx.save_texture(dev, 0);
+				dev->SetTexture(0, basemap2);
+			}
+
 #if DEBUG
 			if (im->m_debug_disable_rendering[11]) ctx.modifiers.do_not_render = true;
 #endif
