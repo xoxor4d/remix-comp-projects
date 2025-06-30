@@ -123,9 +123,9 @@
     #    "inbound_tram", 
     #]}
 
-    #bm_c0a0a = { name = [
-    #    "inbound_tram", 
-    #]}
+    bm_c0a0b = { checksum = [
+        0x7b7f4cc5, 
+    ]}
 
     #bm_c0a0b = { name = [
     #    "inbound_tram", 
@@ -315,6 +315,14 @@
             { position = [313.82, -6348.86, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 0.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 2.71 },
         ], loop = true },
 
+        # rocket_mover
+        { points = [
+            { position = [-352.38, -3520.00, 206.24], radiance = [18.40, 11.00, 4.60], scalar = 20.00, radius = 4.34, smoothness = 0.00, volumetric_scale = 1.00 },
+            { position = [-352.38, -3520.00, 206.24], radiance = [18.40, 11.00, 4.60], scalar = 20.00, radius = 4.34, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 0.75 },
+            { position = [-352.38, -3520.00, 206.24], radiance = [18.40, 11.00, 4.60], scalar = 0.00, radius = 4.34, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 0.85 },
+            { position = [-352.38, -3520.00, 206.24], radiance = [18.40, 11.00, 4.60], scalar = 0.00, radius = 4.34, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 1.25 },
+        ], loop = true },
+
         # tram
         # { attach = { radius = 138.231003 }, points = [
         #     { position = [0, 0, 145], radiance = [10.00, 4.30, 2.00], scalar = 7000.00, radius = 1.00, smoothness = 0.50, direction = [-0.96, 0.00, 0.28], degrees = 45.00, softness = 0.20, exponent = 0.00, volumetric_scale = 1.00 },
@@ -353,10 +361,10 @@
 
         # left fx2
         { points = [
-            { position = [143.87, 535.69, -32.46], radiance = [165.80, 110.00, 232.70], scalar = 1000.00, radius = 1.00, smoothness = 1.00, volumetric_scale = 1.00 },
-            { position = [184.87, 516.19, -60.96], radiance = [192.60, 95.10, 187.80], scalar = 6000.00, radius = 1.00, smoothness = 1.00, volumetric_scale = 1.00, timepoint = 0.10 },
-            { position = [132.37, 594.69, -68.96], radiance = [178.50, 110.00, 232.70], scalar = 5000.00, radius = 1.00, smoothness = 1.00, volumetric_scale = 1.00, timepoint = 0.20 },
-        ], loop = true },
+            { position = [160.87, 584.19, -60.46], radiance = [165.80, 110.00, 232.70], scalar = 1000.00, radius = 1.00, smoothness = 1.00, volumetric_scale = 1.00 },
+            { position = [161.37, 574.19, -69.71], radiance = [192.60, 95.10, 186.10], scalar = 6000.00, radius = 1.00, smoothness = 1.00, volumetric_scale = 1.00, timepoint = 0.10 },
+            { position = [155.87, 575.19, -69.21], radiance = [178.50, 110.00, 232.70], scalar = 5000.00, radius = 1.00, smoothness = 1.00, volumetric_scale = 1.00, timepoint = 0.20 },
+        ], loop = true, loop_smoothing = true },
 
         # tram
         # { attach = { radius = 138.231003 }, points = [
