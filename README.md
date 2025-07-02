@@ -45,7 +45,7 @@ _____
 ![img](.github/img/blackmesa.jpg)
 
 #### This compatibilty mod was used for on an entry in the RTX Remix Modding Competition. 
-#### As such, a proper remix mod with limited scope was created an can be found over at [ModDB](tba)
+#### As such, a proper remix mod with limited scope was created an can be found over at [ModDB](https://www.moddb.com/mods/black-mesa-remixed-poc-inbound/downloads/black-mesa-inbound-ride-and-lab-rtx-remix-mod)
 
 </div>
 
@@ -65,7 +65,7 @@ _____
 - Some textures won't show up in remix (or are simply black) - mostly metal textures and certain skyboxes
 - Effects are not properly fixed (no proper alpha blending at times - or general glitching)
 - Effects and other things might look especially bad when viewed through a translucent surface (eg. tram ride -> that is more of a general remix issue)
-- Cables are strill rendered via shaders and look glitchy due to unstable hashes and vertex imprecision
+- Cables are still rendered via shaders and look glitchy due to unstable hashes and vertex imprecision
 - No facial expressions because of softwareskinning usage (also results in not being able to replace skinned meshes)
 - The asi (dll) might be flagged as a false positive due to the nature of it (process hooking and manipulation)
 
@@ -73,7 +73,7 @@ _____
 
 ###### Usage / Installing:
 This game has separate releases.  
-Look [here](https://github.com/xoxor4d/remix-comp-projects/releases) and follow the install instructions that found on the release page.
+Look [here](https://github.com/xoxor4d/remix-comp-projects/releases) and follow the install instructions that are found on the release page.
 
 <br>
 <br>
