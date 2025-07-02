@@ -89,6 +89,13 @@ namespace shared::utils
 		std::ranges::transform(str.begin(), str.end(), str.begin(), [](const unsigned char c) { return static_cast<char>(std::tolower(c)); });
 	}
 
+	inline std::string to_hex_string(const int value)
+	{
+		std::stringstream ss;
+		ss << "0x" << std::setfill('0') << std::setw(8) << std::hex << value;
+		return ss.str();
+	}
+
 	std::string str_to_lower(std::string input);
 	std::string convert_wstring(const std::wstring& wstr);
 	std::string& ltrim(std::string& s);
@@ -187,4 +194,33 @@ namespace shared::utils
 	};
 
 	std::string hash_file_sha1(const char* file_path);
+
+	// --
+
+	template<typename S>
+	struct fnv_internal;
+	
+	template<typename S>
+	struct fnv1a;
+	
+	template<>
+	struct fnv_internal<uint32_t>
+	{
+		constexpr static uint32_t default_offset_basis = 0x811C9DC5;
+		constexpr static uint32_t prime = 0x01000193;
+	};
+	
+	template<>
+	struct fnv1a<uint32_t> : fnv_internal<uint32_t>
+	{
+		constexpr static uint32_t hash(char const* string, const uint32_t val = default_offset_basis) {
+			return (string[0] == '\0') ? val : hash(&string[1], (val ^ static_cast<uint32_t>(string[0])) * prime);
+		}
+	
+		constexpr static uint32_t hash(wchar_t const* string, const uint32_t val = default_offset_basis) {
+			return (string[0] == L'\0') ? val : hash(&string[1], (val ^ static_cast<uint32_t>(string[0])) * prime);
+		}
+	};
+	
+	using fnv = fnv1a<uint32_t>;
 }

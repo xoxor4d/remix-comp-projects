@@ -1,0 +1,397 @@
+# Water Settings
+# :: Adjust various water related settings per map
+# ~~ Parameters: 
+#
+# <map name> = {
+#   scale =                 uv scale - small values reduce repetition while larger values will increase tiling              [float] << defaults to 1.0
+#   scale_top =             uv scale to top layer - a value of 0 will use 'scale' for top and bottom                        [float] << defaults to 0.0
+#   top_layer_offset =      can offset the dual rendered water mesh along the Z-Axis (usually the animated surface)         [float] << defaults to 0.5
+#   bottom_layer_offset =   can offset the original water mesh along the Z-Axis (usually the surface defining water color)  [float] << defaults to 0.0
+# }
+
+[WATER]
+    background10 = { scale = 1.00, scale_top = 0.0, top_layer_offset = 0.5, bottom_layer_offset = 0.0 }
+
+
+
+# #####################################################################################
+#
+# Override culling per game area
+# :: Useful console command: 'xo_debug_toggle_node_vis'
+# ~~ Parameters:
+#
+# <map name> = [
+#   {
+#       in_area =           the area the player has to be in                [int]
+#       nocull_dist =       |> Distance around the player where objects wont get culled - only used on certain cull modes   [float] << defaults to 600.0
+#   },  
+#   { ... },
+# ]
+
+[CULL]
+
+    bm_c0a0a = [
+        { in_area =   1, nocull_dist = 2000.00 },
+        { in_area =   3, nocull_dist = 4000.00 },
+        { in_area =   4, nocull_dist = 5000.00 },
+    ]
+
+    bm_c0a0b = [
+        { in_area =   1, nocull_dist = 2000.00 },
+        { in_area =   2, nocull_dist = 4000.00 },
+        { in_area =   4, nocull_dist = 2500.00 },
+        { in_area =   6, nocull_dist = 2500.00 },
+        { in_area =   7, nocull_dist = 4000.00 },
+        { in_area =   8, nocull_dist = 4000.00 },
+    ]
+
+    bm_c0a0c = [
+        { in_area =   1, nocull_dist = 5000.00 },
+        { in_area =   2, nocull_dist = 3500.00 },
+        { in_area =   4, nocull_dist = 2500.00 },
+        { in_area =   5, nocull_dist = 3000.00 },
+    ]
+
+
+    bm_c1a0a = [
+        { in_area =   2, nocull_dist = 1800.00 },
+        { in_area =   4, nocull_dist = 1600.00 },
+        { in_area =   5, nocull_dist = 2000.00 },
+    ]
+
+
+
+# #####################################################################################
+#
+# Hide Models
+# :: Can be used to hide models. When a certain model is used a lot, it can make sense to hide them and 
+#    manually re-add the models by adding them as references to map markers (toolkit) - will help with cpu bottlenecks)
+#
+# :: Useful console command: 'xo_debug_toggle_model_info'
+# ~~ Parameters:
+#
+# <map name> = {
+#   name = []             force hide models containing the specified substring                                                                [string array]
+#   radius = []           force hide models with this radius (checking for radii is generally faster and the preferred way to filter models)  [float array]
+# }
+
+[HIDEMODEL]
+
+    #bm_c0a0c = { name = ["loader.mdl"
+    #]}
+
+
+# #####################################################################################
+#
+# Unbake Model Transforms
+# :: If a "static prop" has many unique hashes (remix) then it's likely that it's vertices contain world position data. This will prevent proper mesh-replacements in remix.
+# :: Specifying a substring or preferably the checksum of the model you want to replace here will prevent position/rotation/normal information
+#    from being backed into the model vertices and then use the fixed function world transform to transform it into the game world. 
+# :: String checks are costly so keep entries as small as possible and scope them per map if possible. (Just use checksums!) Use entry 'ALL' if it's a model used throughout the game.
+# :: This will cause issues with some models (mainly ones with sub-meshes)
+# :: Do not specify models if you do not intend to replace them. There is no benefit.
+# 
+# :: Useful console command: 'xo_mapsettings_get_unbake_info' to log all currently visible model names to '/logs/mapsettings_unbake_info.log' and 'xo_debug_toggle_unbake_model_info' for visualizations
+# ~~ Parameters:
+#
+# <map name> = {    per map
+#   name = []       unbake transform data from model vertices which contain the specified substring     [string array]
+#   checksum = []   ^ but using the mdl checksum                                                        [int array - hex format]
+# }
+#
+# ALL = {           ^ on every map
+#   name = []       ^                                                                                   [string array]
+#   checksum = []   ^                                                                                   [int array - hex format]
+# }                                                                                
+
+[UNBAKE]
+
+    ALL = { checksum = [
+        0xb0e398ee, # inbound_tram
+        0x685f1775, # inbound_tram_door
+        0x4354fd72, # railing01_long
+        0xfc97c8f8, # railing01_medium
+        0xaf27c2c4, # railing01_cap
+        0xbac65b23, # railing01_corner_soft
+        0x84e026e7, # railing01_short
+        0x3ba019fb, # railing01_cap_end
+        0xa1c85020, # railing01_end
+        0xb9351d7d, # mopbucket01
+    ]}
+
+    #background10 = { name = [
+    #    "inbound_tram", 
+    #]}
+
+    bm_c0a0b = { checksum = [
+        0x7b7f4cc5, 
+    ]}
+
+    #bm_c0a0b = { name = [
+    #    "inbound_tram", 
+    #]}
+
+    #bm_c0a0c = { name = [
+    #    "inbound_tram", 
+    #]}
+
+    #bm_c1a0a = { name = [
+    #    "inbound_tram" 
+    #], checksum = [
+    #    0x4354fd72, # railing01_long
+    #    0xfc97c8f8, # railing01_medium
+    #    0xaf27c2c4, # railing01_cap
+    #    0xbac65b23, # railing01_corner_soft
+    #    0x84e026e7, # railing01_short
+    #    0x3ba019fb, # railing01_cap_end
+    #    0xa1c85020, # railing01_end
+    #]}
+
+
+
+# #####################################################################################
+#
+# Spawn unique markers meshes
+# :: Can be used as anchor mesh (same one can be spawned multiple times)
+# ~~ Parameters:
+#
+# <map name> = [                  [array of structure below]
+#   {
+#       nocull =                  number of marker mesh - never getting culled and spawned on map load (eg: useful for distant light)                         [int 0-inf]
+#       areas = []                (opt.) only show nocull marker when player is in specified area/s                                                           [int array]
+#       blend =                   (opt.) enables vertex alpha blending on the marker (if you want to use vertex alpha on replacement meshes)                  [bool]
+#       sky =                     (opt.) use sky texture on marker                                                                                            [bool]
+#       position = []             position of the marker mesh     [3D Vector]
+#       rotation = []             rotation of the marker mesh     [3D Vector]
+#       scale = []                scale of the marker mesh        [3D Vector]
+#   },  
+#   { ... },
+# ]
+
+[MARKER]
+
+    background10 = [
+        { nocull = 80, areas = [], position = [-1000.00, -852.00, -1000.00], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00] },
+    ]
+
+    bm_c0a0a = [
+        { nocull = 100, areas = [], position = [3498.47, 3260.22, -1000.00], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00] },
+    ]
+
+    bm_c0a0b = [
+        { nocull = 101, areas = [], position = [2689.96, -3590.37, -1000.00], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00] },
+        { nocull = 105, blend = true, areas = [], position = [2689.96, -3590.37, -990.00], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00] },
+        { nocull = 106, sky = true, areas = [], position = [2689.96, -3590.37, -980.00], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00] },
+    ]
+
+    bm_c0a0c = [
+        { nocull = 102, areas = [], position = [3593.61, -687.10, -2000.00], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00] },
+    ]
+
+    bm_c1a0a = [
+        { nocull = 103, areas = [], position = [316.30, -685.44, -2000.00], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00] },
+    ]
+
+    bm_c1a0b = [
+        { nocull = 104, areas = [], position = [-1329.61, 1922.69, -500.00], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00] },
+    ]
+
+    bm_c2a4a = [
+        # asd
+        { nocull = 30, areas = [], position = [-2962.85, 179.75, 1230.25], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00] },
+    ]
+
+
+
+# #####################################################################################
+#
+# Remix variable configs
+# :: Useful console command: 'xo_scene_print' && 'xo_debug_toggle_node_vis' && 'xo_debug_toggle_sound_print'
+# ~~ Parameters:
+#
+# <map name> = {
+#
+#   startup = []            configs that will be loaded on map-load, conf matching the map name will be auto. loaded and does not need to be specified  [array of strings]
+# }
+
+[CONFIGVARS]
+
+    #bm_c0a0a = { startup = [ 
+    #    "chromatic_explosion.conf" 
+    #    ]}
+
+
+
+# #####################################################################################
+#
+# Spawn lights using the remix api
+# :: Useful console command: 'xo_debug_scene_print' (choreo trigger/kill) && 'xo_debug_toggle_sound_print' (sound trigger/kill) && 'xo_debug_toggle_model_info' (attach)
+# ~~ Parameters:
+#
+# <map name> = [
+#   {                   [array of structure below]
+#       trigger = {     (optional) trigger light creation via choreography (.vcd) or sound :: not defining this will create the light on map load 
+#       
+#                       choreo  ]    THIS =   |> choreo =         name of choreography (.vcd) that will trigger the transition (can be a substring)   [string]
+#                               ]             |> actor =   (opt.) name of actor the event is played on                                                [string]
+#                               ]             |> event =   (opt.) name of the event within the .vcd (can be a substr)                                 [string]
+#                               ]             |> param1 =  (opt.) name of the event within the .vcd (can be a substr)                                 [string]
+#                               ] 
+#                       sound   ] OR THAT =   hash made up of name, index and position (cmd: see desc.)                                               [integer] (hex format)
+#       
+#                               |> delay =    delay spawn after trigger (in seconds)                                                                  [float]
+#                               |> always =   re-triggering the event again will spawn a new light instance everytime (defaults to false)             [bool]
+#       }
+#
+#       -----------
+#       kill = {        (optional) kill light via choreography (.vcd) or sound :: not defining this OR empty string/hash -> light will loop until the map gets unloaded or once loop is complete when run_once is true
+
+#                       choreo  ]    THIS =   name of choreography (.vcd) (can be a substring)                                                        [string]
+#                       sound   ] OR THAT =   hash made up of name, index and position (cmd: see desc.)                                               [integer] (hex format)
+#       
+#                               |> delay =    delay kill after vcd was triggered (in seconds)                                                         [float]
+#       }
+#
+#       -----------
+#       attach = {      (optional) attach light to a prop so it moves with the prop - points are relative to the prop the light gets attached to
+#
+#                       radius  ]    THIS =         radius of prop (recommended) (cmd: see desc.)                                                       [float]
+#                       name    ] OR THAT =         model name that contains this substring (cmd: see desc.)                                            [string]
+#                         
+#                               |> bounds = []      (opt.) define bounds (min/max) where the light can spawn and attach to the prop                     [2x 3D Vector :: [minX, minY, minZ, maxX, maxY, maxZ]
+#       }
+#
+#       -----------
+#       points = [      (required) list of points that will make up a spline the light will move along                                                  [array of structure below]
+#       {
+#                       position = []           X Y Z coordinates of light                                                                              [3D Vector]
+#                                                [!] first point needs to define a position
+#                                                [!] following ones will use the last defined position if position is not defined
+#       
+#                       radiance = []           R G B radiance of light (defaults to 10 10 10)                                                          [3D Vector 0-inf]
+#                       scalar =                ^ radiance scalar
+#                       radius =                radius of light (defaults to 1.0)                                                                       [float]
+#                       smoothness =            curve smoothness (defaults to 0.5 - values above 1 might produce odd results)                           [float 0-1]
+#                       timepoint =             time in seconds at which the light arrives at the point (evenly distributed if not specified)           [float]
+#                                                [!] first timepoint is always 0
+#                                                [!] timepoints can not be out of order
+#                                                [!] last point requires a timepoint and defines the total duration
+#       
+#                       direction = []          light direction (will be normalized in code) (defaults to 0 0 1)                                        [3D Vector 0-inf] (will be normalized in code)
+#                       degrees =               cone angle - anything besides 180 turns ON light shaping (defaults to 180)                              [float 0-180]
+#                       softness =              cone softness (defaults to 0)                                                                           [float 0-PI]
+#                       exponent =              focus expo (defaults to 0)                                                                              [float]
+#       }, { ... }]
+#
+#       -----------
+#       run_once:         ]    THIS =           destroy light after reaching the last point (default: false)                                            [bool]
+#       loop:             ] OR THAT =           create a looping light that restarts at the first point after reaching the last point (default: false)  [bool]
+#       loop_smoothing:   ] OR THAT =           automatically connect and smooth the start and end point (default: false)                               [bool]
+#                                                [!] requires 'loop' to be true
+#                                                [!] only position + timepoint is used from the last point 
+#   },  
+#   { ... },
+# ]
+
+[LIGHTS]
+
+    bm_c0a0b = [
+
+        # welding
+        { points = [
+            { position = [317.82, -6344.11, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 10000.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00 },
+            { position = [317.82, -6350.36, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 0.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 0.10 },
+            { position = [317.82, -6350.36, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 0.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 0.38 },
+            { position = [317.82, -6350.36, 170.52], radiance = [100.00, 100.00, 100.00], scalar = 3000.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 0.49 },
+            { position = [317.32, -6350.36, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 0.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 0.71 },
+            { position = [317.32, -6350.36, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 0.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 1.48 },
+            { position = [317.32, -6350.36, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 1000.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 1.62 },
+            { position = [324.07, -6350.36, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 1000.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 1.75 },
+            { position = [317.32, -6350.36, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 0.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 1.99 },
+            { position = [317.32, -6350.36, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 0.00, radius = 1.00, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 2.26 },
+            { position = [313.82, -6348.86, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 0.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 2.39 },
+            { position = [313.82, -6348.86, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 0.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 2.51 },
+            { position = [313.82, -6348.86, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 10000.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 2.61 },
+            { position = [313.82, -6348.86, 167.02], radiance = [100.00, 100.00, 100.00], scalar = 0.00, radius = 0.20, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 2.71 },
+        ], loop = true },
+
+        # rocket_mover
+        { points = [
+            { position = [-352.38, -3520.00, 206.24], radiance = [18.40, 11.00, 4.60], scalar = 20.00, radius = 4.34, smoothness = 0.00, volumetric_scale = 1.00 },
+            { position = [-352.38, -3520.00, 206.24], radiance = [18.40, 11.00, 4.60], scalar = 20.00, radius = 4.34, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 0.75 },
+            { position = [-352.38, -3520.00, 206.24], radiance = [18.40, 11.00, 4.60], scalar = 0.00, radius = 4.34, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 0.85 },
+            { position = [-352.38, -3520.00, 206.24], radiance = [18.40, 11.00, 4.60], scalar = 0.00, radius = 4.34, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 1.25 },
+        ], loop = true },
+
+        # tram
+        # { attach = { radius = 138.231003 }, points = [
+        #     { position = [0, 0, 145], radiance = [10.00, 4.30, 2.00], scalar = 7000.00, radius = 1.00, smoothness = 0.50, direction = [-0.96, 0.00, 0.28], degrees = 45.00, softness = 0.20, exponent = 0.00, volumetric_scale = 1.00 },
+        #     { position = [0, 0, 145], radiance = [10.00, 4.30, 2.00], scalar = 7000.00, radius = 1.00, smoothness = 0.50, direction = [-0.05, 0.96, 0.28], degrees = 45.00, softness = 0.20, exponent = 0.00, volumetric_scale = 1.00, timepoint = 0.25 },
+        #     { position = [0, 0, 145], radiance = [10.00, 4.30, 2.00], scalar = 7000.00, radius = 1.00, smoothness = 0.50, direction = [0.96, 0.00, 0.28], degrees = 45.00, softness = 0.20, exponent = 0.00, volumetric_scale = 1.00, timepoint = 0.50 },
+        #     { position = [0, 0, 145], radiance = [10.00, 4.30, 2.00], scalar = 7000.00, radius = 1.00, smoothness = 0.50, direction = [0.00, -0.96, 0.28], degrees = 45.00, softness = 0.20, exponent = 0.00, volumetric_scale = 1.00, timepoint = 0.75 },
+        # ], loop = true, loop_smoothing = true },
+    ]
+
+    bm_c0a0c = [
+
+        # right fx1
+        { points = [
+            { position = [-854.63, 589.44, -89.71], radiance = [288.00, 59.50, 5.40], scalar = 500.00, radius = 3.00, smoothness = 0.00, volumetric_scale = 1.00 },
+            { position = [-846.63, 567.94, 3.29], radiance = [288.00, 59.50, 5.40], scalar = 200.00, radius = 2.00, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 0.27 },
+            { position = [-868.63, 562.19, -65.21], radiance = [288.00, 59.50, 5.40], scalar = 500.00, radius = 2.00, smoothness = 0.00, volumetric_scale = 1.00, timepoint = 0.80 },
+        ], loop = true, loop_smoothing = true },
+
+        # right fx2
+        { points = [
+            { position = [-880.63, 589.44, -34.21], radiance = [288.00, 79.60, 56.00], scalar = 2000.00, radius = 1.00, smoothness = 1.00, volumetric_scale = 1.00 },
+            { position = [-850.38, 621.44, 3.29], radiance = [288.00, 59.50, 5.40], scalar = 1000.00, radius = 1.00, smoothness = 1.00, volumetric_scale = 1.00, timepoint = 0.12 },
+            { position = [-902.38, 601.19, -65.21], radiance = [288.00, 59.50, 5.40], scalar = 1000.00, radius = 1.00, smoothness = 1.00, volumetric_scale = 1.00, timepoint = 0.38 },
+            { position = [-882.88, 553.44, -18.96], radiance = [288.00, 59.50, 33.70], scalar = 1000.00, radius = 1.00, smoothness = 1.00, volumetric_scale = 1.00, timepoint = 0.51 },
+            { position = [-878.38, 533.19, -62.71], radiance = [288.00, 59.50, 33.70], scalar = 1200.00, radius = 1.00, smoothness = 1.00, volumetric_scale = 1.00, timepoint = 0.70 },
+            { position = [-813.63, 554.94, -23.71], radiance = [288.00, 59.50, 33.70], scalar = 2000.00, radius = 1.00, smoothness = 1.00, volumetric_scale = 1.00, timepoint = 0.81 },
+            { position = [-880.63, 589.44, -34.21], radiance = [249.10, 59.50, 33.70], scalar = 2000.00, radius = 1.00, smoothness = 1.00, volumetric_scale = 1.00, timepoint = 1.25 },
+        ], loop = true, loop_smoothing = true },
+
+        # left fx1
+        { points = [
+            { position = [143.87, 589.44, -98.96], radiance = [153.30, 110.00, 232.70], scalar = 10000.00, radius = 1.00, smoothness = 1.00, volumetric_scale = 1.00 },
+            { position = [157.62, 582.94, -98.96], radiance = [153.30, 110.00, 232.70], scalar = 1000.00, radius = 1.00, smoothness = 1.00, volumetric_scale = 1.00, timepoint = 0.10 },
+            { position = [132.37, 594.69, -92.96], radiance = [153.30, 110.00, 232.70], scalar = 2000.00, radius = 1.00, smoothness = 1.00, volumetric_scale = 1.00, timepoint = 0.20 },
+        ], loop = true },
+
+        # left fx2
+        { points = [
+            { position = [160.87, 584.19, -60.46], radiance = [165.80, 110.00, 232.70], scalar = 1000.00, radius = 1.00, smoothness = 1.00, volumetric_scale = 1.00 },
+            { position = [161.37, 574.19, -69.71], radiance = [192.60, 95.10, 186.10], scalar = 6000.00, radius = 1.00, smoothness = 1.00, volumetric_scale = 1.00, timepoint = 0.10 },
+            { position = [155.87, 575.19, -69.21], radiance = [178.50, 110.00, 232.70], scalar = 5000.00, radius = 1.00, smoothness = 1.00, volumetric_scale = 1.00, timepoint = 0.20 },
+        ], loop = true, loop_smoothing = true },
+
+        # tram
+        # { attach = { radius = 138.231003 }, points = [
+        #     { position = [0, 0, 145], radiance = [10.00, 4.30, 2.00], scalar = 7000.00, radius = 1.00, smoothness = 0.50, direction = [-0.96, 0.00, 0.28], degrees = 45.00, softness = 0.20, exponent = 0.00, volumetric_scale = 1.00 },
+        #     { position = [0, 0, 145], radiance = [10.00, 4.30, 2.00], scalar = 7000.00, radius = 1.00, smoothness = 0.50, direction = [-0.05, 0.96, 0.28], degrees = 45.00, softness = 0.20, exponent = 0.00, volumetric_scale = 1.00, timepoint = 0.25 },
+        #     { position = [0, 0, 145], radiance = [10.00, 4.30, 2.00], scalar = 7000.00, radius = 1.00, smoothness = 0.50, direction = [0.96, 0.00, 0.28], degrees = 45.00, softness = 0.20, exponent = 0.00, volumetric_scale = 1.00, timepoint = 0.50 },
+        #     { position = [0, 0, 145], radiance = [10.00, 4.30, 2.00], scalar = 7000.00, radius = 1.00, smoothness = 0.50, direction = [0.00, -0.96, 0.28], degrees = 45.00, softness = 0.20, exponent = 0.00, volumetric_scale = 1.00, timepoint = 0.75 },
+        # ], loop = true, loop_smoothing = true },
+    ]
+
+
+# #####################################################################################
+#
+# Set cvars on map load
+# :: Some maps or workflows might require setting cvars on certain maps
+#
+# <map name> = [                                        [string array]
+#   "cvar1 val",
+#   "cvar2 val",
+# ]
+
+[CVARS]
+
+    #bm_c0a0a = [
+    #        "r_drawopaqueworld 0",
+    #        "r_drawstaticprops 0",
+    #        "r_DrawDisp 0",
+    #        "r_drawdecals 0",
+    #        "r_DrawDetailProps 0",
+    #    ]

@@ -11,4 +11,9 @@ namespace shared
 	{
 		float m[3][4];
 	};
+
+	struct VMatrix
+	{
+		float m[4][4];
+	};
 }

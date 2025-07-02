@@ -562,14 +562,6 @@ extern "C" {
     const char*               key,
     const char*               value);
 
-  typedef remixapi_ErrorCode(REMIXAPI_PTR* PFN_remixapi_AddTextureHash)(
-		const char* textureCategory,
-		const char* textureHash);
-
-  typedef remixapi_ErrorCode(REMIXAPI_PTR* PFN_remixapi_RemoveTextureHash)(
-		const char* textureCategory,
-    const char* textureHash);
-
   typedef struct remixapi_PresentInfo {
     remixapi_StructType       sType;
     void*                     pNext;
@@ -650,8 +642,6 @@ extern "C" {
     PFN_remixapi_DestroyLight       DestroyLight;
     PFN_remixapi_DrawLightInstance  DrawLightInstance;
     PFN_remixapi_SetConfigVariable  SetConfigVariable;
-    PFN_remixapi_AddTextureHash     AddTextureHash;
-    PFN_remixapi_RemoveTextureHash  RemoveTextureHash;
 
     // DXVK interoperability
     PFN_remixapi_dxvk_CreateD3D9            dxvk_CreateD3D9;

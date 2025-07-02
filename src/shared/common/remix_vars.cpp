@@ -1,8 +1,6 @@
 #include "std_include.hpp"
 #include "remix_vars.hpp"
-
 #include "remix_api.hpp"
-#include "mods/blackhawkdown/game/game.hpp"
 
 namespace shared::common
 {
@@ -10,6 +8,30 @@ namespace shared::common
 	{
 		static remix_vars instance;
 		return instance;
+	}
+
+	// use a callback function for paused instead of a bool pointer
+	void remix_vars::initialize(std::function<bool()> is_game_paused_callback, float* game_frametime)
+	{
+		auto& instance = get();
+		if (!instance.m_initialized)
+		{
+			if (is_game_paused_callback) {
+				instance.m_is_paused_callback = is_game_paused_callback;
+			} else {
+				instance.m_is_game_paused_ptr = &instance.m_is_game_paused_internal;
+			}
+
+			if (game_frametime) {
+				get().m_frametime_ptr = game_frametime;
+			}
+			else {
+				get().m_frametime_ptr = &get().m_frametime_internal;
+			}
+
+			parse_rtx_options();
+			instance.m_initialized = true;
+		}
 	}
 
 	void remix_vars::initialize(bool* is_game_paused, float* game_frametime)
@@ -522,6 +544,11 @@ namespace shared::common
 		remix_vars::interpolate_stack.clear();
 
 		utils::replace_all(map_name, ".bms", ".conf");
+
+		if (!map_name.ends_with(".conf")) {
+			map_name += ".conf";
+		}
+
 		parse_and_apply_conf_with_lerp(map_name, utils::string_hash64(map_name), EASE_TYPE_SIN_IN, 0.0f, 0.0f);
 	}
 

@@ -7,9 +7,7 @@
 Game modifications specifically made for nvidia's [rtx-remix](https://github.com/NVIDIAGameWorks/rtx-remix).  
 How does a shader based game work with remix? By manually reimplementing fixed function rendering :) 
 
-<br>
-
-If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![ko-fi](https://xoxor4d.github.io/assets/img/social/kofi.png)](https://ko-fi.com/xoxor4d)
+If you want to support my work, consider buying me some [coffee](https://ko-fi.com/xoxor4d) or become a [patreon](https://patreon.com/xoxor4d)
 </div>
 
 <br>
@@ -18,6 +16,7 @@ If you want to support my work, consider buying me some coffee: &ensp;&ensp;[![k
 <div align="center" markdown="1"> 
 
 ### Table of Contents
+__[Black Mesa 1.0 (Steam)](#black-mesa)__  
 __[Bioshock 1 (GOG)](#bioshock-1-gog)__  
 __[SWAT 4 Gold (GOG)](#swat-4---gold-gog)__  
 __[Fear 1 Platinum (GOG)](#fear-1-platinum-gog)__  
@@ -39,6 +38,47 @@ __[Compiling](#compiling)__
 _____
 
 <br>
+
+<div align="center" markdown="1"> 
+
+### Black Mesa
+![img](.github/img/blackmesa.jpg)
+
+#### This compatibilty mod was used for on an entry in the RTX Remix Modding Competition. 
+#### As such, a proper remix mod with limited scope was created an can be found over at [ModDB](tba)
+
+</div>
+
+###### The good:  
+- Pretty stable
+- Most things rendered via fixed function
+- No noticable culling
+- Tweakable per map-settings (ImGui `F5` :: Anti-Culling - Animated lights - Spawnable unique meshes and more)
+- Per map remix configs (config variables)
+- Working, tweakable flashlight
+- Working 3D Sky (with certain limitations)
+- Forced LOD
+- Use commandline arg `-nobeep` to disable the beep on startup
+
+###### The bad:
+- The new UI does not work with remix (hence the usage of `-oldgameui`)
+- Some textures won't show up in remix (or are simply black) - mostly metal textures and certain skyboxes
+- Effects are not properly fixed (no proper alpha blending at times - or general glitching)
+- Effects and other things might look especially bad when viewed through a translucent surface (eg. tram ride -> that is more of a general remix issue)
+- Cables are strill rendered via shaders and look glitchy due to unstable hashes and vertex imprecision
+- No facial expressions because of softwareskinning usage (also results in not being able to replace skinned meshes)
+- The asi (dll) might be flagged as a false positive due to the nature of it (process hooking and manipulation)
+
+<br>
+
+###### Usage / Installing:
+This game has separate releases.  
+Look [here](https://github.com/xoxor4d/remix-comp-projects/releases) and follow the install instructions that found on the release page.
+
+<br>
+<br>
+<br>
+
 
 <div align="center" markdown="1"> 
 
