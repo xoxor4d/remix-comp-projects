@@ -46,19 +46,6 @@ namespace mods::blackmesa
 		} \
 	}
 
-//#define GET_MODULE_HANDLE_WITH_FALLBACK(HANDLE_OUT, NAME, NAME_FALLBACK, T) \
-//	while (!(HANDLE_OUT)) { \
-//		if ((HANDLE_OUT) = (DWORD)GetModuleHandleA(NAME); !(HANDLE_OUT)) { \
-//			if ((HANDLE_OUT) = (DWORD)GetModuleHandleA(NAME_FALLBACK); !(HANDLE_OUT)) { \
-//				Sleep(1u); (T) += 1u; \
-//				if ((T) >= 30000) { \
-//					shared::common::console(); std::cout << "---------------> Failed to find module: " << (NAME) << " / " << (NAME_FALLBACK) << "\n" << "Not loading RTX Compatibility Mod.\n"; \
-//					return TRUE; \
-//				} \
-//			} \
-//		} \
-//	}
-
 	DWORD WINAPI find_game_window_by_sha1([[maybe_unused]] LPVOID lpParam)
 	{
 		shared::common::console();

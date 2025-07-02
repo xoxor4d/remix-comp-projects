@@ -13,11 +13,7 @@
 #include "shared/common/remix_vars.hpp"
 
 // commandline:
-// -dx9 -dxlevel 95 -oldgameui -window -w 1920 -h 1080
-
-// TODO:
-// - trigger configs on leafs to disable 3dsky on bm_c0a0c after passing lasers
-
+// -window -w 1920 -h 1080
 
 namespace mods::blackmesa
 {
